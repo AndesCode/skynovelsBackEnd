@@ -1,7 +1,6 @@
 /*jshint esversion: 6 */
 const usuarios = require('../models').usuarios;
 const jwt = require('../services/jwt');
-const Op = usuarios.sequelize.Op;
 const nodemailer = require("nodemailer");
 const bcrypt = require('bcrypt');
 const Cryptr = require('cryptr');
@@ -16,14 +15,6 @@ function create(req, res) {
     console.log(req.body);
     var user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     var crypted_verification_key = cryptr.encrypt(user_verification_key);
-
-    /*let transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL,
-            pass: process.env.PASSWORD
-        }
-    });*/
 
     const transporter = nodemailer.createTransport({
         host: 'smtp.ethereal.email',
@@ -124,14 +115,6 @@ function passwordResetRequest(req, res) {
         }
     }).then(usuario => {
         requestToken = jwt.createPasswordResetToken(usuario);
-        /* let transporter = nodemailer.createTransport({
-             service: 'gmail',
-             auth: {
-                 user: process.env.EMAIL,
-                 pass: process.env.PASSWORD
-             }
-         });*/
-
         const transporter = nodemailer.createTransport({
             host: 'smtp.ethereal.email',
             port: 587,
@@ -155,11 +138,11 @@ function passwordResetRequest(req, res) {
                 res.status(500).send({ message: 'Error al enviar el correo ' + err });
             } else {
                 console.log('Email enviado');
-                res.status(200).send({ message: 'http://localhost:4200/password-reset/' + requestToken });
+                res.status(200).send({ message: 'Email enviado con exito' });
             }
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Error, Usuario o contraseña incorrectos ' + err });
+        res.status(500).send({ message: 'Error, No se encuentra el email del usuario ' + err });
     });
 }
 

@@ -4,6 +4,7 @@ var config = require('../config/config');
 var secret = config.token_secret;
 var secureRandom = require('secure-random');
 
+
 exports.createToken = (usuario) => {
     var params = {
         sub: usuario.id,

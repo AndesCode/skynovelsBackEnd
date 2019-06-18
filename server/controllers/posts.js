@@ -1,9 +1,6 @@
 /*jshint esversion: 6 */
 const posts = require('../models').posts;
 const posts_comments = require('../models').posts_comments;
-const fs = require('fs');
-const thumb = require('node-thumbnail').thumb;
-const path = require('path');
 
 function create(req, res) {
     var body = req.body;
