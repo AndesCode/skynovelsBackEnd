@@ -1,12 +1,18 @@
 /*jshint esversion: 6 */
+var http = require('http');
 const express = require('express');
 const bodyParser = require('body-parser');
 const exphbs = require('express-handlebars');
 const nodemailer = require('nodemailer');
 const path = require('path');
-
-
 const app = express();
+var server = http.createServer(function(req, res) {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    var message = 'It works!\n',
+        version = 'NodeJS ' + process.versions.node + '\n',
+        response = [message, version].join('\n');
+    res.end(response);
+});
 
 // Body Parser Middleware
 app.use(bodyParser.json());
@@ -34,8 +40,13 @@ app.set('view engine', 'handlebars');
 // Static folder
 app.use('server', express.static(path.join(__dirname, 'server')));
 
-app.get('*', (req, res) => {
-    res.status(200).send({ message: "bienvenido al servidor NodeJS" });
+const port = process.env.PORT || 3000;
+console.log(port);
+
+server.listen(port, function() {
+    var host = server.address().address;
+    var port = server.address().port;
+    console.log('running at http://' + host + ':' + port);
 });
 
 module.exports = app;
