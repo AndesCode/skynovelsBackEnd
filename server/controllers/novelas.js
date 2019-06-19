@@ -139,7 +139,7 @@ function uploadnovelaimg(req, res) {
 
 function getnovela(req, res) {
     var id = req.params.id;
-    novelas.sequelize.query('SELECT novelas.id, novelas.nvl_author, novelas.nvl_status, novelas.nvl_writer, novelas.nvl_title, novelas.nvl_content, novelas.nvl_img, COUNT(capitulos.nvl_id) AS chp_count FROM novelas JOIN capitulos ON capitulos.nvl_id = novelas.id WHERE novelas.id = ?', { replacements: [id], type: novelas.sequelize.QueryTypes.SELECT }).then(novelas => {
+    novelas.sequelize.query('SELECT (SELECT usuarios.user_login from usuarios WHERE usuarios.id = novelas.nvl_author) AS user_author_login, novelas.id , novelas.nvl_content, novelas.nvl_author, novelas.nvl_status, novelas.nvl_writer, novelas.nvl_name, novelas.nvl_img, novelas.nvl_comment_count, novelas.nvl_title, (SELECT COUNT(capitulos.nvl_id) FROM capitulos WHERE capitulos.chp_author = novelas.nvl_author LIMIT 1) AS chp_count FROM novelas WHERE novelas.id = ?', { replacements: [id], type: novelas.sequelize.QueryTypes.SELECT }).then(novelas => {
         res.status(200).send({ novelas });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar la novela' });
