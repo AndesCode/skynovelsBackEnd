@@ -5,7 +5,7 @@ const cm = require('connect-multiparty');
 const md_upload = cm({ uploadDir: './server/uploads/usuarios' });
 
 module.exports = (app) => {
-    app.post('/api/crear-usuario', usuariosController.create);
+    app.post('/api/create-user', usuariosController.create);
     app.post('/api/login', usuariosController.login);
     app.get('/api/usuarios', md_auth.auth, usuariosController.getAll);
     app.get('/api/user/email-verification/:key', usuariosController.activateUser);

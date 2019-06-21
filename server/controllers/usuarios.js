@@ -10,60 +10,66 @@ const atob = require('atob');
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
 const path = require('path');
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 
 function create(req, res) {
-    console.log(req.body);
-    var user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    var crypted_verification_key = cryptr.encrypt(user_verification_key);
+    if (req.body.user_pass == req.body.user_confirm_pass) {
+        console.log(req.body);
+        var user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        var crypted_verification_key = cryptr.encrypt(user_verification_key);
 
-    const transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        auth: {
-            user: 'jaleel.schuster2@ethereal.email',
-            pass: 'qqGC49u1t75GEW7cyp'
-        }
-    });
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.ethereal.email',
+            port: 587,
+            auth: {
+                user: 'halle.lehner@ethereal.email',
+                pass: 'EQhdryhNC456BX7wKR'
+            }
+        });
 
-    let mailOptions = {
-        from: 'jaleel.schuster2@ethereal.email',
-        to: req.body.user_email,
-        subject: 'testing stuff',
-        // template: '../templates/email-confirmation',
-        text: 'haz click en el enalce para activar tu cuenta de Skynovels! http://localhost:4200/verificacion/' + crypted_verification_key
-    };
+        let mailOptions = {
+            from: 'halle.lehner@ethereal.email',
+            to: req.body.user_email,
+            subject: 'testing stuff',
+            // template: '../templates/email-confirmation',
+            text: 'haz click en el enalce para activar tu cuenta de Skynovels! http://localhost:4200/verificacion/' + crypted_verification_key
+        };
 
-    transporter.sendMail(mailOptions, function(err, data) {
-        if (err) {
-            console.log(err);
-            res.status(500).send({ message: 'Error al enviar el correo ' + err });
-        } else {
-            console.log('Email enviado');
-            usuarios.create(req.body).then(usuario => {
-                console.log(req.body.user_pass);
-                var hashed_password = bcrypt.hash(req.body.user_pass, saltRounds, function(err, hash) {
-                    if (err) {
-                        console.log('error ' + err);
-                    } else {
-                        hashed_password = hash;
-                        usuario.update({
-                            user_verification_key: user_verification_key,
-                            user_pass: hashed_password
-                        }).then(() => {
-                            res.status(200).send({ usuario });
-                        }).catch(err => {
-                            res.status(500).send({ message: 'Error al generar la clave secreta de usuario ' + err });
-                        });
-                    }
+        transporter.sendMail(mailOptions, function(err, data) {
+            if (err) {
+                console.log(err);
+                res.status(500).send({ message: 'Error al enviar el correo ' + err });
+            } else {
+                console.log('Email enviado');
+                usuarios.create(req.body).then(usuario => {
+                    console.log(req.body.user_pass);
+                    var hashed_password = bcrypt.hash(req.body.user_pass, saltRounds, function(err, hash) {
+                        if (err) {
+                            console.log('error ' + err);
+                        } else {
+                            hashed_password = hash;
+                            usuario.update({
+                                user_verification_key: user_verification_key,
+                                user_pass: hashed_password
+                            }).then(() => {
+                                res.status(200).send({ usuario });
+                            }).catch(err => {
+                                res.status(500).send({ message: 'Error al generar la clave secreta de usuario ' + err });
+                            });
+                        }
+                    });
+                    console.log(user_verification_key);
+                    console.log(hashed_password);
+                }).catch(err => {
+                    res.status(500).send({ message: 'Error al crear el usuario ' + err });
                 });
-                console.log(user_verification_key);
-                console.log(hashed_password);
-            }).catch(err => {
-                res.status(500).send({ message: 'Error al crear el usuario ' + err });
-            });
 
-        }
-    });
+            }
+        });
+    } else {
+        res.status(500).send({ message: 'La contraseña no coincide con el campo de confirmación de contraseña ' });
+    }
 }
 
 function activateUser(req, res) {
@@ -81,6 +87,8 @@ function activateUser(req, res) {
             usuario.update({
                 user_status: 'Active',
                 user_verification_key: new_user_verification_key
+            }).then(() => {
+                res.status(200).send({ message: 'Usuario activado con exito! bienvenido ' + usuario.user_login });
             }).catch(err => {
                 res.status(500).send({ message: 'Ocurrio algún error activando el usuario ' + err });
             });
@@ -147,9 +155,10 @@ function passwordResetRequest(req, res) {
 }
 
 function login(req, res) {
+    console.log(req.body);
     usuarios.findOne({
         where: {
-            user_login: req.body.user_login,
+            [Op.or]: [{ user_login: req.body.user_login }, { user_email: req.body.user_login }]
         }
     }).then(usuario => {
         console.log(usuario.dataValues);
