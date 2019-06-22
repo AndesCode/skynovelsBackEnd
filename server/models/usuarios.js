@@ -13,11 +13,10 @@ module.exports = (sequelize, DataTypes) => {
             validate: {
                 isUnique: function(value, next) {
                     var self = this;
-                    usuarios.find({ where: { user_login: value } })
+                    usuarios.findOne({ where: { user_login: value } })
                         .then(function(usuarios) {
-                            // reject if a different user wants to use the same email
                             if (usuarios && self.id !== usuarios.id) {
-                                return next('El login de usuario indicado ya esta en uso');
+                                return next({ message: 'El login de usuario ya esta en uso' });
                             }
                             return next();
                         })
@@ -35,9 +34,8 @@ module.exports = (sequelize, DataTypes) => {
             validate: {
                 isUnique: function(value, next) {
                     var self = this;
-                    usuarios.find({ where: { user_email: value } })
+                    usuarios.findOne({ where: { user_email: value } })
                         .then(function(usuarios) {
-                            // reject if a different user wants to use the same email
                             if (usuarios && self.id !== usuarios.id) {
                                 return next('El email indicado ya esta en uso');
                             }

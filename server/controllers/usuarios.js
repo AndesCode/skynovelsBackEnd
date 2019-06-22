@@ -18,57 +18,55 @@ function create(req, res) {
         console.log(req.body);
         var user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         var crypted_verification_key = cryptr.encrypt(user_verification_key);
+        usuarios.create(req.body).then(usuario => {
+            console.log(req.body.user_pass);
+            var hashed_password = bcrypt.hash(req.body.user_pass, saltRounds, function(err, hash) {
+                if (err) {
+                    console.log('error ' + err);
+                } else {
+                    hashed_password = hash;
+                    usuario.update({
+                        user_verification_key: user_verification_key,
+                        user_pass: hashed_password
+                    }).then(() => {
+                        res.status(200).send({ usuario });
+                        const transporter = nodemailer.createTransport({
+                            host: 'smtp.ethereal.email',
+                            port: 587,
+                            auth: {
+                                user: 'halle.lehner@ethereal.email',
+                                pass: 'EQhdryhNC456BX7wKR'
+                            }
+                        });
 
-        const transporter = nodemailer.createTransport({
-            host: 'smtp.ethereal.email',
-            port: 587,
-            auth: {
-                user: 'halle.lehner@ethereal.email',
-                pass: 'EQhdryhNC456BX7wKR'
-            }
-        });
+                        let mailOptions = {
+                            from: 'halle.lehner@ethereal.email',
+                            to: req.body.user_email,
+                            subject: 'testing stuff',
+                            // template: '../templates/email-confirmation',
+                            text: 'haz click en el enalce para activar tu cuenta de Skynovels! http://localhost:4200/verificacion/' + crypted_verification_key
+                        };
 
-        let mailOptions = {
-            from: 'halle.lehner@ethereal.email',
-            to: req.body.user_email,
-            subject: 'testing stuff',
-            // template: '../templates/email-confirmation',
-            text: 'haz click en el enalce para activar tu cuenta de Skynovels! http://localhost:4200/verificacion/' + crypted_verification_key
-        };
-
-        transporter.sendMail(mailOptions, function(err, data) {
-            if (err) {
-                console.log(err);
-                res.status(500).send({ message: 'Error al enviar el correo ' + err });
-            } else {
-                console.log('Email enviado');
-                usuarios.create(req.body).then(usuario => {
-                    console.log(req.body.user_pass);
-                    var hashed_password = bcrypt.hash(req.body.user_pass, saltRounds, function(err, hash) {
-                        if (err) {
-                            console.log('error ' + err);
-                        } else {
-                            hashed_password = hash;
-                            usuario.update({
-                                user_verification_key: user_verification_key,
-                                user_pass: hashed_password
-                            }).then(() => {
-                                res.status(200).send({ usuario });
-                            }).catch(err => {
-                                res.status(500).send({ message: 'Error al generar la clave secreta de usuario ' + err });
-                            });
-                        }
+                        transporter.sendMail(mailOptions, function(err, data) {
+                            if (err) {
+                                console.log(err);
+                                res.status(500).send({ message: 'Error al enviar el correo ' + err });
+                            } else {
+                                console.log('Email enviado');
+                            }
+                        });
+                    }).catch(err => {
+                        res.status(500).send({ message: 'Error al generar la clave secreta de usuario ' + err });
                     });
-                    console.log(user_verification_key);
-                    console.log(hashed_password);
-                }).catch(err => {
-                    res.status(500).send({ message: 'Error al crear el usuario ' + err });
-                });
-
-            }
+                }
+            });
+            console.log(user_verification_key);
+            console.log(hashed_password);
+        }).catch(err => {
+            res.status(500).send({ message: 'Error en el registro del usuario.<br>' + err.message });
         });
     } else {
-        res.status(500).send({ message: 'La contraseña no coincide con el campo de confirmación de contraseña ' });
+        res.status(500).send({ message: 'La contraseña no coincide con el campo de confirmación de contraseña.<br>' });
     }
 }
 
