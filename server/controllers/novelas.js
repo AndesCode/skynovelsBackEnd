@@ -1,6 +1,7 @@
 /*jshint esversion: 6 */
 const novelas = require('../models').novelas;
 const capitulos = require('../models').capitulos;
+const genres = require('../models').genres;
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
 const path = require('path');
@@ -173,6 +174,17 @@ function getCapitulos(req, res) {
     });
 }
 
+function getNovelGenres(req, res) {
+    var id = req.params.id;
+    genres.sequelize.query("SELECT genres.genre_name FROM genres, genres_novels, novelas WHERE genres_novels.novel_id = novelas.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = ?", { replacements: [id], type: genres.sequelize.QueryTypes.SELECT }).then(genres => {
+        res.status(200).send({ genres });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
+    });
+}
+
+
+
 function getUserChapter(req, res) {
     var id = req.params.id;
     capitulos.sequelize.query('SELECT * FROM capitulos WHERE capitulos.id = ? ORDER BY capitulos.createdAt ASC', { replacements: [id], type: capitulos.sequelize.QueryTypes.SELECT }).then(capitulos => {
@@ -293,5 +305,6 @@ module.exports = {
     getNovelImage,
     deleteNovel,
     getAllChaptersByDate,
-    getAllByDate
+    getAllByDate,
+    getNovelGenres
 };

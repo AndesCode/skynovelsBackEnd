@@ -15,4 +15,5 @@ module.exports = (app) => {
     app.get('/api/novela/image/:novel_img/:thumb', novelasController.getNovelImage);
     app.delete('/api/delete-novela/:id', md_auth.adminAuth, novelasController.deleteNovel);
     app.get('/api/home-last-novels', novelasController.getAllByDate);
+    app.get('/api/novel-genres/:id', novelasController.getNovelGenres);
 };
