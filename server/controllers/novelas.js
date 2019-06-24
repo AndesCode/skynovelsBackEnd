@@ -165,6 +165,15 @@ function getAll(req, res) {
     });
 }
 
+function searchNovels(req, res) {
+    var term = req.params.term;
+    novelas.sequelize.query('SELECT (SELECT usuarios.user_login from usuarios WHERE usuarios.id = novelas.nvl_author) AS user_author_login, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ", " ) AS CONCAT FROM genres, genres_novels, novelas n WHERE genres_novels.novel_id = novelas.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres ,novelas.id , novelas.nvl_content, novelas.nvl_author, novelas.nvl_status, novelas.nvl_writer, novelas.nvl_name, novelas.nvl_img, novelas.nvl_comment_count, novelas.nvl_title, (SELECT COUNT(capitulos.nvl_id) FROM capitulos WHERE capitulos.chp_author = novelas.nvl_author LIMIT 1) AS chp_count FROM novelas WHERE novelas.nvl_status = "Activa" AND novelas.nvl_title LIKE "%"?"%"', { replacements: [term], type: novelas.sequelize.QueryTypes.SELECT }).then(novelas => {
+        res.status(200).send({ novelas });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
+    });
+}
+
 function getCapitulos(req, res) {
     var id = req.params.id;
     capitulos.sequelize.query("SELECT * FROM capitulos WHERE nvl_id = ? ORDER BY capitulos.createdAt ASC", { replacements: [id], type: novelas.sequelize.QueryTypes.SELECT }).then(capitulos => {
@@ -306,5 +315,6 @@ module.exports = {
     deleteNovel,
     getAllChaptersByDate,
     getAllByDate,
-    getNovelGenres
+    getNovelGenres,
+    searchNovels
 };

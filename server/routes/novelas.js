@@ -16,4 +16,5 @@ module.exports = (app) => {
     app.delete('/api/delete-novela/:id', md_auth.adminAuth, novelasController.deleteNovel);
     app.get('/api/home-last-novels', novelasController.getAllByDate);
     app.get('/api/novel-genres/:id', novelasController.getNovelGenres);
+    app.get('/api/search-novels/:term', novelasController.searchNovels);
 };
