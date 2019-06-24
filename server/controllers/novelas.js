@@ -140,10 +140,10 @@ function uploadnovelaimg(req, res) {
 
 function getnovela(req, res) {
     var id = req.params.id;
-    novelas.sequelize.query('SELECT (SELECT usuarios.user_login from usuarios WHERE usuarios.id = novelas.nvl_author) AS user_author_login, novelas.id , novelas.nvl_content, novelas.nvl_author, novelas.nvl_status, novelas.nvl_writer, novelas.nvl_name, novelas.nvl_img, novelas.nvl_comment_count, novelas.nvl_title, (SELECT COUNT(capitulos.nvl_id) FROM capitulos WHERE capitulos.chp_author = novelas.nvl_author LIMIT 1) AS chp_count FROM novelas WHERE novelas.id = ?', { replacements: [id], type: novelas.sequelize.QueryTypes.SELECT }).then(novelas => {
+    novelas.sequelize.query('SELECT (SELECT usuarios.user_login from usuarios WHERE usuarios.id = novelas.nvl_author) AS user_author_login, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ", " ) AS CONCAT FROM genres, genres_novels, novelas n WHERE genres_novels.novel_id = novelas.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres ,novelas.id , novelas.nvl_content, novelas.nvl_author, novelas.nvl_status, novelas.nvl_writer, novelas.nvl_name, novelas.nvl_img, novelas.nvl_comment_count, novelas.nvl_title, (SELECT COUNT(capitulos.nvl_id) FROM capitulos WHERE capitulos.chp_author = novelas.nvl_author LIMIT 1) AS chp_count FROM novelas WHERE novelas.id = ?', { replacements: [id], type: novelas.sequelize.QueryTypes.SELECT }).then(novelas => {
         res.status(200).send({ novelas });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' });
+        res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
     });
 }
 
@@ -158,7 +158,7 @@ function getUserNovels(req, res) {
 
 function getAll(req, res) {
 
-    novelas.sequelize.query("SELECT novelas.id, nvl_status, novelas.nvl_title, novelas.nvl_content, COUNT(capitulos.nvl_id) AS chp_count FROM novelas JOIN capitulos ON capitulos.nvl_id = novelas.id group by novelas.id;", { type: novelas.sequelize.QueryTypes.SELECT }).then(novelas => {
+    novelas.sequelize.query("SELECT novelas.id, nvl_status, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ', ' ) AS CONCAT FROM genres, genres_novels, novelas n WHERE genres_novels.novel_id = novelas.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres , novelas.nvl_title, novelas.nvl_content, COUNT(capitulos.nvl_id) AS chp_count FROM novelas JOIN capitulos ON capitulos.nvl_id = novelas.id group by novelas.id;", { type: novelas.sequelize.QueryTypes.SELECT }).then(novelas => {
         res.status(200).send({ novelas });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
