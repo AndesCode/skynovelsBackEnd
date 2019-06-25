@@ -21,7 +21,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
-require('./server/routes/usuarios')(app);
+require('./server/routes/users')(app);
 require('./server/routes/novelas')(app);
 require('./server/routes/capitulos')(app);
 require('./server/routes/posts')(app);

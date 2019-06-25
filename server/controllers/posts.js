@@ -31,7 +31,7 @@ function update(req, res) {
 
 function getPosts(req, res) {
     var type = req.params.type;
-    posts.sequelize.query("SELECT ( SELECT COUNT(*) FROM posts_comments WHERE posts_comments.forum_topic_id = posts.id ) AS comment_count, forum.forum_type, posts.id, posts.post_author_id, posts.post_title, posts.forum_type_id, usuarios.user_login AS USER FROM forum, posts JOIN usuarios ON posts.post_author_id = usuarios.id WHERE posts.forum_type_id = forum.id AND forum.forum_type = ?", { replacements: [type], type: posts.sequelize.QueryTypes.SELECT }).then(posts => {
+    posts.sequelize.query("SELECT ( SELECT COUNT(*) FROM posts_comments WHERE posts_comments.forum_topic_id = posts.id ) AS comment_count, forum.forum_type, posts.id, posts.post_author_id, posts.post_title, posts.forum_type_id, users.user_login AS USER FROM forum, posts JOIN users ON posts.post_author_id = users.id WHERE posts.forum_type_id = forum.id AND forum.forum_type = ?", { replacements: [type], type: posts.sequelize.QueryTypes.SELECT }).then(posts => {
         res.status(200).send({ posts });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error' + err });
@@ -42,7 +42,7 @@ function getPosts(req, res) {
 
 function getPost(req, res) {
     var id = req.params.id;
-    posts.sequelize.query("SELECT posts.createdAt, posts.updatedAt,posts.id, (SELECT COUNT(*) from posts where posts.post_author_id = usuarios.id) AS author_post_count, (SELECT COUNT(*) FROM posts_comments WHERE posts_comments.post_comment_author_id = usuarios.id ) AS author_commnet_count ,posts.post_author_id, posts.post_title, posts.post_content, usuarios.user_login AS user, usuarios.user_profile_image FROM posts JOIN usuarios ON posts.post_author_id = usuarios.id WHERE posts.id = ?", { replacements: [id], type: posts.sequelize.QueryTypes.SELECT }).then(posts => {
+    posts.sequelize.query("SELECT posts.createdAt, posts.updatedAt,posts.id, (SELECT COUNT(*) from posts where posts.post_author_id = users.id) AS author_post_count, (SELECT COUNT(*) FROM posts_comments WHERE posts_comments.post_comment_author_id = users.id ) AS author_commnet_count ,posts.post_author_id, posts.post_title, posts.post_content, users.user_login AS user, users.user_profile_image FROM posts JOIN users ON posts.post_author_id = users.id WHERE posts.id = ?", { replacements: [id], type: posts.sequelize.QueryTypes.SELECT }).then(posts => {
         res.status(200).send({ posts });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error' + err });
@@ -52,7 +52,7 @@ function getPost(req, res) {
 function getPostComments(req, res) {
     var id = req.params.id;
     console.log(id);
-    posts_comments.sequelize.query("SELECT posts.id, (posts_comments.id) as post_comment_id, posts_comments.post_comment_content ,posts_comments.post_comment_author_id, usuarios.user_login AS user FROM posts,posts_comments JOIN usuarios ON posts_comments.post_comment_author_id = usuarios.id WHERE posts.id = posts_comments.forum_topic_id AND forum_topic_id = ?", { replacements: [id], type: posts_comments.sequelize.QueryTypes.SELECT }).then(postsComments => {
+    posts_comments.sequelize.query("SELECT posts.id, (posts_comments.id) as post_comment_id, posts_comments.post_comment_content ,posts_comments.post_comment_author_id, users.user_login AS user FROM posts,posts_comments JOIN users ON posts_comments.post_comment_author_id = users.id WHERE posts.id = posts_comments.forum_topic_id AND forum_topic_id = ?", { replacements: [id], type: posts_comments.sequelize.QueryTypes.SELECT }).then(postsComments => {
         res.status(200).send({ postsComments });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error' });

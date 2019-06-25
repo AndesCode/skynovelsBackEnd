@@ -1,6 +1,6 @@
 /*jshint esversion: 6 */
 module.exports = (sequelize, DataTypes) => {
-    const usuarios = sequelize.define('usuarios', {
+    const users = sequelize.define('users', {
         id: {
             autoIncrement: true,
             primaryKey: true,
@@ -13,9 +13,9 @@ module.exports = (sequelize, DataTypes) => {
             validate: {
                 isUnique: function(value, next) {
                     var self = this;
-                    usuarios.findOne({ where: { user_login: value } })
-                        .then(function(usuarios) {
-                            if (usuarios && self.id !== usuarios.id) {
+                    users.findOne({ where: { user_login: value } })
+                        .then(function(users) {
+                            if (users && self.id !== users.id) {
                                 return next({ message: 'El login de usuario ya esta en uso' });
                             }
                             return next();
@@ -34,9 +34,9 @@ module.exports = (sequelize, DataTypes) => {
             validate: {
                 isUnique: function(value, next) {
                     var self = this;
-                    usuarios.findOne({ where: { user_email: value } })
-                        .then(function(usuarios) {
-                            if (usuarios && self.id !== usuarios.id) {
+                    users.findOne({ where: { user_email: value } })
+                        .then(function(users) {
+                            if (users && self.id !== users.id) {
                                 return next('El email indicado ya esta en uso');
                             }
                             return next();
@@ -58,5 +58,5 @@ module.exports = (sequelize, DataTypes) => {
 
     });
 
-    return usuarios;
+    return users;
 };

@@ -1,5 +1,5 @@
 /*jshint esversion: 6 */
-const usuarios = require('../models').usuarios;
+const users = require('../models').users;
 const jwt = require('../services/jwt');
 const nodemailer = require("nodemailer");
 const bcrypt = require('bcrypt');
@@ -18,18 +18,18 @@ function create(req, res) {
         console.log(req.body);
         var user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         var crypted_verification_key = cryptr.encrypt(user_verification_key);
-        usuarios.create(req.body).then(usuario => {
+        users.create(req.body).then(user => {
             console.log(req.body.user_pass);
             var hashed_password = bcrypt.hash(req.body.user_pass, saltRounds, function(err, hash) {
                 if (err) {
                     console.log('error ' + err);
                 } else {
                     hashed_password = hash;
-                    usuario.update({
+                    user.update({
                         user_verification_key: user_verification_key,
                         user_pass: hashed_password
                     }).then(() => {
-                        res.status(200).send({ usuario });
+                        res.status(200).send({ user });
                         const transporter = nodemailer.createTransport({
                             host: 'smtp.ethereal.email',
                             port: 587,
@@ -75,18 +75,18 @@ function activateUser(req, res) {
     var decryptedkey = cryptr.decrypt(key);
     if (decryptedkey.length > 4) {
         console.log(decryptedkey);
-        usuarios.findOne({
+        users.findOne({
             where: {
                 user_verification_key: decryptedkey
             }
-        }).then(usuario => {
+        }).then(user => {
             console.log('activando el usuario con el email = ');
             var new_user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-            usuario.update({
+            user.update({
                 user_status: 'Active',
                 user_verification_key: new_user_verification_key
             }).then(() => {
-                res.status(200).send({ message: 'Usuario activado con exito! bienvenido ' + usuario.user_login });
+                res.status(200).send({ message: 'Usuario activado con exito! bienvenido ' + user.user_login });
             }).catch(err => {
                 res.status(500).send({ message: 'Ocurrio algún error activando el usuario ' + err });
             });
@@ -102,9 +102,9 @@ function update(req, res) {
     var id = req.params.id;
     var body = req.body;
 
-    usuarios.findByPk(id).then(usuario => {
-        usuario.update(body).then(() => {
-            res.status(200).send({ usuario });
+    users.findByPk(id).then(user => {
+        user.update(body).then(() => {
+            res.status(200).send({ user });
         }).catch(err => {
             res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario' });
         });
@@ -115,12 +115,12 @@ function update(req, res) {
 
 function passwordResetRequest(req, res) {
     console.log(req.body);
-    usuarios.findOne({
+    users.findOne({
         where: {
             user_email: req.body.user_email,
         }
-    }).then(usuario => {
-        requestToken = jwt.createPasswordResetToken(usuario);
+    }).then(user => {
+        requestToken = jwt.createPasswordResetToken(user);
         const transporter = nodemailer.createTransport({
             host: 'smtp.ethereal.email',
             port: 587,
@@ -154,22 +154,22 @@ function passwordResetRequest(req, res) {
 
 function login(req, res) {
     console.log(req.body);
-    usuarios.findOne({
+    users.findOne({
         where: {
             [Op.or]: [{ user_login: req.body.user_login }, { user_email: req.body.user_login }]
         }
-    }).then(usuario => {
-        console.log(usuario.dataValues);
-        hash = usuario.dataValues.user_pass;
+    }).then(user => {
+        console.log(user.dataValues);
+        hash = user.dataValues.user_pass;
         user_password = bcrypt.compare(req.body.user_pass, hash, function(err, response) {
-            if (usuario && usuario.dataValues.user_status == 'Active' && response == true) {
+            if (user && user.dataValues.user_status == 'Active' && response == true) {
                 if (req.body.token) {
                     res.status(200).send({
-                        token: jwt.createToken(usuario)
+                        token: jwt.createToken(user)
                     });
                 } else {
                     res.status(200).send({
-                        usuario: usuario,
+                        user: user,
                     });
                 }
 
@@ -183,8 +183,8 @@ function login(req, res) {
 }
 
 function getAll(req, res) {
-    usuarios.all().then(usuarios => {
-        res.status(200).send({ usuarios });
+    users.all().then(users => {
+        res.status(200).send({ users });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar a todos los usuarios' });
     });
@@ -192,12 +192,12 @@ function getAll(req, res) {
 
 function getUser(req, res) {
     var id = req.params.id;
-    usuarios.sequelize.query("SELECT user_description, usuarios.user_profile_image, usuarios.id, usuarios.user_login, usuarios.user_email, usuarios.user_status, usuarios.user_rol, (SELECT COUNT(*) FROM posts where posts.post_author_id = usuarios.id) AS Cuenta_Posts, (SELECT COUNT(*) FROM posts_comments WHERE posts_comments.post_comment_author_id = usuarios.id) AS Cuenta_Comentarios, (SELECT COUNT(*) FROM novelas where novelas.nvl_author = usuarios.id) AS Cuenta_Novelas, (SELECT p.post_title FROM posts p where p.post_author_id=usuarios.id ORDER BY createdAt DESC LIMIT 1) AS last_post FROM usuarios WHERE usuarios.id = ?", {
+    users.sequelize.query("SELECT user_description, users.user_profile_image, users.id, users.user_login, users.user_email, users.user_status, users.user_rol, (SELECT COUNT(*) FROM posts where posts.post_author_id = users.id) AS Cuenta_Posts, (SELECT COUNT(*) FROM posts_comments WHERE posts_comments.post_comment_author_id = users.id) AS Cuenta_Comentarios, (SELECT COUNT(*) FROM novelas where novelas.nvl_author = users.id) AS Cuenta_Novelas, (SELECT p.post_title FROM posts p where p.post_author_id=users.id ORDER BY createdAt DESC LIMIT 1) AS last_post FROM users WHERE users.id = ?", {
         replacements: [id],
-        type: usuarios.sequelize.QueryTypes.SELECT
-    }).then(usuarios => {
+        type: users.sequelize.QueryTypes.SELECT
+    }).then(user => {
         res.status(200).send({
-            usuarios
+            user
         });
     }).catch(err => {
         res.status(500).send({
@@ -211,37 +211,37 @@ function getUserByEmailToken(req, res) {
     var jwtData = token.split('.')[1];
     var decodedJwtData = JSON.parse(atob(jwtData));
     var id = decodedJwtData.sub;
-    usuarios.findOne({
+    users.findOne({
         where: {
             id: id,
         },
         attributes: ['id'],
-    }).then(usuario => {
-        res.status(200).send({ usuario });
+    }).then(user => {
+        res.status(200).send({ user });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar a todos los usuarios' });
+        res.status(500).send({ message: 'EL usuario indicado no existe.' });
     });
 }
 
 function updateUserPassword(req, res) {
     var id = req.body.user_id;
-    usuarios.findOne({
+    users.findOne({
         where: {
             id: id
         }
-    }).then(usuario => {
-        res.status(200).send({ usuario });
+    }).then(user => {
+        res.status(200).send({ user });
         var hashed_password = bcrypt.hash(req.body.user_pass, saltRounds, function(err, hash) {
             if (err) {
                 console.log('error ' + err);
             } else {
                 hashed_password = hash;
                 var new_user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                usuario.update({
+                user.update({
                     user_pass: hashed_password,
                     user_verification_key: new_user_verification_key
                 }).then(() => {
-                    console.log('contraseña de usuario' + usuario.id + 'actualizada');
+                    console.log('contraseña de usuario' + user.id + 'actualizada');
                 }).catch(err => {
                     res.status(500).send({ message: 'Error al generar la clave secreta de usuario ' + err });
                 });
@@ -260,8 +260,8 @@ function uploadUserProfileImg(req, res) {
     if (req.body.old_user_profile_image) {
         console.log(req.body.old_user_profile_image);
         var old_img = req.body.old_user_profile_image;
-        old_file_path = './server/uploads/usuarios/' + old_img;
-        old_file_thumb_path = './server/uploads/usuarios/thumbs/' + old_img;
+        old_file_path = './server/uploads/users/' + old_img;
+        old_file_thumb_path = './server/uploads/users/thumbs/' + old_img;
         console.log(old_img);
         fs.unlink(old_file_path, (err) => {
             if (err) {
@@ -295,11 +295,11 @@ function uploadUserProfileImg(req, res) {
             var user_profile_image = {};
             user_profile_image.user_profile_image = file_name;
 
-            usuarios.findByPk(id).then(user => {
+            users.findByPk(id).then(user => {
                 console.log(id);
                 user.update(user_profile_image).then(() => {
-                    var newPath = './server/uploads/usuarios/' + file_name;
-                    var thumbPath = './server/uploads/usuarios/thumbs';
+                    var newPath = './server/uploads/users/' + file_name;
+                    var thumbPath = './server/uploads/users/thumbs';
                     console.log(thumbPath);
                     thumb({
                         source: path.resolve(newPath),
@@ -308,7 +308,7 @@ function uploadUserProfileImg(req, res) {
                         suffix: ''
                     }).then(() => {
                         console.log("Se esta enviando el usuario");
-                        res.status(200).send({ usuarios });
+                        res.status(200).send({ user });
                     }).catch(err => {
                         fs.unlink(file_path, (err) => {
                             if (err) {
@@ -368,9 +368,9 @@ function getUserProfileImage(req, res) {
     console.log(thumb);
 
     if (thumb == "false") {
-        var img_path = './server/uploads/usuarios/' + image;
+        var img_path = './server/uploads/users/' + image;
     } else if (thumb == "true") {
-        var img_path = './server/uploads/usuarios/thumbs/' + image;
+        var img_path = './server/uploads/users/thumbs/' + image;
     }
 
     fs.exists(img_path, (exists) => {
