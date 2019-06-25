@@ -3,7 +3,7 @@ var nJwT = require('njwt');
 var config = require('../config/config');
 var secret = config.token_secret;
 var atob = require('atob');
-var usuarios = require('../models').usuarios;
+var users = require('../models').users;
 
 function auth(req, res, next) {
     if (!req.headers.authorization) {
@@ -16,8 +16,8 @@ function auth(req, res, next) {
         var decodedJwtData = JSON.parse(atob(jwtData));
         var user_id = decodedJwtData.sub;
 
-        usuarios.findByPk(user_id).then((usuarios) => {
-            if ((usuarios.dataValues.user_status == 'Active') && (!err)) {
+        users.findByPk(user_id).then((user) => {
+            if ((user.dataValues.user_status == 'Active') && (!err)) {
                 next();
             } else {
                 return res.status(401).send({ message: 'No autorizado' });
@@ -39,9 +39,9 @@ function forumAuth(req, res, next) {
         var decodedJwtData = JSON.parse(atob(jwtData));
         var user_id = decodedJwtData.sub;
 
-        usuarios.findByPk(user_id).then((usuarios) => {
-            if ((usuarios.dataValues.user_forum_auth == 'Active') && (!err)) {
-                if (usuarios.dataValues.user_status == 'Active') {
+        users.findByPk(user_id).then((user) => {
+            if ((user.dataValues.user_forum_auth == 'Active') && (!err)) {
+                if (user.dataValues.user_status == 'Active') {
                     next();
                 } else {
                     return res.status(401).send({ message: 'Usuario desactivado' });
@@ -67,8 +67,8 @@ function adminAuth(req, res, next) {
         var user_id = decodedJwtData.sub;
         var user_rol = decodedJwtData.user_rol;
 
-        usuarios.findByPk(user_id).then((usuarios) => {
-            if (usuarios.dataValues.user_status != 'Active') {
+        users.findByPk(user_id).then((user) => {
+            if (user.dataValues.user_status != 'Active') {
                 return res.status(401).send({ message: 'Usuario desactivado' });
             } else {
                 if ((user_rol === 'admin') && (!err)) {
@@ -104,8 +104,8 @@ function emailVerificationAuth(req, res, next) {
     var nsecret = token_user_verification_key + token_user_email;
     console.log(nsecret);
     var payload = nJwT.verify(token, nsecret, (err, verifiedJwT) => {
-        usuarios.findByPk(user_id).then((usuario) => {
-            if ((usuario.dataValues.user_verification_key == token_user_verification_key) && (!err)) {
+        users.findByPk(user_id).then((user) => {
+            if ((user.dataValues.user_verification_key == token_user_verification_key) && (!err)) {
                 next();
             } else {
                 return res.status(401).send({ message: 'Token de cambio de contraseña invalido' });

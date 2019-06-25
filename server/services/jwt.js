@@ -5,11 +5,11 @@ var secret = config.token_secret;
 var secureRandom = require('secure-random');
 
 
-exports.createToken = (usuario) => {
+exports.createToken = (user) => {
     var params = {
-        sub: usuario.id,
-        user_login: usuario.user_login,
-        user_rol: usuario.user_rol
+        sub: user.id,
+        user_login: user.user_login,
+        user_rol: user.user_rol
     };
 
     var jwt = njwt.create(params, secret);
@@ -23,13 +23,13 @@ exports.createToken = (usuario) => {
     return token;
 };
 
-exports.createPasswordResetToken = (usuario) => {
-    console.log(usuario.user_login);
-    console.log(usuario.user_verification_key);
+exports.createPasswordResetToken = (user) => {
+    console.log(user.user_login);
+    console.log(user.user_verification_key);
     var params = {
-        sub: usuario.id,
-        user_verification_key: usuario.user_verification_key,
-        user_email: usuario.user_email
+        sub: user.id,
+        user_verification_key: user.user_verification_key,
+        user_email: user.user_email
     };
 
     var nsecret = params.user_verification_key + params.user_email;
