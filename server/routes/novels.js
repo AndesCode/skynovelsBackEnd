@@ -6,9 +6,9 @@ const md_upload = cm({ uploadDir: './server/uploads/novels' });
 
 module.exports = (app) => {
     app.post('/api/new-novel', md_auth.adminAuth, novelsController.create);
-    app.put('/api/update-novels/:id', md_auth.adminAuth, novelsController.update);
-    app.post('/api/upload-novel-img/:id', [md_auth.adminAuth, md_upload], novelsController.uploadnovelimg);
-    app.get('/api/novel/:id', novelsController.getnovel);
+    app.put('/api/update-novel/:id', md_auth.adminAuth, novelsController.update);
+    app.post('/api/upload-novel-img/:id', [md_auth.adminAuth, md_upload], novelsController.uploadNovelImage);
+    app.get('/api/novel/:id', novelsController.getNovel);
     app.get('/api/novels', novelsController.getAll);
     app.get('/api/novels-admin', md_auth.adminAuth, novelsController.getAllAdmin);
     app.post('/api/novels-user', md_auth.adminAuth, novelsController.getUserNovels);
