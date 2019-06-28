@@ -1,6 +1,6 @@
 /*jshint esversion: 6 */
 module.exports = (sequelize, DataTypes) => {
-    const capitulos = sequelize.define('capitulos', {
+    const chapters = sequelize.define('chapters', {
         id: {
             autoIncrement: true,
             primaryKey: true,
@@ -18,5 +18,5 @@ module.exports = (sequelize, DataTypes) => {
 
     });
 
-    return capitulos;
+    return chapters;
 };
