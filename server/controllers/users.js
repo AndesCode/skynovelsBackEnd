@@ -12,6 +12,7 @@ const thumb = require('node-thumbnail').thumb;
 const path = require('path');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+const user_reading_lists = require('../models').user_reading_lists;
 
 function create(req, res) {
     if (req.body.user_pass == req.body.user_confirm_pass) {
@@ -125,17 +126,17 @@ function passwordResetRequest(req, res) {
             host: 'smtp.ethereal.email',
             port: 587,
             auth: {
-                user: 'jaleel.schuster2@ethereal.email',
-                pass: 'qqGC49u1t75GEW7cyp'
+                user: 'halle.lehner@ethereal.email',
+                pass: 'EQhdryhNC456BX7wKR'
             }
         });
 
         let mailOptions = {
-            from: 'jaleel.schuster2@ethereal.email',
+            from: 'halle.lehner@ethereal.email',
             to: req.body.user_email,
             subject: 'Password reset test',
             // template: '../templates/email-confirmation',
-            text: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/password-reset/' + requestToken
+            text: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + requestToken
         };
 
         transporter.sendMail(mailOptions, function(err, data) {
@@ -224,32 +225,36 @@ function getUserByEmailToken(req, res) {
 }
 
 function updateUserPassword(req, res) {
-    var id = req.body.user_id;
-    users.findOne({
-        where: {
-            id: id
-        }
-    }).then(user => {
-        res.status(200).send({ user });
-        var hashed_password = bcrypt.hash(req.body.user_pass, saltRounds, function(err, hash) {
-            if (err) {
-                console.log('error ' + err);
-            } else {
-                hashed_password = hash;
-                var new_user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                user.update({
-                    user_pass: hashed_password,
-                    user_verification_key: new_user_verification_key
-                }).then(() => {
-                    console.log('contraseña de usuario' + user.id + 'actualizada');
-                }).catch(err => {
-                    res.status(500).send({ message: 'Error al generar la clave secreta de usuario ' + err });
-                });
+    if (req.body.user_pass == req.body.user_confirm_pass) {
+        var id = req.body.user_id;
+        users.findOne({
+            where: {
+                id: id
             }
+        }).then(user => {
+            var hashed_password = bcrypt.hash(req.body.user_pass, saltRounds, function(err, hash) {
+                if (err) {
+                    console.log('error ' + err);
+                } else {
+                    hashed_password = hash;
+                    var new_user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                    user.update({
+                        user_pass: hashed_password,
+                        user_verification_key: new_user_verification_key
+                    }).then(() => {
+                        res.status(200).send({ user });
+                        console.log('contraseña de usuario ' + user.id + ' actualizada');
+                    }).catch(err => {
+                        res.status(500).send({ message: 'Error al generar la clave secreta de usuario ' + err });
+                    });
+                }
+            });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio algún error al encontrar esta clave secreta ' + err });
         });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio algún error al encontrar esta clave secreta ' + err });
-    });
+    } else {
+        res.status(500).send({ message: 'La contraseña no coincide con el campo de confirmación de contraseña.<br>' });
+    }
 }
 
 function uploadUserProfileImg(req, res) {
@@ -384,6 +389,56 @@ function getUserProfileImage(req, res) {
     });
 }
 
+function createUserReadingList(req, res) {
+    var body = req.body;
+    console.log(body);
+    user_reading_lists.create(body).then(user_reading_list => {
+        res.status(200).send({ user_reading_list });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
+    });
+}
+
+function findUserReadingList(req, res) {
+    var id = req.body.user_id;
+    user_reading_lists.sequelize.query("SELECT novels.id novels.nvl_title from novels, user_reading_lists WHERE novels.id = user_reading_lists.nvl_id AND user_reading_lists.user_id = ?", {
+        replacements: [id],
+        type: user_reading_lists.sequelize.QueryTypes.SELECT
+    }).then(user_reading_list => {
+        res.status(200).send({ user_reading_list });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
+    });
+}
+
+function removeUserReadingList(req, res) {
+    var novel_id = req.body.novel_id;
+    user_reading_lists.destroy({
+        where: {
+            nvl_id: novel_id
+        }
+    }).then(user_reading_list => {
+        res.status(200).send({ user_reading_list });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al eliminar la novela de la lista de lectura' + err });
+    });
+}
+
+function updateUserReadingListItem(req, res) {
+    var id = req.params.id;
+    var body = req.body;
+
+    users.findByPk(id).then(user => {
+        user.update(body).then(() => {
+            res.status(200).send({ user });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario' });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar el usuario' });
+    });
+}
+
 module.exports = {
     create,
     login,
@@ -395,5 +450,9 @@ module.exports = {
     getUserByEmailToken,
     updateUserPassword,
     uploadUserProfileImg,
-    getUserProfileImage
+    getUserProfileImage,
+    createUserReadingList,
+    findUserReadingList,
+    removeUserReadingList,
+    updateUserReadingListItem
 };

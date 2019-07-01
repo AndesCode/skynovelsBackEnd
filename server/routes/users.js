@@ -16,4 +16,7 @@ module.exports = (app) => {
     app.get('/api/user/get-user-by-email-token/:token', md_auth.emailVerificationAuth, userController.getUserByEmailToken);
     app.post('/api/upload-profile-img/:id', [md_auth.auth, md_upload], userController.uploadUserProfileImg);
     app.get('/api/user/image/:profile_img/:thumb', userController.getUserProfileImage);
+    app.post('/api/create-user-reading-list', userController.createUserReadingList);
+    app.post('/api/find-user-reading-list', userController.findUserReadingList);
+    app.delete('/api/remmove-user-reading-list-item', userController.removeUserReadingList);
 };
