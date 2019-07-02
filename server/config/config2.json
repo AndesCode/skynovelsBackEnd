@@ -1,0 +1,24 @@
+{
+    "development": {
+        "username": "root",
+        "password": "andres23722",
+        "database": "skynovelsdb_new",
+        "host": "localhost",
+        "dialect": "mysql"
+    },
+    "test": {
+        "username": "root",
+        "password": "andres23722",
+        "database": "skynovelsdb_new",
+        "host": "localhost",
+        "dialect": "mysql"
+    },
+    "production": {
+        "username": "root",
+        "password": "andres23722",
+        "database": "skynovelsdb_new",
+        "host": "localhost",
+        "dialect": "mysql"
+    },
+    "token_secret": "123ABc456r%SERT987o_"
+}

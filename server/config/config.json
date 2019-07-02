@@ -1,23 +1,23 @@
 {
     "development": {
-        "username": "root",
-        "password": "andres23722",
-        "database": "skynovelsdb_new",
-        "host": "localhost",
+        "username": "skynovel_root",
+        "password": "Andres.23722845",
+        "database": "skynovel_skynovelsdb_new",
+        "host": "68.66.224.41",
         "dialect": "mysql"
     },
     "test": {
-        "username": "root",
-        "password": "andres23722",
-        "database": "skynovelsdb_new",
-        "host": "localhost",
+        "username": "skynovel_root",
+        "password": "Andres.23722845",
+        "database": "skynovel_skynovelsdb_new",
+        "host": "68.66.224.41",
         "dialect": "mysql"
     },
     "production": {
-        "username": "root",
-        "password": "andres23722",
-        "database": "skynovelsdb_new",
-        "host": "localhost",
+        "username": "skynovel_root",
+        "password": "Andres.23722845",
+        "database": "skynovel_skynovelsdb_new",
+        "host": "68.66.224.41",
         "dialect": "mysql"
     },
     "token_secret": "123ABc456r%SERT987o_"
