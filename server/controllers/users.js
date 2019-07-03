@@ -411,6 +411,21 @@ function findUserReadingList(req, res) {
     });
 }
 
+function checkNovelIsBookmarked(req, res) {
+    novel_id = req.params.nvl;
+    user_id = req.params.uid;
+    user_reading_lists.findOne({
+        where: {
+            nvl_id: novel_id,
+            user_id: user_id
+        }
+    }).then(user_reading_list => {
+        res.status(200).send({ user_reading_list });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al encontrar si la novela esta marcada' + err });
+    });
+}
+
 function removeUserReadingList(req, res) {
     var novel_id = req.body.novel_id;
     user_reading_lists.destroy({
@@ -454,5 +469,6 @@ module.exports = {
     createUserReadingList,
     findUserReadingList,
     removeUserReadingList,
-    updateUserReadingListItem
+    updateUserReadingListItem,
+    checkNovelIsBookmarked
 };

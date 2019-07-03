@@ -19,4 +19,5 @@ module.exports = (app) => {
     app.post('/api/create-user-reading-list', userController.createUserReadingList);
     app.post('/api/find-user-reading-list', userController.findUserReadingList);
     app.delete('/api/remmove-user-reading-list-item', userController.removeUserReadingList);
+    app.get('/api/check-novel-bookmark/:nvl/:uid', userController.checkNovelIsBookmarked);
 };
