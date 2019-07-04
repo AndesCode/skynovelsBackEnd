@@ -412,8 +412,8 @@ function findUserReadingList(req, res) {
 }
 
 function checkNovelIsBookmarked(req, res) {
-    novel_id = req.params.nvl;
-    user_id = req.params.uid;
+    var novel_id = req.params.nvl;
+    var user_id = req.params.uid;
     user_reading_lists.findOne({
         where: {
             nvl_id: novel_id,
@@ -427,10 +427,12 @@ function checkNovelIsBookmarked(req, res) {
 }
 
 function removeUserReadingList(req, res) {
-    var novel_id = req.body.novel_id;
+    var novel_id = req.params.nvl;
+    var user_id = req.params.uid;
     user_reading_lists.destroy({
         where: {
-            nvl_id: novel_id
+            nvl_id: novel_id,
+            user_id: user_id
         }
     }).then(user_reading_list => {
         res.status(200).send({ user_reading_list });
