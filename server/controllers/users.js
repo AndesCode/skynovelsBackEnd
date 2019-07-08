@@ -400,8 +400,8 @@ function createUserReadingList(req, res) {
 }
 
 function findUserReadingList(req, res) {
-    var id = req.body.user_id;
-    user_reading_lists.sequelize.query("SELECT novels.id novels.nvl_title from novels, user_reading_lists WHERE novels.id = user_reading_lists.nvl_id AND user_reading_lists.user_id = ?", {
+    var id = req.params.id;
+    user_reading_lists.sequelize.query("SELECT novels.id, novels.nvl_title, novels.nvl_name, user_reading_lists.nvl_chapter from novels, user_reading_lists WHERE novels.id = user_reading_lists.nvl_id AND user_reading_lists.user_id = ?", {
         replacements: [id],
         type: user_reading_lists.sequelize.QueryTypes.SELECT
     }).then(user_reading_list => {
@@ -442,17 +442,16 @@ function removeUserReadingList(req, res) {
 }
 
 function updateUserReadingListItem(req, res) {
-    var id = req.params.id;
     var body = req.body;
 
-    users.findByPk(id).then(user => {
-        user.update(body).then(() => {
-            res.status(200).send({ user });
+    user_reading_lists.findByPk(body.id).then(user_reading_list => {
+        user_reading_list.update(body).then(() => {
+            res.status(200).send({ user_reading_list });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario' });
+            res.status(500).send({ message: 'Ocurrio un error al actualizar el marcapaginas' });
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar el usuario' });
+        res.status(500).send({ message: 'Ocurrio un error al buscar el marcapaginas' });
     });
 }
 

@@ -17,7 +17,8 @@ module.exports = (app) => {
     app.post('/api/upload-profile-img/:id', [md_auth.auth, md_upload], userController.uploadUserProfileImg);
     app.get('/api/user/image/:profile_img/:thumb', userController.getUserProfileImage);
     app.post('/api/create-user-reading-list', md_auth.auth, userController.createUserReadingList);
-    app.post('/api/find-user-reading-list', md_auth.auth, userController.findUserReadingList);
+    app.get('/api/find-user-reading-list/:id', md_auth.auth, userController.findUserReadingList);
     app.delete('/api/remmove-user-bookmark/:nvl/:uid', md_auth.auth, userController.removeUserReadingList);
     app.get('/api/check-novel-bookmark/:nvl/:uid', md_auth.auth, userController.checkNovelIsBookmarked);
+    app.put('/api/update-user-bookmark', md_auth.auth, userController.updateUserReadingListItem);
 };
