@@ -149,7 +149,7 @@ function passwordResetRequest(req, res) {
             }
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Error, No se encuentra el email del usuario ' + err });
+        res.status(500).send({ message: 'Error, No se encuentra el email especificado' });
     });
 }
 
@@ -164,16 +164,10 @@ function login(req, res) {
         hash = user.dataValues.user_pass;
         user_password = bcrypt.compare(req.body.user_pass, hash, function(err, response) {
             if (user && user.dataValues.user_status == 'Active' && response == true) {
-                if (req.body.token) {
-                    res.status(200).send({
-                        token: jwt.createToken(user)
-                    });
-                } else {
-                    res.status(200).send({
-                        user: user,
-                    });
-                }
-
+                res.status(200).send({
+                    token: jwt.createToken(user),
+                    user: user
+                });
             } else {
                 res.status(401).send({ message: 'Error, Usuario o contraseña incorrectos' });
             }
