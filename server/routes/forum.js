@@ -1,4 +1,3 @@
-/*jshint esversion: 6 */
 const forumController = require('../controllers').forum;
 const md_auth = require('../authenticated/authenticated');
 

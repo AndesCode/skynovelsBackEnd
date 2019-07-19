@@ -26,6 +26,7 @@ require('./server/routes/novels')(app);
 require('./server/routes/chapters')(app);
 require('./server/routes/posts')(app);
 require('./server/routes/forum')(app);
+require('./server/routes/adminPanel')(app);
 
 // View engine setup
 app.engine('handlebards', exphbs());
