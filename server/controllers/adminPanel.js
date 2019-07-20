@@ -1,13 +1,16 @@
 const forum = require('../models').forum;
+const posts = require('../models').posts;
+const posts_comments = require('../models').posts_comments;
 
-function getAllPosts(req, res){
-        var type = req.params.type;
-        forum.sequelize.query("SELECT (SELECT(select u.user_login from users u where u.id = p.post_author_id) from posts p where p.forum_type_id = forum.id ORDER BY createdAt DESC LIMIT 1) AS last_user_posted, (SELECT p.post_title FROM posts p where p.forum_type_id=forum.id ORDER BY createdAt DESC LIMIT 1) AS last_post_title,forum.forum_type, COUNT(*) as forum_posts_count, (SELECT p.id FROM posts p where p.forum_type_id=forum.id ORDER BY createdAt DESC LIMIT 1) AS last_post_id FROM posts p, forum WHERE p.forum_type_id = forum.id GROUP BY p.forum_type_id", { type: forum.sequelize.QueryTypes.SELECT }).then(adminPanel => {
-        res.status(200).send({ adminPanel });
-        }).catch(err => {
-         res.status(500).send({ message: 'Ocurrio un error' + err });
-        });
-    }
+function getAllPosts(req, res) {
+    var orderBy = req.params.orderBy;
+    console.log(orderBy);
+    posts.sequelize.query(`SELECT ( SELECT COUNT(*) FROM posts_comments WHERE posts_comments.forum_topic_id = posts.id ) AS comment_count, forum.forum_type, posts.id, posts.post_author_id, posts.post_title, posts.forum_type_id, users.user_login AS USER FROM forum, posts JOIN users ON posts.post_author_id = users.id WHERE posts.forum_type_id = forum.id ORDER BY ${orderBy};`, { type: posts.sequelize.QueryTypes.SELECT }).then(posts => {
+        res.status(200).send({ posts });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error' + err });
+    });
+}
 
 
 module.exports = {
