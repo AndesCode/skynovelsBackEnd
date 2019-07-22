@@ -41,10 +41,9 @@ function create(req, res) {
 }
 
 function update(req, res) {
-    var id = req.params.id;
     var body = req.body;
-
-    novels.findByPk(id).then(novel => {
+    console.log(body);
+    novels.findByPk(body.id).then(novel => {
         novel.update(body).then(() => {
             res.status(200).send({ novel });
         }).catch(err => {
