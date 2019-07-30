@@ -157,7 +157,7 @@ function getUserNovels(req, res) {
 
 function getAll(req, res) {
 
-    novels.sequelize.query("SELECT novels.id, novels.nvl_status, novels.nvl_name, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ', ' ) AS CONCAT FROM genres, genres_novels, novels n WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres , novels.nvl_title, novels.nvl_content, COUNT(chapters.nvl_id) AS chp_count FROM novels JOIN chapters ON chapters.nvl_id = novels.id group by novels.id;", { type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
+    novels.sequelize.query("SELECT novels.id, novels.nvl_status, novels.nvl_name, novels.nvl_img, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ', ' ) AS CONCAT FROM genres, genres_novels, novels n WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres , novels.nvl_title, novels.nvl_content, COUNT(chapters.nvl_id) AS chp_count FROM novels JOIN chapters ON chapters.nvl_id = novels.id group by novels.id;", { type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
         res.status(200).send({ novels });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
@@ -184,7 +184,7 @@ function getChapters(req, res) {
 
 function getNovelGenres(req, res) {
     var id = req.params.id;
-    genres.sequelize.query("SELECT genres.genre_name FROM genres, genres_novels, novels WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = ?", { replacements: [id], type: genres.sequelize.QueryTypes.SELECT }).then(genres => {
+    genres.sequelize.query("SELECT genres.id, genres.genre_name FROM genres, genres_novels, novels WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = ?", { replacements: [id], type: genres.sequelize.QueryTypes.SELECT }).then(genres => {
         res.status(200).send({ genres });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
