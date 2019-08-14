@@ -31,8 +31,6 @@ function getAllByDate(req, res) {
 
 function create(req, res) {
     var body = req.body;
-
-
     novels.create(body).then(novel => {
         res.status(200).send({ novel });
     }).catch(err => {
@@ -68,7 +66,7 @@ function uploadNovelImage(req, res) {
                     if (err) {
                         res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen thumb antigua.' });
                     } else {
-
+                        res.status(200);
                     }
                 });
             }
@@ -191,6 +189,36 @@ function getNovelGenres(req, res) {
     });
 }
 
+function addGenreToNovel(req, res) {
+    var body = req.body;
+    console.log(body);
+    genres.create(body).then(genre => {
+        res.status(200).send({ genre });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al agregar el genero a la novela' + err });
+    });
+}
+
+function deleteNovelGenres(req, res) {
+    var id = req.params.id;
+    console.log(id);
+    genres.findAll({
+        where: {
+          novel_id: id
+        }
+      }).then(genres =>{
+        genres.destroy({
+            where: {
+                id: id
+            }
+        }).then(genres => {
+            res.status(200).send({ genres });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al eliminar los generos antiguos de la novela ' });
+        });
+      });
+}
+
 
 
 function getUserChapter(req, res) {
@@ -274,7 +302,7 @@ function deleteNovel(req, res) {
                         if (err) {
                             res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen thumb antigua. ' });
                         } else {
-
+                            res.status(200);
                         }
                     });
                 }
@@ -296,6 +324,14 @@ function deleteNovel(req, res) {
     });
 }
 
+function getGenres(req, res) {
+    novels.sequelize.query('SELECT * FROM genres', { type: novels.sequelize.QueryTypes.SELECT }).then(genres => {
+        res.status(200).send({ genres });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar los generos' + err });
+    });
+}
+
 module.exports = {
     create,
     update,
@@ -313,5 +349,8 @@ module.exports = {
     getAllChaptersByDate,
     getAllByDate,
     getNovelGenres,
-    searchNovels
+    searchNovels,
+    getGenres,
+    addGenreToNovel,
+    deleteNovelGenres
 };

@@ -17,4 +17,7 @@ module.exports = (app) => {
     app.get('/api/home-last-novels', novelsController.getAllByDate);
     app.get('/api/novel-genres/:id', novelsController.getNovelGenres);
     app.get('/api/search-novels/:term', novelsController.searchNovels);
+    app.get('/api/genres', novelsController.getGenres);
+    app.post('/api/add-genre-to-novel', md_auth.adminAuth, novelsController.addGenreToNovel);
+    app.delete('/api/clean-novel-genres/:id', md_auth.adminAuth, novelsController.deleteNovelGenres);
 };
