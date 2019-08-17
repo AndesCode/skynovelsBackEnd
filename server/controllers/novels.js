@@ -1,7 +1,7 @@
 /*jshint esversion: 6 */
 const novels = require('../models').novels;
 const chapters = require('../models').chapters;
-const genres = require('../models').genres;
+const genres_novels = require('../models').genres_novels;
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
 const path = require('path');
@@ -182,7 +182,7 @@ function getChapters(req, res) {
 
 function getNovelGenres(req, res) {
     var id = req.params.id;
-    genres.sequelize.query("SELECT genres.id, genres.genre_name FROM genres, genres_novels, novels WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = ?", { replacements: [id], type: genres.sequelize.QueryTypes.SELECT }).then(genres => {
+    genres_novels.sequelize.query("SELECT genres.id, genres.genre_name FROM genres, genres_novels, novels WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = ?", { replacements: [id], type: genres_novels.sequelize.QueryTypes.SELECT }).then(genres => {
         res.status(200).send({ genres });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
@@ -192,7 +192,7 @@ function getNovelGenres(req, res) {
 function addGenreToNovel(req, res) {
     var body = req.body;
     console.log(body);
-    genres.create(body).then(genre => {
+    genres_novels.create(body).then(genre => {
         res.status(200).send({ genre });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al agregar el genero a la novela' + err });
@@ -202,14 +202,14 @@ function addGenreToNovel(req, res) {
 function deleteNovelGenres(req, res) {
     var id = req.params.id;
     console.log(id);
-    genres.findAll({
+    genres_novels.findAll({
         where: {
           novel_id: id
         }
       }).then(genres =>{
-        genres.destroy({
+        genres_novels.destroy({
             where: {
-                id: id
+                novel_id: id
             }
         }).then(genres => {
             res.status(200).send({ genres });
