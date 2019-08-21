@@ -2,6 +2,7 @@
 const novels = require('../models').novels;
 const chapters = require('../models').chapters;
 const genres_novels = require('../models').genres_novels;
+const genres = require('../models').genres;
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
 const path = require('path');
@@ -204,9 +205,9 @@ function deleteNovelGenres(req, res) {
     console.log(id);
     genres_novels.findAll({
         where: {
-          novel_id: id
+            novel_id: id
         }
-      }).then(genres =>{
+    }).then(genres => {
         genres_novels.destroy({
             where: {
                 novel_id: id
@@ -216,7 +217,7 @@ function deleteNovelGenres(req, res) {
         }).catch(err => {
             res.status(500).send({ message: 'Ocurrio un error al eliminar los generos antiguos de la novela ' });
         });
-      });
+    });
 }
 
 
@@ -332,6 +333,15 @@ function getGenres(req, res) {
     });
 }
 
+function createGenre(req, res) {
+    var body = req.body;
+    genres.create(body).then(genre => {
+        res.status(200).send({ genre });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al crear el genero para las novelas ' + err });
+    });
+}
+
 module.exports = {
     create,
     update,
@@ -352,5 +362,6 @@ module.exports = {
     searchNovels,
     getGenres,
     addGenreToNovel,
-    deleteNovelGenres
+    deleteNovelGenres,
+    createGenre
 };
