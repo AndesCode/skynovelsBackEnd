@@ -1,15 +1,16 @@
 /*jshint esversion: 6 */
 module.exports = (sequelize, DataTypes) => {
-    const genres = sequelize.define('genres', {
+    const genres_novels = sequelize.define('genres_novels', {
         id: {
             autoIncrement: true,
             primaryKey: true,
             type: DataTypes.INTEGER
         },
-        genre_name: DataTypes.TEXT
+        novel_id: DataTypes.INTEGER,
+        genre_id: DataTypes.INTEGER,
     }, {
         timestamps: false,
     });
 
-    return genres;
+    return genres_novels;
 };
