@@ -342,6 +342,40 @@ function createGenre(req, res) {
     });
 }
 
+function updateGenre(req, res) {
+    var body = req.body;
+    console.log(body);
+    genres.findByPk(body.id).then(genre => {
+        genre.update(body).then(() => {
+            res.status(200).send({ genre });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+    });
+}
+
+function deleteGenre(req, res) {
+    var id = req.params.id;
+    console.log(id);
+    genres.findAll({
+        where: {
+            id: id
+        }
+    }).then(genre => {
+        genre.destroy({
+            where: {
+                id: id
+            }
+        }).then(genre => {
+            res.status(200).send({ genre });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al eliminar el genero indicado' });
+        });
+    });
+}
+
 module.exports = {
     create,
     update,
@@ -363,5 +397,7 @@ module.exports = {
     getGenres,
     addGenreToNovel,
     deleteNovelGenres,
-    createGenre
+    createGenre,
+    updateGenre,
+    deleteGenre
 };

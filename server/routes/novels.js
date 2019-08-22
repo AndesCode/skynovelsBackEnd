@@ -21,4 +21,6 @@ module.exports = (app) => {
     app.post('/api/add-genre-to-novel', md_auth.adminAuth, novelsController.addGenreToNovel);
     app.delete('/api/clean-novel-genres/:id', md_auth.adminAuth, novelsController.deleteNovelGenres);
     app.post('/api/new-genre', md_auth.adminAuth, novelsController.createGenre);
+    app.put('/api/update-genre', md_auth.adminAuth, novelsController.updateGenre);
+    app.delete('/api/delete-genre/:id', md_auth.adminAuth, novelsController.deleteGenre);
 };
