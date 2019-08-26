@@ -335,6 +335,7 @@ function getGenres(req, res) {
 
 function createGenre(req, res) {
     var body = req.body;
+    console.log(body);
     genres.create(body).then(genre => {
         res.status(200).send({ genre });
     }).catch(err => {
@@ -364,7 +365,7 @@ function deleteGenre(req, res) {
             id: id
         }
     }).then(genre => {
-        genre.destroy({
+        genres.destroy({
             where: {
                 id: id
             }
