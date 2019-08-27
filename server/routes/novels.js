@@ -9,8 +9,8 @@ module.exports = (app) => {
     app.put('/api/update-novel', md_auth.adminAuth, novelsController.update);
     app.post('/api/upload-novel-img/:id', [md_auth.adminAuth, md_upload], novelsController.uploadNovelImage);
     app.get('/api/novel/:id', novelsController.getNovel);
-    app.get('/api/novels', novelsController.getAll);
-    app.get('/api/novels-admin', md_auth.adminAuth, novelsController.getAllAdmin);
+    app.get('/api/novels', novelsController.getActiveNovels);
+    app.get('/api/all-novels', novelsController.getAllNovels);
     app.post('/api/novels-user', md_auth.adminAuth, novelsController.getUserNovels);
     app.get('/api/novel/image/:novel_img/:thumb', novelsController.getNovelImage);
     app.delete('/api/delete-novel/:id', md_auth.adminAuth, novelsController.deleteNovel);
