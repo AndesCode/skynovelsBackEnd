@@ -165,7 +165,7 @@ function getActiveNovels(req, res) {
 
 function getAllNovels(req, res) {
 
-    novels.sequelize.query('SELECT novels.id, novels.nvl_author, novels.nvl_status, novels.nvl_name, novels.nvl_title, novels.nvl_content, IFNULL(COUNT(chapters.nvl_id), 0) AS chp_count, novels.nvl_img FROM novels LEFT JOIN chapters ON chapters.nvl_id = novels.id GROUP BY novels.id', { type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
+    novels.sequelize.query('SELECT novels.id, novels.nvl_author author, (SELECT users.user_login from users where users.id = author) as author_login, novels.nvl_status, novels.nvl_name, novels.nvl_title, novels.nvl_content, IFNULL(COUNT(chapters.nvl_id), 0) AS chp_count, novels.nvl_img FROM novels LEFT JOIN chapters ON chapters.nvl_id = novels.id GROUP BY novels.id', { type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
         res.status(200).send({ novels });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
