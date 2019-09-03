@@ -13,6 +13,7 @@ const path = require('path');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const user_reading_lists = require('../models').user_reading_lists;
+const invitations = require('../models').invitations;
 
 function create(req, res) {
     if (req.body.user_pass == req.body.user_confirm_pass) {
@@ -449,6 +450,20 @@ function updateUserReadingListItem(req, res) {
     });
 }
 
+function searchUserByName(req, res) {
+    var body = req.body;
+    console.log(body);
+    users.findOne({
+        where: {
+            user_login: body.user_login,
+        }
+    }).then(user => {
+        res.status(200).send({ user });
+    }).catch(err => {
+        res.status(500).send({ message: 'No se encuentra ningún usuario por ese nombre ' + err });
+    });
+}
+
 module.exports = {
     create,
     login,
@@ -465,5 +480,6 @@ module.exports = {
     findUserReadingList,
     removeUserReadingList,
     updateUserReadingListItem,
-    checkNovelIsBookmarked
+    checkNovelIsBookmarked,
+    searchUserByName
 };
