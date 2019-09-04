@@ -22,5 +22,6 @@ module.exports = (app) => {
     app.get('/api/check-novel-bookmark/:nvl/:uid', md_auth.auth, userController.checkNovelIsBookmarked);
     app.put('/api/update-user-bookmark', md_auth.auth, userController.updateUserReadingListItem);
     app.post('/api/search-user', md_auth.auth, userController.searchUserByName);
-    // app.post('/api/invitate-user', md_auth.auth, userController.getUserNovels);
+    app.post('/api/send-invitation-to-user', md_auth.auth, userController.createUserInvitation);
+    app.get('/api/get-user-invitations/:id', md_auth.auth, userController.getUserInvitations);
 };

@@ -458,11 +458,54 @@ function searchUserByName(req, res) {
             user_login: body.user_login,
         }
     }).then(user => {
-        res.status(200).send({ user });
+        if (user == null) {
+            res.status(500).send({ message: 'No se encuentra ningún usuario por ese nombre' });
+        } else {
+            res.status(200).send({ user });
+        }
     }).catch(err => {
-        res.status(500).send({ message: 'No se encuentra ningún usuario por ese nombre ' + err });
+        res.status(500).send({ message: 'No se encuentra ningún usuario por ese nombre' });
     });
 }
+
+function createUserInvitation(req, res) {
+    var body = req.body;
+    console.log(body);
+    invitations.findOne({
+        where: {
+            invitation_from_id: body.invitation_from_id,
+            invitation_to_id: body.invitation_to_id
+        }
+    }).then(invitation => {
+        if (invitation == null) {
+            invitations.create(body).then(invitation => {
+                res.status(200).send({ invitation });
+            }).catch(err => {
+                res.status(500).send({ message: 'Ocurrio un error al crear la invitación del usuario' });
+            });
+        } else {
+            res.status(500).send({ message: 'Ya has invitado al usuario' });
+        }
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la invitación' });
+    });
+}
+
+function getUserInvitations(req, res) {
+    var id = req.params.id;
+    invitations.sequelize.query("SELECT (select users.user_login from users where users.id = invitations.invitation_from_id) AS invitation_from_login, (select users.user_login from users where users.id = invitations.invitation_to_id) AS invitation_to_login, invitations.invitation_status, invitations.createdAt from invitations where invitation_to_id = ?", {
+        replacements: [id],
+        type: invitations.sequelize.QueryTypes.SELECT
+    }).then(invitations => {
+        res.status(200).send({ invitations });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
+    });
+}
+
+
+
+
 
 module.exports = {
     create,
@@ -481,5 +524,7 @@ module.exports = {
     removeUserReadingList,
     updateUserReadingListItem,
     checkNovelIsBookmarked,
-    searchUserByName
+    searchUserByName,
+    createUserInvitation,
+    getUserInvitations
 };
