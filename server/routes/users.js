@@ -23,5 +23,7 @@ module.exports = (app) => {
     app.put('/api/update-user-bookmark', md_auth.auth, userController.updateUserReadingListItem);
     app.post('/api/search-user', md_auth.auth, userController.searchUserByName);
     app.post('/api/send-invitation-to-user', md_auth.auth, userController.createUserInvitation);
+    app.put('/api/update-user-invitation', md_auth.auth, userController.updateUserInvitation);
     app.get('/api/get-user-invitations/:id', md_auth.auth, userController.getUserInvitations);
+    app.post('/api/create-novel-collaborator', md_auth.auth, userController.createNovelCollaborator);
 };

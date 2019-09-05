@@ -7,8 +7,9 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER
         },
         invitation_from_id: DataTypes.INTEGER,
-        invitation_to_id: DataTypes.TEXT,
-        invitation_status: DataTypes.TEXT,
+        invitation_to_id: DataTypes.INTEGER,
+        invitation_novel: DataTypes.INTEGER,
+        invitation_status: DataTypes.TEXT
     });
 
     return invitations;

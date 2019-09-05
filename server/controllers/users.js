@@ -14,6 +14,7 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const user_reading_lists = require('../models').user_reading_lists;
 const invitations = require('../models').invitations;
+const novels_collaborators = require('../models').novels_collaborators;
 
 function create(req, res) {
     if (req.body.user_pass == req.body.user_confirm_pass) {
@@ -474,7 +475,8 @@ function createUserInvitation(req, res) {
     invitations.findOne({
         where: {
             invitation_from_id: body.invitation_from_id,
-            invitation_to_id: body.invitation_to_id
+            invitation_to_id: body.invitation_to_id,
+            invitation_novel: invitation_novel
         }
     }).then(invitation => {
         if (invitation == null) {
@@ -491,15 +493,38 @@ function createUserInvitation(req, res) {
     });
 }
 
+function updateUserInvitation(req, res) {
+    var body = req.body;
+    invitations.findByPk(body.id).then(invitations => {
+        invitations.update(body).then(() => {
+            res.status(200).send({ invitations });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al actualizar la invitación ' });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la invitación ' });
+    });
+}
+
+
 function getUserInvitations(req, res) {
     var id = req.params.id;
-    invitations.sequelize.query("SELECT (select users.user_login from users where users.id = invitations.invitation_from_id) AS invitation_from_login, (select users.user_login from users where users.id = invitations.invitation_to_id) AS invitation_to_login, invitations.invitation_status, invitations.createdAt from invitations where invitation_to_id = ?", {
+    invitations.sequelize.query("SELECT invitations.id, (select users.user_login from users where users.id = invitations.invitation_from_id) AS invitation_from_login, (select users.user_login from users where users.id = invitations.invitation_to_id) AS invitation_to_login, (select novels.nvl_title from novels where novels.id = invitations.invitation_novel) AS invitation_novel_name, invitations.invitation_status, invitations.invitation_novel, invitations.createdAt from invitations where invitation_to_id = ?", {
         replacements: [id],
         type: invitations.sequelize.QueryTypes.SELECT
     }).then(invitations => {
         res.status(200).send({ invitations });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
+    });
+}
+
+function createNovelCollaborator(req, res) {
+    var body = req.body;
+    novels_collaborators.create(body).then(novel_collaborator => {
+        res.status(200).send({ novel_collaborator });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al crear el colaborador de novela ' + err });
     });
 }
 
@@ -526,5 +551,7 @@ module.exports = {
     checkNovelIsBookmarked,
     searchUserByName,
     createUserInvitation,
-    getUserInvitations
+    getUserInvitations,
+    createNovelCollaborator,
+    updateUserInvitation
 };
