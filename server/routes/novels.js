@@ -12,6 +12,8 @@ module.exports = (app) => {
     app.get('/api/novels', novelsController.getActiveNovels);
     app.get('/api/all-novels', novelsController.getAllNovels);
     app.post('/api/novels-user', md_auth.adminAuth, novelsController.getUserNovels);
+    app.post('/api/novels-collaborators', md_auth.adminAuth, novelsController.getUserCollaborationsNovels);
+    app.get('/api/get-novel-collaborators/:id', md_auth.adminAuth, novelsController.getCollaboratorsFromNovel);
     app.get('/api/novel/image/:novel_img/:thumb', novelsController.getNovelImage);
     app.delete('/api/delete-novel/:id', md_auth.adminAuth, novelsController.deleteNovel);
     app.get('/api/home-last-novels', novelsController.getAllByDate);

@@ -476,7 +476,7 @@ function createUserInvitation(req, res) {
         where: {
             invitation_from_id: body.invitation_from_id,
             invitation_to_id: body.invitation_to_id,
-            invitation_novel: invitation_novel
+            invitation_novel: body.invitation_novel
         }
     }).then(invitation => {
         if (invitation == null) {
