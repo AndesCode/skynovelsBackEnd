@@ -180,7 +180,9 @@ function login(req, res) {
 }
 
 function getAll(req, res) {
-    users.all().then(users => {
+    users.findAll({
+        attributes: ['user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth']
+    }).then(users => {
         res.status(200).send({ users });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar a todos los usuarios' });

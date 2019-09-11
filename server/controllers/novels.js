@@ -236,7 +236,7 @@ function deleteNovelGenres(req, res) {
         where: {
             novel_id: id
         }
-    }).then(genres_novels => {
+    }).then(genres => {
         genres_novels.destroy({
             where: {
                 novel_id: id
@@ -247,7 +247,7 @@ function deleteNovelGenres(req, res) {
             res.status(500).send({ message: 'Ocurrio un error al eliminar los generos antiguos de la novela ' });
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar los generos antiguos de la novela ' });
+        res.status(500).send({ message: 'Ocurrio un error al encontrar los generos antiguos de la novela ' + err });
     });
 }
 
@@ -291,11 +291,12 @@ function updateChapter(req, res) {
 function getNovelImage(req, res) {
     var image = req.params.novel_img;
     var thumb = req.params.thumb;
+    var img_path = null;
 
     if (thumb == "false") {
-        var img_path = './server/uploads/novels/' + image;
+        img_path = './server/uploads/novels/' + image;
     } else if (thumb == "true") {
-        var img_path = './server/uploads/novels/thumbs/' + image;
+        img_path = './server/uploads/novels/thumbs/' + image;
     }
 
     fs.exists(img_path, (exists) => {
