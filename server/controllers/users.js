@@ -366,14 +366,15 @@ function uploadUserProfileImg(req, res) {
 function getUserProfileImage(req, res) {
     var image = req.params.profile_img;
     var thumb = req.params.thumb;
+    var img_path = null;
 
     console.log(image);
     console.log(thumb);
 
     if (thumb == "false") {
-        var img_path = './server/uploads/users/' + image;
+        img_path = './server/uploads/users/' + image;
     } else if (thumb == "true") {
-        var img_path = './server/uploads/users/thumbs/' + image;
+        img_path = './server/uploads/users/thumbs/' + image;
     }
 
     fs.exists(img_path, (exists) => {
@@ -530,9 +531,31 @@ function createNovelCollaborator(req, res) {
     });
 }
 
+function createNovelCollaborator(req, res) {
+    var body = req.body;
+    novels_collaborators.create(body).then(novel_collaborator => {
+        res.status(200).send({ novel_collaborator });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al crear el colaborador de novela ' + err });
+    });
+}
 
-
-
+function DeleteNovelCollaborator(req, res) {
+    var id = req.params.id;
+    novels_collaborators.findByPk(id).then(novels_collaborator => {
+        novels_collaborator.destroy({
+            where: {
+                id: id
+            }
+        }).then(() => {
+            res.status(200).send({ novels_collaborator });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al eliminar al colaborador de la novela ' + err });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar al colaborador de la novela ' + err });
+    });
+}
 
 module.exports = {
     create,
@@ -555,5 +578,6 @@ module.exports = {
     createUserInvitation,
     getUserInvitations,
     createNovelCollaborator,
-    updateUserInvitation
+    updateUserInvitation,
+    DeleteNovelCollaborator
 };
