@@ -15,7 +15,6 @@ function update(req, res) {
     var id = req.params.id;
     var body = req.body;
 
-
     posts.findByPk(id).then(posts => {
         posts.update(body).then(() => {
             res.status(200).send({ posts }).catch(err => {
