@@ -288,6 +288,23 @@ function updateChapter(req, res) {
     });
 }
 
+function deleteChapter(req, res) {
+    var id = req.params.id;
+    chapters.findByPk(id).then(chapter => {
+        chapters.destroy({
+            where: {
+                id: id
+            }
+        }).then(() => {
+            res.status(200).send({ chapter });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al eliminar el capitulo' });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al encotnrar el capitulo' });
+    });
+}
+
 function getNovelImage(req, res) {
     var image = req.params.novel_img;
     var thumb = req.params.thumb;
@@ -422,5 +439,6 @@ module.exports = {
     updateGenre,
     deleteGenre,
     getUserCollaborationsNovels,
-    getCollaboratorsFromNovel
+    getCollaboratorsFromNovel,
+    deleteChapter
 };
