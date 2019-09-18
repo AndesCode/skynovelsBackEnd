@@ -414,6 +414,29 @@ function deleteGenre(req, res) {
     });
 }
 
+function getNovelRating(req, res) {
+    var id = req.params.id;
+    console.log(id);
+    novels.sequelize.query('SELECT nvl_rating FROM novels where id = ?', { replacements: [id], type: novels.sequelize.QueryTypes.SELECT }).then(rating => {
+        res.status(200).send({ rating });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error en el rating de esta novela' + err });
+    });
+}
+
+function updateNovelRating(req, res) {
+    var body = req.body;
+    console.log(body);
+    novels.findByPk(body.id).then(novelRating => {
+        novelRating.update(body).then(() => {
+            res.status(200).send({ novelRating });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+    });
+}
 module.exports = {
     create,
     update,
@@ -440,5 +463,6 @@ module.exports = {
     deleteGenre,
     getUserCollaborationsNovels,
     getCollaboratorsFromNovel,
-    deleteChapter
+    deleteChapter,
+    getNovelRating
 };

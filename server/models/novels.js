@@ -14,10 +14,8 @@ module.exports = (sequelize, DataTypes) => {
         nvl_name: DataTypes.CHAR,
         nvl_comment_count: DataTypes.INTEGER,
         nvl_writer: DataTypes.CHAR,
-        nvl_img: DataTypes.CHAR
-
-
-
+        nvl_img: DataTypes.CHAR,
+        nvl_rating: DataTypes.INTEGER
     });
 
     return novels;
