@@ -139,7 +139,7 @@ function uploadNovelImage(req, res) {
 
 function getNovel(req, res) {
     var id = req.params.id;
-    novels.sequelize.query('SELECT (SELECT users.user_login from users WHERE users.id = novels.nvl_author) AS user_author_login, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ", " ) AS CONCAT FROM genres, genres_novels, novels n WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres ,novels.id, novels.nvl_name, novels.nvl_content, novels.nvl_author, novels.nvl_status, novels.nvl_writer, novels.nvl_name, novels.nvl_img, novels.nvl_comment_count, novels.nvl_title, (SELECT COUNT(chapters.nvl_id) FROM chapters WHERE chapters.nvl_id = novels.id LIMIT 1) AS chp_count, novels.updatedAt, novels.nvl_rate FROM novels WHERE novels.nvl_name = ?', { replacements: [id], type: novels.sequelize.QueryTypes.SELECT }).then(novel => {
+    novels.sequelize.query('SELECT (SELECT users.user_login from users WHERE users.id = novels.nvl_author) AS user_author_login, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ", " ) AS CONCAT FROM genres, genres_novels, novels n WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres ,novels.id, novels.nvl_name, novels.nvl_content, novels.nvl_author, novels.nvl_status, novels.nvl_writer, novels.nvl_name, novels.nvl_img, novels.nvl_comment_count, novels.nvl_title, (SELECT COUNT(chapters.nvl_id) FROM chapters WHERE chapters.nvl_id = novels.id LIMIT 1) AS chp_count, novels.updatedAt, novels.nvl_rating FROM novels WHERE novels.nvl_name = ?', { replacements: [id], type: novels.sequelize.QueryTypes.SELECT }).then(novel => {
         res.status(200).send({ novel });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
@@ -424,17 +424,12 @@ function getNovelRating(req, res) {
     });
 }
 
-function updateNovelRating(req, res) {
+function postNovelRating(req, res) {
     var body = req.body;
-    console.log(body);
-    novels.findByPk(body.id).then(novelRating => {
-        novelRating.update(body).then(() => {
-            res.status(200).send({ novelRating });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
-        });
+    novels.create(body).then(rate => {
+        res.status(200).send({ rate });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        res.status(500).send({ message: 'Ocurrio un error al guardar ' + err });
     });
 }
 module.exports = {
@@ -465,5 +460,5 @@ module.exports = {
     getCollaboratorsFromNovel,
     deleteChapter,
     getNovelRating,
-    updateNovelRating
+    postNovelRating
 };
