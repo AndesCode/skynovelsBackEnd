@@ -7,6 +7,7 @@ const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
 const path = require('path');
 const novels_collaborators = require('../models').novels_collaborators;
+const novels_ratings = require('../models').novels_ratings;
 
 
 // home functions
@@ -414,24 +415,47 @@ function deleteGenre(req, res) {
     });
 }
 
-function getNovelRating(req, res) {
+function getNovelsRatings(req, res) {
     var id = req.params.id;
     console.log(id);
-    novels.sequelize.query('SELECT nvl_rating FROM novels where id = ?', { replacements: [id], type: novels.sequelize.QueryTypes.SELECT }).then(rating => {
-        res.status(200).send({ rating });
+    novels_ratings.findAll({
+        where: {
+            novel_id: id
+        }
+    }).then(rates => {
+        res.status(200).send({ rates });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error en el rating de esta novela' + err });
+        res.status(500).send({ message: 'Ocurrio un error al encontrar las clasificaciones de la novela ' + err });
     });
 }
 
+
 function postNovelRating(req, res) {
     var body = req.body;
-    novels.create(body).then(rate => {
-        res.status(200).send({ rate });
+    novels_ratings.findOne({
+        where: {
+            novel_id: body.novel_id,
+            user_id: body.user_id
+        }
+    }).then(novel_rating => {
+        if (novel_rating == null) {
+            novels_ratings.create(body).then(rate => {
+                res.status(200).send({ rate });
+            }).catch(err => {
+                res.status(500).send({ message: 'Ocurrio un error al guardar ' + err });
+            });
+        } else {
+            novel_rating.update(body).then(rate => {
+                res.status(200).send({ rate });
+            }).catch(err => {
+                res.status(500).send({ message: 'Ocurrio un error al guardar ' + err });
+            });
+        }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al guardar ' + err });
+        res.status(500).send({ message: 'Ocurrio un error al buscar la invitación' });
     });
 }
+
 module.exports = {
     create,
     update,
@@ -459,6 +483,6 @@ module.exports = {
     getUserCollaborationsNovels,
     getCollaboratorsFromNovel,
     deleteChapter,
-    getNovelRating,
+    getNovelsRatings,
     postNovelRating
 };
