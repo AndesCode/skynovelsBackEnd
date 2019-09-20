@@ -177,7 +177,7 @@ function getCollaboratorsFromNovel(req, res) {
 
 function getActiveNovels(req, res) {
 
-    novels.sequelize.query("SELECT novels.nvl_writer, novels.createdAt, novels.updatedAt, novels.id, novels.nvl_status, novels.nvl_name, novels.nvl_img, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ', ' ) AS CONCAT FROM genres, genres_novels, novels n WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres , novels.nvl_title, novels.nvl_content, COUNT(chapters.nvl_id) AS chp_count FROM novels JOIN chapters ON chapters.nvl_id = novels.id AND (novels.nvl_status = 'Finalizada' OR novels.nvl_status = 'Publicada') group by novels.id;", { type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
+    novels.sequelize.query("SELECT novels.nvl_writer, novels.createdAt, novels.updatedAt, novels.id, novels.nvl_status, novels.nvl_name, novels.nvl_img, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ', ' ) AS CONCAT FROM genres, genres_novels, novels n WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres , novels.nvl_title, novels.nvl_content, COUNT(chapters.nvl_id) AS chp_count, nvl_rating FROM novels JOIN chapters ON chapters.nvl_id = novels.id AND (novels.nvl_status = 'Finalizada' OR novels.nvl_status = 'Publicada') group by novels.id;", { type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
         res.status(200).send({ novels });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
