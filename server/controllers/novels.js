@@ -452,7 +452,7 @@ function postNovelRating(req, res) {
             });
         }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la invitación' });
+        res.status(500).send({ message: 'Ocurrio un error al buscar la invitación' + err });
     });
 }
 
