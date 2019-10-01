@@ -432,7 +432,7 @@ function getNovelsRatings(req, res) {
 function getNovelComments(req, res) {
     var id = req.params.id;
     console.log(id);
-    novels_ratings.sequelize.query("SELECT novels_ratings.rate_comment, novels_ratings.user_id, novels_ratings.rate_value, (SELECT users.user_login FROM users WHERE users.id = novels_ratings.user_id) AS user_comment_login from novels_ratings where novels_ratings.novel_id = ?", { replacements: [id], type: novels_ratings.sequelize.QueryTypes.SELECT }).then(novelComments => {
+    novels_ratings.sequelize.query("SELECT novels_ratings.rate_comment, novels_ratings.updatedAt, novels_ratings.createdAt, novels_ratings.user_id, novels_ratings.rate_value, (SELECT users.user_login FROM users WHERE users.id = novels_ratings.user_id) AS user_comment_login from novels_ratings where novels_ratings.novel_id = ?", { replacements: [id], type: novels_ratings.sequelize.QueryTypes.SELECT }).then(novelComments => {
         res.status(200).send({ novelComments });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error' });
