@@ -58,20 +58,36 @@ function update(req, res) {
 function uploadNovelImage(req, res) {
     var id = req.params.id;
     if (req.body.old_novel_image) {
+        console.log('deleting old image from the novel');
         var old_img = req.body.old_novel_image;
         old_file_path = './server/uploads/novels/' + old_img;
         old_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
-        fs.unlink(old_file_path, (err) => {
-            if (err) {
-                res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' });
-            } else {
-                fs.unlink(old_file_thumb_path, (err) => {
+        console.log(old_file_path);
+        console.log(old_file_thumb_path);
+        fs.exists(old_file_path, (exists) => {
+            if (exists) {
+                fs.unlink(old_file_path, (err) => {
                     if (err) {
-                        res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen thumb antigua.' });
+                        res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' + err });
                     } else {
-                        res.status(200);
+                        console.log('imagen de novela eliminada');
                     }
                 });
+            } else {
+                console.log('archivo con el nombre de imagen de novela inexistente.');
+            }
+        });
+        fs.exists(old_file_thumb_path, (exists) => {
+            if (exists) {
+                fs.unlink(old_file_thumb_path, (err) => {
+                    if (err) {
+                        res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo.' + err });
+                    } else {
+                        console.log('thumb de novela eliminada');
+                    }
+                });
+            } else {
+                console.log('archivo con el nombre de imagen de novela inexistente.');
             }
         });
     } else {
