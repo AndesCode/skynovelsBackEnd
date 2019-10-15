@@ -8,12 +8,14 @@ const thumb = require('node-thumbnail').thumb;
 const path = require('path');
 const novels_collaborators = require('../models').novels_collaborators;
 const novels_ratings = require('../models').novels_ratings;
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 
 
 // home functions
 
 function getAllChaptersByDate(req, res) {
-    chapters.sequelize.query("SELECT chapters.id, DATE_FORMAT(chapters.createdAt, '%d %M, %Y') AS chp_created_date, chapters.chp_title, novels.nvl_title FROM chapters, novels WHERE chapters.nvl_id = novels.id ORDER BY chapters.createdAt DESC", { type: novels.sequelize.QueryTypes.SELECT }).then(chapters => {
+    chapters.sequelize.query("SELECT chapters.id, DATE_FORMAT(chapters.createdAt, '%d %M, %Y') AS chp_created_date, chapters.chp_title, chp_number, novels.nvl_title FROM chapters, novels WHERE chapters.nvl_id = novels.id ORDER BY chapters.createdAt DESC", { type: novels.sequelize.QueryTypes.SELECT }).then(chapters => {
         res.status(200).send({ chapters });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un erro al buscar el capitulo' + err });
@@ -281,10 +283,23 @@ function getUserChapter(req, res) {
 
 function createChapter(req, res) {
     var body = req.body;
-    chapters.create(body).then(chapter => {
-        res.status(200).send({ chapter });
+    chapters.findOne({
+        where: {
+            [Op.or]: [{ chp_number: body.chp_number }, { chp_title: body.chp_title }],
+            [Op.and]: [{ nvl_id: body.nvl_id }]
+        }
+    }).then(chapter => {
+        if (chapter == null) {
+            chapters.create(body).then(chapter => {
+                res.status(200).send({ chapter });
+            }).catch(err => {
+                res.status(500).send({ message: 'Ocurrio un error al guardar el capitulo ' + err });
+            });
+        } else {
+            res.status(500).send({ message: 'Ya existe un capitulo con ese nombre o numero de capitulo' });
+        }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al guardar el capitulo' });
+        res.status(500).send({ message: 'Ocurrio un error de verificación de capitulo ' + err });
     });
 }
 

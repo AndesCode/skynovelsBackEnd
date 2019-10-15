@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         chp_author: DataTypes.INTEGER,
         nvl_id: DataTypes.INTEGER,
+        chp_number: DataTypes.INTEGER,
         chp_content: DataTypes.TEXT,
         chp_review: DataTypes.TEXT,
         chp_title: DataTypes.TEXT,
