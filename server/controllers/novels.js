@@ -59,42 +59,6 @@ function update(req, res) {
 
 function uploadNovelImage(req, res) {
     var id = req.params.id;
-    if (req.body.old_novel_image) {
-        console.log('deleting old image from the novel');
-        var old_img = req.body.old_novel_image;
-        old_file_path = './server/uploads/novels/' + old_img;
-        old_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
-        console.log(old_file_path);
-        console.log(old_file_thumb_path);
-        fs.exists(old_file_path, (exists) => {
-            if (exists) {
-                fs.unlink(old_file_path, (err) => {
-                    if (err) {
-                        res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' + err });
-                    } else {
-                        console.log('imagen de novela eliminada');
-                    }
-                });
-            } else {
-                console.log('archivo con el nombre de imagen de novela inexistente.');
-            }
-        });
-        fs.exists(old_file_thumb_path, (exists) => {
-            if (exists) {
-                fs.unlink(old_file_thumb_path, (err) => {
-                    if (err) {
-                        res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo.' + err });
-                    } else {
-                        console.log('thumb de novela eliminada');
-                    }
-                });
-            } else {
-                console.log('archivo con el nombre de imagen de novela inexistente.');
-            }
-        });
-    } else {
-        console.log('creating a new image in db');
-    }
     if (req.files) {
         var file_path = req.files.novel_image.path;
         var file_split = file_path.split('\\');
@@ -102,6 +66,42 @@ function uploadNovelImage(req, res) {
         var ext_split = file_name.split('\.');
         var file_ext = ext_split[1];
         if (file_ext == 'jpg') {
+            if (req.body.old_novel_image) {
+                console.log('deleting old image from the novel');
+                var old_img = req.body.old_novel_image;
+                old_file_path = './server/uploads/novels/' + old_img;
+                old_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
+                console.log(old_file_path);
+                console.log(old_file_thumb_path);
+                fs.exists(old_file_path, (exists) => {
+                    if (exists) {
+                        fs.unlink(old_file_path, (err) => {
+                            if (err) {
+                                res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' + err });
+                            } else {
+                                console.log('imagen de novela eliminada');
+                            }
+                        });
+                    } else {
+                        console.log('archivo con el nombre de imagen de novela inexistente.');
+                    }
+                });
+                fs.exists(old_file_thumb_path, (exists) => {
+                    if (exists) {
+                        fs.unlink(old_file_thumb_path, (err) => {
+                            if (err) {
+                                res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo.' + err });
+                            } else {
+                                console.log('thumb de novela eliminada');
+                            }
+                        });
+                    } else {
+                        console.log('archivo con el nombre de imagen de novela inexistente.');
+                    }
+                });
+            } else {
+                console.log('creating a new image in db');
+            }
             var novel_image = {};
             novel_image.nvl_img = file_name;
 
@@ -167,7 +167,7 @@ function getNovel(req, res) {
 
 function getUserNovels(req, res) {
     var id = req.body.user_id;
-    novels.sequelize.query('SELECT novels.id, novels.nvl_author, novels.nvl_status, novels.nvl_name, novels.nvl_title, novels.nvl_content, IFNULL(COUNT(chapters.nvl_id), 0) AS chp_count, novels.nvl_img, novels.updatedAt FROM novels LEFT JOIN chapters ON chapters.nvl_id = novels.id WHERE novels.nvl_author = ? GROUP BY novels.id', { replacements: [id], type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
+    novels.sequelize.query('SELECT novels.id, novels.nvl_author, novels.nvl_status, novels.nvl_name, novels.nvl_title, novels.nvl_content, IFNULL(COUNT(chapters.nvl_id), 0) AS chp_count, novels.nvl_img, novels.updatedAt, novels.createdAt FROM novels LEFT JOIN chapters ON chapters.nvl_id = novels.id WHERE novels.nvl_author = ? GROUP BY novels.id', { replacements: [id], type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
         res.status(200).send({ novels });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un erro al buscar las novelas' });
