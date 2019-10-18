@@ -102,10 +102,9 @@ function activateUser(req, res) {
 }
 
 function update(req, res) {
-    var id = req.params.id;
     var body = req.body;
 
-    users.findByPk(id).then(user => {
+    users.findByPk(body.id).then(user => {
         user.update(body).then(() => {
             res.status(200).send({ user });
         }).catch(err => {
@@ -113,6 +112,40 @@ function update(req, res) {
         });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar el usuario' });
+    });
+}
+
+function deleteUser(req, res) {
+    var id = req.params.id;
+    users.findByPk(id).then(user => {
+        users.destroy({
+            where: {
+                id: id
+            }
+        }).then(() => {
+            res.status(200).send({ user });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al eliminar el usuario' });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario' });
+    });
+}
+
+function deleteChapter(req, res) {
+    var id = req.params.id;
+    chapters.findByPk(id).then(chapter => {
+        chapters.destroy({
+            where: {
+                id: id
+            }
+        }).then(() => {
+            res.status(200).send({ chapter });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al eliminar el capitulo' });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al encotnrar el capitulo' });
     });
 }
 
@@ -181,7 +214,7 @@ function login(req, res) {
 
 function getAll(req, res) {
     users.findAll({
-        attributes: ['user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth']
+        attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth']
     }).then(users => {
         res.status(200).send({ users });
     }).catch(err => {
@@ -561,6 +594,7 @@ module.exports = {
     create,
     login,
     update,
+    deleteUser,
     getAll,
     activateUser,
     getUser,
