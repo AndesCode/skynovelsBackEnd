@@ -132,23 +132,6 @@ function deleteUser(req, res) {
     });
 }
 
-function deleteChapter(req, res) {
-    var id = req.params.id;
-    chapters.findByPk(id).then(chapter => {
-        chapters.destroy({
-            where: {
-                id: id
-            }
-        }).then(() => {
-            res.status(200).send({ chapter });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar el capitulo' });
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encotnrar el capitulo' });
-    });
-}
-
 function passwordResetRequest(req, res) {
     console.log(req.body);
     users.findOne({
@@ -213,8 +196,8 @@ function login(req, res) {
 }
 
 function getAll(req, res) {
-    users.findAll({
-        attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth']
+    users.sequelize.query("SELECT id, user_login, user_email, user_rol, user_status, user_forum_auth, (SELECT COUNT(*) FROM novels WHERE novels.nvl_author = users.id) AS user_novels_count, (SELECT COUNT(*) from chapters where chapters.chp_author = users.id) AS user_chapters_count, (SELECT COUNT(*) FROM novels_collaborators WHERE novels_collaborators.user_id = users.id) AS user_collaborations_count FROM users", {
+        type: users.sequelize.QueryTypes.SELECT
     }).then(users => {
         res.status(200).send({ users });
     }).catch(err => {
