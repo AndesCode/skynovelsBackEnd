@@ -12,7 +12,7 @@ module.exports = (app) => {
     app.get('/api/users', md_auth.auth, userController.getAll);
     app.get('/api/user/email-verification/:key', userController.activateUser);
     app.post('/api/user/password-reset', userController.passwordResetRequest);
-    app.get('/api/user/:id', md_auth.auth, userController.getUser);
+    app.get('/api/user/:id', userController.getUser);
     app.put('/api/update-user-password', md_auth.emailVerificationAuth, userController.updateUserPassword);
     app.get('/api/user/get-user-by-email-token/:token', md_auth.emailVerificationAuth, userController.getUserByEmailToken);
     app.post('/api/upload-profile-img/:id', [md_auth.auth, md_upload], userController.uploadUserProfileImg);
