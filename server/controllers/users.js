@@ -196,7 +196,7 @@ function login(req, res) {
 }
 
 function getAll(req, res) {
-    users.sequelize.query("SELECT id, user_login, user_email, user_rol, user_status, user_forum_auth, (SELECT COUNT(*) FROM novels WHERE novels.nvl_author = users.id) AS user_novels_count, (SELECT COUNT(*) from chapters where chapters.chp_author = users.id) AS user_chapters_count, (SELECT COUNT(*) FROM novels_collaborators WHERE novels_collaborators.user_id = users.id) AS user_collaborations_count FROM users", {
+    users.sequelize.query("SELECT id, user_login, user_profile_image, user_email, user_rol, user_status, user_forum_auth, (SELECT COUNT(*) FROM novels WHERE novels.nvl_author = users.id) AS user_novels_count, (SELECT COUNT(*) from chapters where chapters.chp_author = users.id) AS user_chapters_count, (SELECT COUNT(*) FROM novels_collaborators WHERE novels_collaborators.user_id = users.id) AS user_collaborations_count FROM users", {
         type: users.sequelize.QueryTypes.SELECT
     }).then(users => {
         res.status(200).send({ users });
@@ -273,109 +273,97 @@ function updateUserPassword(req, res) {
 
 function uploadUserProfileImg(req, res) {
     var id = req.params.id;
-    console.log(req.files);
-    console.log(req.body);
-    // var update = req.params.update;
-    if (req.body.old_user_profile_image) {
-        console.log(req.body.old_user_profile_image);
-        var old_img = req.body.old_user_profile_image;
-        old_file_path = './server/uploads/users/' + old_img;
-        old_file_thumb_path = './server/uploads/users/thumbs/' + old_img;
-        console.log(old_img);
-        fs.unlink(old_file_path, (err) => {
-            if (err) {
-                res.status(500).send({
-                    message: 'Ocurrio un error al eliminar la imagen antigua.' + err
-                });
-            } else {
-                fs.unlink(old_file_thumb_path, (err) => {
-                    if (err) {
-                        res.status(500).send({
-                            message: 'Ocurrio un error al eliminar la imagen thumb antigua.'
-                        });
-                    } else {
-
-                    }
-                });
-            }
-        });
-    } else {
-        console.log('Usuario no tiene imagen de usuario');
-    }
     if (req.files) {
-        console.log('subiendo una nueva imagen de usuario');
         var file_path = req.files.user_profile_image.path;
-        console.log(file_path);
         var file_split = file_path.split('\\');
         var file_name = file_split[3];
         var ext_split = file_name.split('\.');
         var file_ext = ext_split[1];
         if (file_ext == 'jpg') {
+            if (req.body.old_user_profile_image) {
+                var old_img = req.body.old_user_profile_image;
+                old_file_path = './server/uploads/users/' + old_img;
+                old_file_thumb_path = './server/uploads/users/thumbs/' + old_img;
+                fs.exists(old_file_path, (exists) => {
+                    if (exists) {
+                        fs.unlink(old_file_path, (err) => {
+                            if (err) {
+                                res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' + err });
+                            } else {
+                                console.log('imagen de novela eliminada');
+                            }
+                        });
+                    } else {
+                        console.log('archivo con el nombre de imagen de novela inexistente.');
+                    }
+                });
+                fs.exists(old_file_thumb_path, (exists) => {
+                    if (exists) {
+                        fs.unlink(old_file_thumb_path, (err) => {
+                            if (err) {
+                                res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo.' + err });
+                            } else {
+                                console.log('thumb de novela eliminada');
+                            }
+                        });
+                    } else {
+                        console.log('archivo con el nombre de imagen de novela inexistente.');
+                    }
+                });
+            } else {
+                console.log('creating a new image in db');
+            }
             var user_profile_image = {};
             user_profile_image.user_profile_image = file_name;
 
             users.findByPk(id).then(user => {
-                console.log(id);
                 user.update(user_profile_image).then(() => {
+
                     var newPath = './server/uploads/users/' + file_name;
                     var thumbPath = './server/uploads/users/thumbs';
-                    console.log(thumbPath);
+
                     thumb({
                         source: path.resolve(newPath),
                         destination: path.resolve(thumbPath),
-                        width: 200,
+                        width: 210,
+                        height: 280,
                         suffix: ''
                     }).then(() => {
-                        console.log("Se esta enviando el usuario");
                         res.status(200).send({ user });
                     }).catch(err => {
                         fs.unlink(file_path, (err) => {
                             if (err) {
-                                res.status(500).send({
-                                    message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' + err
-                                });
+                                res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
                             }
                         });
-                        res.status(500).send({
-                            message: 'Ocurrio un error al crear el thumbnail.' + err
-                        });
+                        res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail.' });
                     });
                 }).catch(err => {
                     fs.unlink(file_path, (err) => {
                         if (err) {
-                            res.status(500).send({
-                                message: 'Ocurrio un error al intentar eliminar el archivo.' + err
-                            });
+                            res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                         }
                     });
-                    res.status(500).send({
-                        message: 'Ocurrio un error al actualziar la foto de perfil.' + err
-                    });
+                    res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario.' });
                 });
             }).catch(err => {
                 fs.unlink(file_path, (err) => {
                     if (err) {
-                        res.status(500).send({
-                            message: 'Ocurrio un error al intentar eliminar el archivo.' + err
-                        });
+                        res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                     }
                 });
-                res.status(500).send({
-                    message: 'No existe el usuario.' + err
-                });
+                res.status(500).send({ message: 'No existe el usuario.' });
             });
         } else {
             fs.unlink(file_path, (err) => {
                 if (err) {
-                    res.status(500).send({
-                        message: 'Ocurrio un error al intentar eliminar el archivo.' + err
-                    });
+                    res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                 }
             });
-            res.status(500).send({
-                message: 'La extensión del archivo no es valida.' + err
-            });
+            res.status(500).send({ message: 'La extensión del archivo no es valida.' });
         }
+    } else {
+        res.status(400).send({ message: 'Debe Seleccionar us usuario.' });
     }
 }
 
