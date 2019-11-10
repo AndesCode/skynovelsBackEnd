@@ -6,7 +6,8 @@ module.exports = (sequelized, DataTypes) => {
             primaryKey: true,
             type: DataTypes.INTEGER
         },
-        forum_type: DataTypes.TEXT
+        forum_type: DataTypes.TEXT,
+        forum_category_description: DataTypes.TEXT
     }, {
         freezeTableName: true
     });
