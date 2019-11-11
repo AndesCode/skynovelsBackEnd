@@ -34,8 +34,27 @@ function getForum(req, res) {
         res.status(500).send({ message: 'Ocurrio un error' + err });
     });
 }
+
+
+function deleteForumCategory(req, res) {
+    var id = req.params.id;
+    forum.findByPk(id).then(category => {
+        forum.destroy({
+            where: {
+                id: id
+            }
+        }).then(() => {
+            res.status(200).send({ category });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro ' });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro ' });
+    });
+}
 module.exports = {
     create,
     update,
-    getForum
+    getForum,
+    deleteForumCategory
 };
