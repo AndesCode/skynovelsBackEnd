@@ -41,7 +41,6 @@ function create(req, res) {
                                 pass: 'EQhdryhNC456BX7wKR'
                             }
                         });
-
                         let mailOptions = {
                             from: 'halle.lehner@ethereal.email',
                             to: req.body.user_email,
@@ -49,7 +48,6 @@ function create(req, res) {
                             // template: '../templates/email-confirmation',
                             text: 'haz click en el enalce para activar tu cuenta de Skynovels! http://localhost:4200/verificacion/' + crypted_verification_key
                         };
-
                         transporter.sendMail(mailOptions, function(err, data) {
                             if (err) {
                                 console.log(err);

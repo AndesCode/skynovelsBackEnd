@@ -9,6 +9,7 @@ module.exports = (sequelized, DataTypes) => {
         forum_type: DataTypes.TEXT,
         forum_category_description: DataTypes.TEXT
     }, {
+        timestamps: false,
         freezeTableName: true
     });
     return forum;
