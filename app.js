@@ -38,7 +38,7 @@ app.use('server', express.static(path.join(__dirname, 'server')));
 const port = parseInt(process.env.port, 10) || 3000;
 
 app.get('*', (req, res) => {
-    res.status(200).send({ message: "bienvenido al servidor NodeJS" });
+    res.status(200).send({ message: "NodeJS server initialized" });
 });
 
 var server = http.createServer(app);

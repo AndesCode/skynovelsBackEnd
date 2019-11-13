@@ -101,7 +101,6 @@ function activateUser(req, res) {
 
 function update(req, res) {
     var body = req.body;
-
     users.findByPk(body.id).then(user => {
         user.update(body).then(() => {
             res.status(200).send({ user });

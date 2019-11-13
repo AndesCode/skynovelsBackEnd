@@ -1,3 +1,4 @@
+/*jshint esversion: 6 */
 const forum = require('../models').forum;
 const posts = require('../models').posts;
 const posts_comments = require('../models').posts_comments;

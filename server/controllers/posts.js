@@ -63,7 +63,7 @@ function newPostComment(req, res) {
     posts_comments.create(body).then(comment => {
         res.status(200).send({ comment });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al guardar ' + err });
+        res.status(500).send({ message: 'Ocurrio un error al guardar el comentario ' });
     });
 }
 

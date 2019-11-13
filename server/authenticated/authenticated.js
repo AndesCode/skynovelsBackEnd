@@ -84,14 +84,15 @@ function adminAuth(req, res, next) {
 }
 
 function emailVerificationAuth(req, res, next) {
+    var token = '';
     if (!req.params.token) {
         if (!req.headers.authorization) {
             return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
         } else {
-            var token = req.headers.authorization.replace(/['"]+/g, '');
+            token = req.headers.authorization.replace(/['"]+/g, '');
         }
     } else {
-        var token = req.params.token.replace(/['"]+/g, '');
+        token = req.params.token.replace(/['"]+/g, '');
     }
     console.log('entra la autorizacion');
     console.log(req.params.token);
