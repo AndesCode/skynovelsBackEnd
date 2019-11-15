@@ -2,19 +2,18 @@
 var njwt = require('njwt');
 const users = require('../models').users;
 var config = require('../config/config');
-var secret = config.token_secret;
+// var secret = config.token_secret;
 // var secureRandom = require('secure-random');
 
-var signingKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-
 exports.createToken = (user) => {
+    console.log('empieza la creacion del token');
+    var signingKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     var params = {
         sub: user.id,
         user_login: user.user_login,
         user_rol: user.user_rol
     };
-    var jwt = njwt.create(params, secret); // trabajando aquí
+    var jwt = njwt.create(params, signingKey); // trabajando aquí
 
     var t = new Date();
     t.setHours(t.getHours() + 2);
@@ -26,15 +25,17 @@ exports.createToken = (user) => {
         user.update({
             user_verification_key: signingKey,
         }).then(() => {
-            console.log('Verification_key_updated');
+            console.log(token);
+            // return token;  habilitar esteeee
         }).catch(err => {
-            console.log('Ocurrio un error al actualizar el usuario');
+            console.log('error al actualizar el verification key');
+            return null;
         });
     }).catch(err => {
-        console.log('Ocurrio un error al buscar el usuario');
+        console.log('error al actualizar el verification key');
+        return null;
     });
-
-    return token;
+    return token;   // quitar estooooo
 };
 
 exports.createPasswordResetToken = (user) => {

@@ -8,79 +8,85 @@ var users = require('../models').users;
 function auth(req, res, next) {
     if (!req.headers.authorization) {
         return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
-    }
-    var token = req.headers.authorization.replace(/['"]+/g, '');
-    var payload = nJwT.verify(token, secret, (err, verifiedJwT) => {
+    } else {
+        var token = req.headers.authorization.replace(/['"]+/g, '');
 
         var jwtData = token.split('.')[1];
         var decodedJwtData = JSON.parse(atob(jwtData));
         var user_id = decodedJwtData.sub;
-
+    
         users.findByPk(user_id).then((user) => {
-            if ((user.dataValues.user_status == 'Active') && (!err)) {
-                next();
+            if (user.dataValues.user_status == 'Active') {
+                var payload = nJwT.verify(token, user.dataValues.user_verification_key, (err, verifiedJwT) => {
+                    if (!err) {
+                        next();
+                    } else {
+                        return res.status(401).send({ message: 'No autorizado' });
+                    }     
+                });
             } else {
                 return res.status(401).send({ message: 'No autorizado' });
             }
         }).catch(err => {
             res.status(500).send({ message: 'No se encuentra usuario por el id indicado' });
         });
-    });
+    }
 }
 
 function forumAuth(req, res, next) {
     if (!req.headers.authorization) {
         return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
-    }
-    var token = req.headers.authorization.replace(/['"]+/g, '');
-    var payload = nJwT.verify(token, secret, (err, verifiedJwT) => {
+    } else {
+        var token = req.headers.authorization.replace(/['"]+/g, '');
 
         var jwtData = token.split('.')[1];
         var decodedJwtData = JSON.parse(atob(jwtData));
         var user_id = decodedJwtData.sub;
-
+    
         users.findByPk(user_id).then((user) => {
-            if ((user.dataValues.user_forum_auth == 'Active') && (!err)) {
-                if (user.dataValues.user_status == 'Active') {
-                    next();
-                } else {
-                    return res.status(401).send({ message: 'Usuario desactivado' });
-                }
+            if (user.dataValues.user_status == 'Active' && user.dataValues.user_forum_auth == 'Active') {
+                var payload = nJwT.verify(token, user.dataValues.user_verification_key, (err, verifiedJwT) => {
+                    if (!err) {
+                        next();
+                    } else {
+                        return res.status(401).send({ message: 'No autorizado' });
+                    }       
+                });
             } else {
-                return res.status(401).send({ message: 'Usuario sin acceso a foro' });
+                return res.status(401).send({ message: 'No autorizado o sin acceso al foro' });
             }
         }).catch(err => {
             res.status(500).send({ message: 'No se encuentra usuario por el id indicado' });
         });
-    });
+    }
 }
 
 function adminAuth(req, res, next) {
     if (!req.headers.authorization) {
         return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
-    }
-    var token = req.headers.authorization.replace(/['"]+/g, '');
-    var payload = nJwT.verify(token, secret, (err, verifiedJwT) => {
+    } else {
+        var token = req.headers.authorization.replace(/['"]+/g, '');
 
         var jwtData = token.split('.')[1];
         var decodedJwtData = JSON.parse(atob(jwtData));
         var user_id = decodedJwtData.sub;
-        var user_rol = decodedJwtData.user_rol;
-
+    
         users.findByPk(user_id).then((user) => {
-            if (user.dataValues.user_status != 'Active') {
-                return res.status(401).send({ message: 'Usuario desactivado' });
+            if (user.dataValues.user_status == 'Active' && user.dataValues.user_rol == 'admin') {
+                var payload = nJwT.verify(token, user.dataValues.user_verification_key, (err, verifiedJwT) => {
+                    if (!err) {
+                        next();
+                    } else {
+                        return res.status(401).send({ message: 'No autorizado' });
+                    }        
+                });
             } else {
-                if ((user_rol === 'admin') && (!err)) {
-                    next();
-                } else {
-                    return res.status(401).send({ message: 'Acceso no autorizado' });
-                }
+                return res.status(401).send({ message: 'No autorizado o no es administrador' });
             }
         }).catch(err => {
             res.status(500).send({ message: 'No se encuentra usuario por el id indicado' });
         });
-    });
+    }
 }
 
 function emailVerificationAuth(req, res, next) {
@@ -123,3 +129,59 @@ module.exports = {
     adminAuth,
     emailVerificationAuth
 };
+
+
+/*function forumAuth(req, res, next) {
+    if (!req.headers.authorization) {
+        return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
+    }
+    var token = req.headers.authorization.replace(/['"]+/g, '');
+    var payload = nJwT.verify(token, secret, (err, verifiedJwT) => {
+
+        var jwtData = token.split('.')[1];
+        var decodedJwtData = JSON.parse(atob(jwtData));
+        var user_id = decodedJwtData.sub;
+
+        users.findByPk(user_id).then((user) => {
+            if ((user.dataValues.user_forum_auth == 'Active') && (!err)) {
+                if (user.dataValues.user_status == 'Active') {
+                    next();
+                } else {
+                    return res.status(401).send({ message: 'Usuario desactivado' });
+                }
+            } else {
+                return res.status(401).send({ message: 'Usuario sin acceso a foro' });
+            }
+        }).catch(err => {
+            res.status(500).send({ message: 'No se encuentra usuario por el id indicado' });
+        });
+    });
+}*/
+
+/*function adminAuth(req, res, next) {
+    if (!req.headers.authorization) {
+        return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
+    }
+    var token = req.headers.authorization.replace(/['"]+/g, '');
+    var payload = nJwT.verify(token, secret, (err, verifiedJwT) => {
+
+        var jwtData = token.split('.')[1];
+        var decodedJwtData = JSON.parse(atob(jwtData));
+        var user_id = decodedJwtData.sub;
+        var user_rol = decodedJwtData.user_rol;
+
+        users.findByPk(user_id).then((user) => {
+            if (user.dataValues.user_status != 'Active') {
+                return res.status(401).send({ message: 'Usuario desactivado' });
+            } else {
+                if ((user_rol === 'admin') && (!err)) {
+                    next();
+                } else {
+                    return res.status(401).send({ message: 'Acceso no autorizado' });
+                }
+            }
+        }).catch(err => {
+            res.status(500).send({ message: 'No se encuentra usuario por el id indicado' });
+        });
+    });
+}*/
