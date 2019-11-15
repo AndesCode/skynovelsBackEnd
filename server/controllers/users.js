@@ -169,19 +169,24 @@ function passwordResetRequest(req, res) {
 }
 
 function login(req, res) {
-    console.log(req.body);
     users.findOne({
         where: {
             [Op.or]: [{ user_login: req.body.user_login }, { user_email: req.body.user_login }]
         }
     }).then(user => {
-        console.log(user.dataValues);
         hash = user.dataValues.user_pass;
         user_password = bcrypt.compare(req.body.user_pass, hash, function(err, response) {
             if (user && user.dataValues.user_status == 'Active' && response == true) {
-                res.status(200).send({
-                    token: jwt.createToken(user),
-                    user: user
+                var token_data = jwt.createToken(user);
+                user.update({
+                    user_verification_key: token_data.key,
+                }).then(() => {
+                    res.status(200).send({
+                        token: token_data.token,
+                        user: user
+                    });
+                }).catch(err => {
+                    res.status(500).send({ message: 'Error al actualizar la key de usuario' });
                 });
             } else {
                 res.status(401).send({ message: 'Error, Usuario o contraseña incorrectos' });
@@ -558,6 +563,19 @@ function DeleteNovelCollaborator(req, res) {
     });
 }
 
+function adminVerification(req, res) {
+    body = req.body;
+    users.findOne({
+        where: {
+            [Op.and]: [{ id: req.body.user_id }, { user_rol: 'admin' }]
+        }
+    }).then((user) => {
+        res.status(200).send({ user });
+    }).catch(err => {
+        res.status(401).send({ message: 'Ocurrio un error al eliminar el usuario' + err });
+    });
+}
+
 module.exports = {
     create,
     login,
@@ -581,5 +599,6 @@ module.exports = {
     getUserInvitations,
     createNovelCollaborator,
     updateUserInvitation,
-    DeleteNovelCollaborator
+    DeleteNovelCollaborator,
+    adminVerification
 };

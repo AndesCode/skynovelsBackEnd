@@ -6,7 +6,6 @@ var config = require('../config/config');
 // var secureRandom = require('secure-random');
 
 exports.createToken = (user) => {
-    console.log('empieza la creacion del token');
     var signingKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     var params = {
         sub: user.id,
@@ -14,28 +13,14 @@ exports.createToken = (user) => {
         user_rol: user.user_rol
     };
     var jwt = njwt.create(params, signingKey); // trabajando aquí
-
     var t = new Date();
     t.setHours(t.getHours() + 2);
     jwt.setExpiration(t);
-
-    var token = jwt.compact();
-
-    users.findByPk(user.id).then(user => {
-        user.update({
-            user_verification_key: signingKey,
-        }).then(() => {
-            console.log(token);
-            // return token;  habilitar esteeee
-        }).catch(err => {
-            console.log('error al actualizar el verification key');
-            return null;
-        });
-    }).catch(err => {
-        console.log('error al actualizar el verification key');
-        return null;
-    });
-    return token;   // quitar estooooo
+    var token_data = {
+        token: jwt.compact(),
+        key: signingKey
+    };
+    return token_data; // quitar estooooo
 };
 
 exports.createPasswordResetToken = (user) => {

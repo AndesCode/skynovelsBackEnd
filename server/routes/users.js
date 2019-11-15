@@ -28,4 +28,5 @@ module.exports = (app) => {
     app.get('/api/get-user-invitations/:id', md_auth.auth, userController.getUserInvitations);
     app.post('/api/create-novel-collaborator', md_auth.auth, userController.createNovelCollaborator);
     app.delete('/api/delete-novel-collaborator/:id', md_auth.auth, userController.DeleteNovelCollaborator);
+    app.post('/api/admin-verification', md_auth.adminAuth, userController.adminVerification);
 };
