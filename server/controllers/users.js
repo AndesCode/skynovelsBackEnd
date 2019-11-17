@@ -563,19 +563,6 @@ function DeleteNovelCollaborator(req, res) {
     });
 }
 
-function adminVerification(req, res) {
-    body = req.body;
-    users.findOne({
-        where: {
-            [Op.and]: [{ id: req.body.user_id }, { user_rol: 'admin' }]
-        }
-    }).then((user) => {
-        res.status(200).send({ user });
-    }).catch(err => {
-        res.status(401).send({ message: 'Ocurrio un error al eliminar el usuario' + err });
-    });
-}
-
 module.exports = {
     create,
     login,
@@ -599,6 +586,5 @@ module.exports = {
     getUserInvitations,
     createNovelCollaborator,
     updateUserInvitation,
-    DeleteNovelCollaborator,
-    adminVerification
+    DeleteNovelCollaborator
 };

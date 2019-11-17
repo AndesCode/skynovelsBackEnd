@@ -1,7 +1,25 @@
 /*jshint esversion: 6 */
 const forum = require('../models').forum;
 const posts = require('../models').posts;
+const users = require('../models').users;
 const posts_comments = require('../models').posts_comments;
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
+
+
+
+function adminVerification(req, res) {
+    body = req.body;
+    users.findOne({
+        where: {
+            [Op.and]: [{ id: req.body.user_id }, { user_rol: 'admin' }]
+        }
+    }).then((user) => {
+        res.status(200).send({ user });
+    }).catch(err => {
+        res.status(401).send({ message: 'Ocurrio un error al eliminar el usuario' + err });
+    });
+}
 
 function getAllPosts(req, res) {
     var orderBy = req.body.orderBy;
@@ -13,6 +31,34 @@ function getAllPosts(req, res) {
         res.status(500).send({ message: 'Ocurrio un error' + err });
     });
 }
+
+function adminUserDataUpdate(req, res) {
+    var body = req.body;
+    users.findByPk(body.id).then(user => {
+        if (body.action && body.action == 'Desactivate') {
+            var user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            user.update({
+                user_verification_key: user_verification_key,
+                user_status: 'Desactive'
+            }).then(() => {
+                res.status(200).send({ user });
+            }).catch(err => {
+                res.status(500).send({ message: 'Error al actualizar la key de usuario' });
+            });
+        } else {
+            user.update(body).then(() => {
+                res.status(200).send({ user });
+            }).catch(err => {
+                res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario' });
+            });
+        }
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar el usuario' });
+    });
+}
+
 module.exports = {
-    getAllPosts
+    getAllPosts,
+    adminUserDataUpdate,
+    adminVerification
 };

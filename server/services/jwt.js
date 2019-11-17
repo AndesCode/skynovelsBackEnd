@@ -12,7 +12,7 @@ exports.createToken = (user) => {
         user_login: user.user_login,
         user_rol: user.user_rol
     };
-    var jwt = njwt.create(params, signingKey); // trabajando aquí
+    var jwt = njwt.create(params, signingKey);
     var t = new Date();
     t.setHours(t.getHours() + 2);
     jwt.setExpiration(t);
@@ -20,7 +20,7 @@ exports.createToken = (user) => {
         token: jwt.compact(),
         key: signingKey
     };
-    return token_data; // quitar estooooo
+    return token_data;
 };
 
 exports.createPasswordResetToken = (user) => {
