@@ -1,16 +1,23 @@
 /*jshint esversion: 6 */
 require('dotenv').config();
-var http = require('http');
+const http = require('http');
 const express = require('express');
 const bodyParser = require('body-parser');
 const exphbs = require('express-handlebars');
 const path = require('path');
 const app = express();
+// const expressValidator = require('express-validator');
+const expressSession = require('express-session');
+const cookieParser = require('cookie-parser');
+
 
 
 // Body Parser Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+// app.use(expressValidator());
+app.use(cookieParser());
+app.use(expressSession({ secret: 'cambiaEsteSecretPorfavor', saveUninitialized: false, resave: false, cookie: { expires: 600000 } }));
 
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
