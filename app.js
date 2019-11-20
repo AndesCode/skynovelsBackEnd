@@ -17,9 +17,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 // app.use(expressValidator());
 app.use(cookieParser());
-app.use(expressSession({ secret: 'cambiaEsteSecretPorfavor', saveUninitialized: false, resave: false, cookie: { expires: 600000 } }));
+app.use(expressSession({ key: 'user_sid', secret: 'cambiaEsteSecretPorfavor', saveUninitialized: false, resave: false, cookie: { expires: 600000 } }));
 
 app.use((req, res, next) => {
+    if (req.cookies.user_sid && !req.session.user) {
+        res.clearCookie('user_sid');
+    }
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
@@ -45,7 +48,8 @@ app.use('server', express.static(path.join(__dirname, 'server')));
 const port = parseInt(process.env.port, 10) || 3000;
 
 app.get('*', (req, res) => {
-    res.status(200).send({ message: "NodeJS server initialized" });
+    req.session.cuenta = req.session.cuenta ? req.session.cuenta + 1 : 1;
+    res.status(200).send({ message: `Welcome to the server: ${req.session.cuenta}` });
 });
 
 var server = http.createServer(app);

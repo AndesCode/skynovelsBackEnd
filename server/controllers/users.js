@@ -168,6 +168,37 @@ function passwordResetRequest(req, res) {
     });
 }
 
+// LOGIN CON jwt
+//
+/*function login(req, res) {
+    users.findOne({
+        where: {
+            [Op.or]: [{ user_login: req.body.user_login }, { user_email: req.body.user_login }]
+        }
+    }).then(user => {
+        hash = user.dataValues.user_pass;
+        user_password = bcrypt.compare(req.body.user_pass, hash, function(err, response) {
+            if (user && user.dataValues.user_status == 'Active' && response == true) {
+                var token_data = jwt.createToken(user);
+                user.update({
+                    user_verification_key: token_data.key,
+                }).then(() => {
+                    res.status(200).send({
+                        token: token_data.token,
+                        user: user
+                    });
+                }).catch(err => {
+                    res.status(500).send({ message: 'Error al actualizar la key de usuario' });
+                });
+            } else {
+                res.status(401).send({ message: 'Error, Usuario o contraseña incorrectos' });
+            }
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Error, Usuario o contraseña incorrectos' });
+    });
+}*/
+
 function login(req, res) {
     users.findOne({
         where: {
