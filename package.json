@@ -19,8 +19,6 @@
         "dotenv": "^8.2.0",
         "express": "^4.17.1",
         "express-handlebars": "^3.1.0",
-        "express-session": "^1.17.0",
-        "express-validator": "^6.2.0",
         "mysql2": "^1.7.0",
         "njwt": "^1.0.0",
         "node-thumbnail": "^0.15.0",
