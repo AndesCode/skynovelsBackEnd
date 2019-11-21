@@ -3,7 +3,7 @@ var njwt = require('njwt');
 const users = require('../models').users;
 var config = require('../config/config');
 // var secret = config.token_secret;
-// var secureRandom = require('secure-random');
+var secureRandom = require('secure-random');
 
 exports.createToken = (user) => {
     var signingKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);

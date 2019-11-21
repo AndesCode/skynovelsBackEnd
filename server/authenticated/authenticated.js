@@ -4,6 +4,8 @@ var config = require('../config/config');
 var secret = config.token_secret;
 var atob = require('atob');
 var users = require('../models').users;
+const Cryptr = require('cryptr');
+const cryptr = new Cryptr('86505c4d73769b882913bb93fdab5cb1e26bb');
 
 function auth(req, res, next) {
     if (!req.headers.authorization) {
@@ -14,15 +16,16 @@ function auth(req, res, next) {
         var jwtData = token.split('.')[1];
         var decodedJwtData = JSON.parse(atob(jwtData));
         var user_id = decodedJwtData.sub;
-    
+
         users.findByPk(user_id).then((user) => {
             if (user.dataValues.user_status == 'Active') {
-                var payload = nJwT.verify(token, user.dataValues.user_verification_key, (err, verifiedJwT) => {
+                var decryptedverification_key = cryptr.decrypt(user.dataValues.user_verification_key);
+                var payload = nJwT.verify(token, decryptedverification_key, (err, verifiedJwT) => {
                     if (!err) {
                         next();
                     } else {
                         return res.status(401).send({ message: 'No autorizado' });
-                    }     
+                    }
                 });
             } else {
                 return res.status(401).send({ message: 'No autorizado' });
@@ -42,15 +45,16 @@ function forumAuth(req, res, next) {
         var jwtData = token.split('.')[1];
         var decodedJwtData = JSON.parse(atob(jwtData));
         var user_id = decodedJwtData.sub;
-    
+
         users.findByPk(user_id).then((user) => {
             if (user.dataValues.user_status == 'Active' && user.dataValues.user_forum_auth == 'Active') {
-                var payload = nJwT.verify(token, user.dataValues.user_verification_key, (err, verifiedJwT) => {
+                var decryptedverification_key = cryptr.decrypt(user.dataValues.user_verification_key);
+                var payload = nJwT.verify(token, decryptedverification_key, (err, verifiedJwT) => {
                     if (!err) {
                         next();
                     } else {
                         return res.status(401).send({ message: 'No autorizado' });
-                    }       
+                    }
                 });
             } else {
                 return res.status(401).send({ message: 'No autorizado o sin acceso al foro' });
@@ -70,21 +74,23 @@ function adminAuth(req, res, next) {
         var jwtData = token.split('.')[1];
         var decodedJwtData = JSON.parse(atob(jwtData));
         var user_id = decodedJwtData.sub;
-    
+
         users.findByPk(user_id).then((user) => {
             if (user.dataValues.user_status == 'Active' && user.dataValues.user_rol == 'admin') {
-                var payload = nJwT.verify(token, user.dataValues.user_verification_key, (err, verifiedJwT) => {
+                var decryptedverification_key = cryptr.decrypt(user.dataValues.user_verification_key);
+                console.log(decryptedverification_key);
+                var payload = nJwT.verify(token, decryptedverification_key, (err, verifiedJwT) => {
                     if (!err) {
                         next();
                     } else {
                         return res.status(401).send({ message: 'No autorizado' });
-                    }        
+                    }
                 });
             } else {
                 return res.status(401).send({ message: 'No autorizado o no es administrador' });
             }
         }).catch(err => {
-            res.status(500).send({ message: 'No se encuentra usuario por el id indicado' });
+            res.status(500).send({ message: 'No se encuentra usuario por el id indicado' + err });
         });
     }
 }
