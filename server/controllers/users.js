@@ -133,7 +133,7 @@ function passwordResetRequest(req, res) {
     console.log(req.body);
     users.findOne({
         where: {
-            user_email: req.body.user_email,
+            user_email: req.body.req_email,
         }
     }).then(user => {
         requestToken = jwt.createPasswordResetToken(user);
