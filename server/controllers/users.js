@@ -16,7 +16,7 @@ const user_reading_lists = require('../models').user_reading_lists;
 const invitations = require('../models').invitations;
 const novels_collaborators = require('../models').novels_collaborators;
 
-function create(req, res) {
+/*function create(req, res) {  Este create tiene la función de enviar email de confirmación
     if (req.body.user_pass == req.body.user_confirm_pass) {
         console.log(req.body);
         var user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -63,6 +63,36 @@ function create(req, res) {
             });
             console.log(user_verification_key);
             console.log(hashed_password);
+        }).catch(err => {
+            res.status(500).send({ message: 'Error en el registro del usuario.<br>' + err.message });
+        });
+    } else {
+        res.status(500).send({ message: 'La contraseña no coincide con el campo de confirmación de contraseña.<br>' });
+    }
+}*/
+
+function create(req, res) {
+    if (req.body.user_pass == req.body.user_confirm_pass) {
+        console.log(req.body);
+        var user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        var crypted_verification_key = cryptr.encrypt(user_verification_key);
+        users.create(req.body).then(user => {
+            console.log(req.body.user_pass);
+            var hashed_password = bcrypt.hash(req.body.user_pass, saltRounds, function(err, hash) {
+                if (err) {
+                    console.log('error ' + err);
+                } else {
+                    hashed_password = hash;
+                    user.update({
+                        user_verification_key: user_verification_key,
+                        user_pass: hashed_password
+                    }).then(() => {
+                        res.status(200).send({ user });
+                    }).catch(err => {
+                        res.status(500).send({ message: 'Error al generar la clave secreta de usuario ' + err });
+                    });
+                }
+            });
         }).catch(err => {
             res.status(500).send({ message: 'Error en el registro del usuario.<br>' + err.message });
         });
