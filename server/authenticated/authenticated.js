@@ -5,8 +5,9 @@ var secret = config.token_secret;
 var atob = require('atob');
 var users = require('../models').users;
 const Cryptr = require('cryptr');
-const cryptr = new Cryptr('86505c4d73769b882913bb93fdab5cb1e26bb');
+const cryptr = new Cryptr(config.key);
 
+// Autorización de usuario logeado
 function auth(req, res, next) {
     if (!req.headers.authorization) {
         return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
@@ -36,6 +37,7 @@ function auth(req, res, next) {
     }
 }
 
+// Autorización de usuario logeado y autorización de posteo en el foro
 function forumAuth(req, res, next) {
     if (!req.headers.authorization) {
         return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
@@ -65,6 +67,7 @@ function forumAuth(req, res, next) {
     }
 }
 
+// Autorización de usuario administrador
 function adminAuth(req, res, next) {
     if (!req.headers.authorization) {
         return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
@@ -78,7 +81,6 @@ function adminAuth(req, res, next) {
         users.findByPk(user_id).then((user) => {
             if (user.dataValues.user_status == 'Active' && user.dataValues.user_rol == 'admin') {
                 var decryptedverification_key = cryptr.decrypt(user.dataValues.user_verification_key);
-                console.log(decryptedverification_key);
                 var payload = nJwT.verify(token, decryptedverification_key, (err, verifiedJwT) => {
                     if (!err) {
                         next();

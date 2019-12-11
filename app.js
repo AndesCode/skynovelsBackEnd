@@ -9,7 +9,7 @@ const app = express();
 // Body Parser Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-// app.use(expressValidator());
+
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
@@ -24,7 +24,7 @@ require('./server/routes/chapters')(app);
 require('./server/routes/posts')(app);
 require('./server/routes/forum')(app);
 require('./server/routes/adminPanel')(app);
-// View engine setup
+// View engine setu
 app.engine('handlebards', exphbs());
 app.set('view engine', 'handlebars');
 // Static folder

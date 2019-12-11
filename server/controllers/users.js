@@ -1,10 +1,11 @@
 /*jshint esversion: 6 */
+var config = require('../config/config');
 const users = require('../models').users;
 const jwt = require('../services/jwt');
 const nodemailer = require("nodemailer");
 const bcrypt = require('bcrypt');
 const Cryptr = require('cryptr');
-const cryptr = new Cryptr('86505c4d73769b882913bb93fdab5cb1e26bb');
+const cryptr = new Cryptr(config.key);
 const saltRounds = 10;
 const atob = require('atob');
 const fs = require('fs');
@@ -16,7 +17,9 @@ const user_reading_lists = require('../models').user_reading_lists;
 const invitations = require('../models').invitations;
 const novels_collaborators = require('../models').novels_collaborators;
 
-/*function create(req, res) {  Este create tiene la función de enviar email de confirmación
+
+// Esta función create tiene la función de enviar email de confirmación
+/*function create(req, res) {
     if (req.body.user_pass == req.body.user_confirm_pass) {
         console.log(req.body);
         var user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -29,7 +32,7 @@ const novels_collaborators = require('../models').novels_collaborators;
                 } else {
                     hashed_password = hash;
                     user.update({
-                        user_verification_key: user_verification_key,
+                        user_verification_key: crypted_verification_key,
                         user_pass: hashed_password
                     }).then(() => {
                         res.status(200).send({ user });
@@ -84,7 +87,7 @@ function create(req, res) {
                 } else {
                     hashed_password = hash;
                     user.update({
-                        user_verification_key: user_verification_key,
+                        user_verification_key: crypted_verification_key,
                         user_pass: hashed_password
                     }).then(() => {
                         res.status(200).send({ user });
@@ -224,7 +227,7 @@ function login(req, res) {
             }
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Error, Usuario o contraseña incorrectos' });
+        res.status(401).send({ message: 'Error, Usuario o contraseña incorrectos' });
     });
 }
 

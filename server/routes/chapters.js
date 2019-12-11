@@ -1,7 +1,6 @@
 /*jshint esversion: 6 */
 const novelsController = require('../controllers').novels;
 const md_auth = require('../authenticated/authenticated');
-const cm = require('connect-multiparty');
 
 module.exports = (app) => {
     app.get('/api/novel/:id/chapters', novelsController.getChapters);
