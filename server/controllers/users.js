@@ -1,24 +1,29 @@
 /*jshint esversion: 6 */
 var config = require('../config/config');
+// Models
+const user_reading_lists = require('../models').user_reading_lists;
+const invitations = require('../models').invitations;
+const novels_collaborators = require('../models').novels_collaborators;
 const users = require('../models').users;
-const jwt = require('../services/jwt');
-const nodemailer = require("nodemailer");
+// Sequelize
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
+// Encrypters
 const bcrypt = require('bcrypt');
 const Cryptr = require('cryptr');
 const cryptr = new Cryptr(config.key);
 const saltRounds = 10;
+// Json web tokens
+const jwt = require('../services/jwt');
+// More requires
+const nodemailer = require("nodemailer");
 const atob = require('atob');
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
 const path = require('path');
-const Sequelize = require('sequelize');
-const Op = Sequelize.Op;
-const user_reading_lists = require('../models').user_reading_lists;
-const invitations = require('../models').invitations;
-const novels_collaborators = require('../models').novels_collaborators;
 
 
-// Esta función create tiene la función de enviar email de confirmación
+// Esta función create tiene la función de enviar email de confirmación deshabilitada temporalmente *nodemailer*
 /*function create(req, res) {
     if (req.body.user_pass == req.body.user_confirm_pass) {
         console.log(req.body);

@@ -1,17 +1,18 @@
 /*jshint esversion: 6 */
+//Models
+const novels_collaborators = require('../models').novels_collaborators;
+const novels_ratings = require('../models').novels_ratings;
 const novels = require('../models').novels;
 const chapters = require('../models').chapters;
 const genres_novels = require('../models').genres_novels;
 const genres = require('../models').genres;
+// More requires
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
 const path = require('path');
-const novels_collaborators = require('../models').novels_collaborators;
-const novels_ratings = require('../models').novels_ratings;
+//Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-
-
 // home functions
 
 function getAllChaptersByDate(req, res) {

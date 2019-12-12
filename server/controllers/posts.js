@@ -1,4 +1,5 @@
 /*jshint esversion: 6 */
+// Models
 const posts = require('../models').posts;
 const posts_comments = require('../models').posts_comments;
 

@@ -1,4 +1,5 @@
 /*jshint esversion: 6 */
+// Models
 const forum = require('../models').forum;
 
 function create(req, res) {

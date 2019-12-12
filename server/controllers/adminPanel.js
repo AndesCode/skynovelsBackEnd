@@ -1,12 +1,12 @@
 /*jshint esversion: 6 */
+// Models
 const forum = require('../models').forum;
 const posts = require('../models').posts;
 const users = require('../models').users;
 const posts_comments = require('../models').posts_comments;
+// Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-
-
 
 function adminVerification(req, res) {
     body = req.body;
