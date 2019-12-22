@@ -28,4 +28,7 @@ module.exports = (app) => {
     app.get('/api/rating-novel/:id', novelsController.getNovelsRatings);
     app.post('/api/create-novel-rate', md_auth.auth, novelsController.postNovelRating);
     app.get('/api/novel-comments/:id', novelsController.getNovelComments);
+
+    app.get('/api/novel-test/:id', novelsController.getNovelEdition);
+    
 };

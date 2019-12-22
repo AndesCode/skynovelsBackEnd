@@ -160,7 +160,35 @@ function uploadNovelImage(req, res) {
 function getNovel(req, res) {
     var id = req.params.id;
     novels.sequelize.query('SELECT (SELECT users.user_login from users WHERE users.id = novels.nvl_author) AS user_author_login, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ", " ) AS CONCAT FROM genres, genres_novels, novels n WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres ,novels.id, novels.nvl_name, novels.nvl_content, novels.nvl_author, novels.nvl_status, novels.nvl_writer, novels.nvl_name, novels.nvl_img, novels.nvl_comment_count, novels.nvl_title, (SELECT COUNT(chapters.nvl_id) FROM chapters WHERE chapters.nvl_id = novels.id LIMIT 1) AS chp_count, novels.updatedAt, novels.createdAt, novels.nvl_rating FROM novels WHERE novels.nvl_name = ?', { replacements: [id], type: novels.sequelize.QueryTypes.SELECT }).then(novel => {
-        res.status(200).send({ novel });
+        if (novel.length > 0) {
+            novels_collaborators.sequelize.query('SELECT *, (SELECT users.user_login FROM users WHERE users.id = novels_collaborators.user_id) AS user_collaborator_login FROM novels_collaborators WHERE novels_collaborators.novel_id = ?', { replacements: [novel[0].id], type: novels_collaborators.sequelize.QueryTypes.SELECT }).then(collaborators => {
+                genres_novels.sequelize.query("SELECT genres.id, genres.genre_name FROM genres, genres_novels, novels WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = ?", { replacements: [novel[0].id], type: genres_novels.sequelize.QueryTypes.SELECT }).then(genres => {
+                    chapters.sequelize.query("SELECT * FROM chapters WHERE nvl_id = ? ORDER BY chapters.createdAt ASC", { replacements: [novel[0].id], type: novels.sequelize.QueryTypes.SELECT }).then(chapters => {
+                        res.status(200).send({ novel, collaborators, genres, chapters});
+                    }).catch(err => {
+                        res.status(500).send({ message: 'Ocurrio un error al buscar los capitulos de la novela' + err });
+                    });          
+                }).catch(err => {
+                    res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
+                });      
+            }).catch(err => {
+                res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
+            });
+        } else {
+            res.status(404).send({ message: 'No se encontro ninguna novela por el nombre especificado'});
+        }
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
+    });
+}
+
+function getNovelEdition(req, res) {
+    var id = req.params.id;
+    console.log('hola');
+    novels.sequelize.query('SELECT (SELECT users.user_login from users WHERE users.id = novels.nvl_author) AS user_author_login, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ", " ) AS CONCAT FROM genres, genres_novels, novels n WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres ,novels.id, novels.nvl_name, novels.nvl_content, novels.nvl_author, novels.nvl_status, novels.nvl_writer, novels.nvl_name, novels.nvl_img, novels.nvl_comment_count, novels.nvl_title, (SELECT COUNT(chapters.nvl_id) FROM chapters WHERE chapters.nvl_id = novels.id LIMIT 1) AS chp_count, novels.updatedAt, novels.createdAt, novels.nvl_rating FROM novels WHERE novels.nvl_name = ?', { replacements: [id], type: novels.sequelize.QueryTypes.SELECT }).then(novel => {
+        novels_collaborators.sequelize.query('SELECT *, (SELECT users.user_login FROM users WHERE users.id = novels_collaborators.user_id) AS user_collaborator_login FROM novels_collaborators WHERE novels_collaborators.novel_id = ?', { replacements: [novel[0].id], type: novels_collaborators.sequelize.QueryTypes.SELECT }).then(collaborators => {
+            res.status(200).send({ novel, collaborators });
+        })   
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
     });
@@ -528,5 +556,6 @@ module.exports = {
     deleteChapter,
     getNovelsRatings,
     getNovelComments,
-    postNovelRating
+    postNovelRating,
+    getNovelEdition
 };
