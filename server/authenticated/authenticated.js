@@ -14,7 +14,7 @@ function auth(req, res, next) {
     } else {
         var token = req.headers.authorization.replace(/['"]+/g, '');
 
-        var jwtData = token.split('.')[1];
+        const jwtData = token.split('.')[1];
         var decodedJwtData = JSON.parse(atob(jwtData));
         var user_id = decodedJwtData.sub;
 
