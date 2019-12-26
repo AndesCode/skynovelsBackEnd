@@ -31,6 +31,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
             unique: true,
+            isEmail: true,
             validate: {
                 isUnique: function(value, next) {
                     var self = this;

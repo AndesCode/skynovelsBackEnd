@@ -46,7 +46,6 @@ function create(req, res) {
 
 function update(req, res) {
     var body = req.body;
-    console.log(body);
     novels.findByPk(body.id).then(novel => {
         novel.update(body).then(() => {
             res.status(200).send({ novel });
@@ -307,7 +306,7 @@ function getUserChapter(req, res) {
     chapters.sequelize.query('SELECT * FROM chapters WHERE chapters.id = ? ORDER BY chapters.createdAt ASC', { replacements: [id], type: chapters.sequelize.QueryTypes.SELECT }).then(chapters => {
         res.status(200).send({ chapters });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un erro al buscar el capitulo' + err });
+        res.status(404).send({ message: 'Ocurrio un error al buscar el capitulo ' + err });
     });
 }
 
@@ -319,31 +318,30 @@ function createChapter(req, res) {
             [Op.and]: [{ nvl_id: body.nvl_id }]
         }
     }).then(chapter => {
-        if (chapter == null) {
+        /*if (chapter == null) {*/
             chapters.create(body).then(chapter => {
                 res.status(200).send({ chapter });
             }).catch(err => {
                 res.status(500).send({ message: 'Ocurrio un error al guardar el capitulo ' + err });
             });
-        } else {
-            res.status(500).send({ message: 'Ya existe un capitulo con ese nombre o numero de capitulo' });
-        }
+        /*} else {
+            res.status(400).send({ message: 'Ya existe un capitulo con ese nombre o numero de capitulo' });
+        }*/
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error de verificación de capitulo ' + err });
+        res.status(404).send({ message: 'Ocurrio un error en la verificacion del capitulo ' + err });
     });
 }
 
 function updateChapter(req, res) {
     var id = req.params.id;
     var body = req.body;
-    console.log(id);
-    console.log(body);
+
 
     chapters.findByPk(id).then(chapter => {
         chapter.update(body).then(() => {
             res.status(200).send({ chapter });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar la capitulos' });
+            res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulos ' + err });
         });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });

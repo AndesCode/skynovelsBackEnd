@@ -8,7 +8,27 @@ module.exports = (sequelize, DataTypes) => {
         },
         chp_author: DataTypes.INTEGER,
         nvl_id: DataTypes.INTEGER,
-        chp_number: DataTypes.INTEGER,
+        chp_number: {
+            type: DataTypes.INTEGER,
+            validate: {
+                isUniqueNovelChapter: function(value, next) {
+                    var self = this;
+                    chapters.findOne({ where: {chp_number: value} })
+                        .then(function(chapter) {
+                            // console.log(chapter);
+                            if (chapter && self.nvl_id === chapter.nvl_id) {
+                                console.log(chapter.nvl_id);
+                                console.log(self.nvl_id);
+                                return next({ message: 'error, ya tienes un capitulo con este numero de capitulo' });
+                            }
+                            return next();
+                        })
+                        .catch(function(err) {
+                            return next(err);
+                        });
+                }
+            }
+        },
         chp_content: DataTypes.TEXT,
         chp_review: DataTypes.TEXT,
         chp_title: DataTypes.TEXT,
