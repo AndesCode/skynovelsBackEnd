@@ -13,12 +13,12 @@ module.exports = (sequelize, DataTypes) => {
             validate: {
                 isUniqueNovelChapter: function(value, next) {
                     var self = this;
-                    chapters.findOne({ where: {chp_number: value} })
+                    chapters.findOne({ where: { chp_number: value } })
                         .then(function(chapter) {
                             // console.log(chapter);
                             if (chapter && self.nvl_id === chapter.nvl_id) {
-                                console.log(chapter.nvl_id);
-                                console.log(self.nvl_id);
+                                // console.log(chapter.nvl_id);
+                                // console.log(self.nvl_id);
                                 return next({ message: 'error, ya tienes un capitulo con este numero de capitulo' });
                             }
                             return next();
@@ -39,6 +39,12 @@ module.exports = (sequelize, DataTypes) => {
 
 
 
+    });
+
+    chapters.beforeCreate((chapter, options) => {
+        console.log('Ejecutando before create');
+        console.log(chapter.nvl_id);
+        // console.log(options);
     });
 
     return chapters;
