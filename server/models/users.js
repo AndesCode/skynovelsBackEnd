@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
             unique: true,
             validate: {
                 isUnique: function(value, next) {
-                    var self = this;
+                    const self = this;
                     users.findOne({ where: { user_login: value } })
                         .then(function(users) {
                             if (users && self.id !== users.id) {
@@ -30,18 +30,23 @@ module.exports = (sequelize, DataTypes) => {
                         .catch(function(err) {
                             return next(err);
                         });
-                }
+                },
+                is: /^[a-zA-Z\u00d1\u00f1]{3}(?=.{2,12}$)(?![0-9])[a-zA-Z0-9\u00d1\u00f1]+$/i
             }
         },
-        user_pass: DataTypes.STRING,
+        user_pass: {
+            type: DataTypes.STRING,
+            validate: {
+                is: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/i
+            }
+        },
         user_email: {
             type: DataTypes.STRING,
             allowNull: false,
             unique: true,
-            isEmail: true,
             validate: {
                 isUnique: function(value, next) {
-                    var self = this;
+                    const self = this;
                     users.findOne({ where: { user_email: value } })
                         .then(function(users) {
                             if (users && self.id !== users.id) {
@@ -52,7 +57,8 @@ module.exports = (sequelize, DataTypes) => {
                         .catch(function(err) {
                             return next(err);
                         });
-                }
+                },
+                isEmail: true
             }
         },
         user_rol: DataTypes.INTEGER,
@@ -60,10 +66,7 @@ module.exports = (sequelize, DataTypes) => {
         user_forum_auth: DataTypes.STRING,
         user_verification_key: DataTypes.STRING,
         user_profile_image: DataTypes.STRING,
-        user_description: DataTypes.STRING,
-        createdAt: DataTypes.DATE,
-        updatedAt: DataTypes.DATE
-
+        user_description: DataTypes.STRING
     });
 
     users.beforeCreate((user, options) => {

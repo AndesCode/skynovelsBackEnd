@@ -302,7 +302,7 @@ function deleteNovelGenres(req, res) {
 
 
 function getUserChapter(req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
     chapters.sequelize.query('SELECT * FROM chapters WHERE chapters.id = ? ORDER BY chapters.createdAt ASC', { replacements: [id], type: chapters.sequelize.QueryTypes.SELECT }).then(chapters => {
         res.status(200).send({ chapters });
     }).catch(err => {
@@ -311,24 +311,10 @@ function getUserChapter(req, res) {
 }
 
 function createChapter(req, res) {
-    var body = req.body;
-    chapters.findOne({
-        where: {
-            [Op.or]: [{ chp_number: body.chp_number }, { chp_title: body.chp_title }],
-            [Op.and]: [{ nvl_id: body.nvl_id }]
-        }
-    }).then(chapter => {
-        /*if (chapter == null) {*/
-            chapters.create(body).then(chapter => {
-                res.status(200).send({ chapter });
-            }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio un error al guardar el capitulo ' + err });
-            });
-        /*} else {
-            res.status(400).send({ message: 'Ya existe un capitulo con ese nombre o numero de capitulo' });
-        }*/
+    chapters.create(req.body).then(chapter => {
+        res.status(200).send({ chapter });
     }).catch(err => {
-        res.status(404).send({ message: 'Ocurrio un error en la verificacion del capitulo ' + err });
+        res.status(500).send({ message: 'Ocurrio un error al guardar el capitulo ' + err });
     });
 }
 
