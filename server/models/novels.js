@@ -36,20 +36,24 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     novels.associate = function(models) {
-        console.log('Inicia asociaciones novelas-capitulos');
-        novels.hasMany(models.chapters, {foreignKey: 'id'});
-    };
-
-    novels.associate = function(models) {
         console.log('Inicia asociaciones novelas-generos');
         novels.belongsToMany(models.genres, {
             through: 'genres_novels',
             as: 'genres',
             foreignKey: 'novel_id'
         });
+        novels.hasMany(models.chapters, {
+            foreignKey: 'nvl_id',
+            as: 'chapters',
+        });
     };
 
     novels.beforeCreate((novel, options) => {
+        novel.nvl_title = novel.nvl_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
+        novel.nvl_name = novel.nvl_title.split(' ').join('-');
+        novel.nvl_name = novel.nvl_name.toLowerCase();
+    });
+    novels.beforeUpdate((novel, options) => {
         novel.nvl_title = novel.nvl_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
         novel.nvl_name = novel.nvl_title.split(' ').join('-');
         novel.nvl_name = novel.nvl_name.toLowerCase();

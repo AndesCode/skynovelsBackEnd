@@ -93,7 +93,10 @@ module.exports = (sequelize, DataTypes) => {
 
     chapters.associate = function(models) {
         console.log('Inicia asociaciones');
-        chapters.belongsTo(models.novels, { foreignKey: 'nvl_id'});
+        chapters.belongsTo(models.novels, {
+            foreignKey: 'nvl_id',
+            as: 'novels'
+        });
     };
 
     chapters.beforeCreate((chapter, options) => {
