@@ -30,5 +30,6 @@ module.exports = (app) => {
     app.get('/api/novel-comments/:id', novelsController.getNovelComments);
 
     app.get('/api/novel-test/:id', novelsController.getNovelEdition);
-    
+
+    app.get('/api/novel-test-association/:id', novelsController.getNovelTest);
 };

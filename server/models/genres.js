@@ -11,5 +11,14 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: false,
     });
 
+    genres.associate = function(models) {
+        console.log('Inicia asociaciones generos-novelas');
+        genres.belongsToMany(models.novels, {
+            through: 'genres_novels',
+            as: 'novels',
+            foreignKey: 'genre_id'
+        });
+    };
+
     return genres;
 };

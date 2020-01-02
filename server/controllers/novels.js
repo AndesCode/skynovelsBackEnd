@@ -182,6 +182,46 @@ function getNovel(req, res) {
     });
 }
 
+function getNovelTest(req, res) {
+    var id = req.params.id;
+
+    novels.findAll({
+        include: [{
+            model: genres,
+            as: 'genres',
+            through: {attributes: []}
+            // where: { id: Sequelize.col('genres_novels.genre_id') }
+        }],
+        where: {
+            id: id
+        }
+    }).then(novels => {
+         res.status(200).send({ novels}); // response final
+    })
+
+
+/*
+
+    novels.findByPk(id).then(novel => {
+        chapters.findAll({
+            where: { nvl_id: id}
+        }).then(chapters => {
+
+
+
+
+            res.status(200).send({ novel, chapters }); // response final
+
+
+
+       }).catch(err => {
+           res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+       });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+    });*/
+}
+
 function getNovelEdition(req, res) {
     var id = req.params.id;
     console.log('hola');
@@ -542,5 +582,7 @@ module.exports = {
     getNovelsRatings,
     getNovelComments,
     postNovelRating,
-    getNovelEdition
+    getNovelEdition,
+    // tests
+    getNovelTest
 };

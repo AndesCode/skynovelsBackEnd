@@ -24,7 +24,7 @@ require('./server/routes/chapters')(app);
 require('./server/routes/posts')(app);
 require('./server/routes/forum')(app);
 require('./server/routes/adminPanel')(app);
-// View engine setu
+// View engine setup
 app.engine('handlebards', exphbs());
 app.set('view engine', 'handlebars');
 // Static folder
@@ -33,10 +33,10 @@ const port = parseInt(process.env.port, 10) || 3000;
 app.get('*', (req, res) => {
     res.status(200).send({ message: 'Welcome to the server' });
 });
-var server = http.createServer(app);
+const server = http.createServer(app);
 server.listen(port, function() {
-    var host = server.address().address;
-    var port = server.address().port;
+    const host = server.address().address;
+    const port = server.address().port;
     console.log('running at http://' + host + ':' + port);
 });
 module.exports = app;
