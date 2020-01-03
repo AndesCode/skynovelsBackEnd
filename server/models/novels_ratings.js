@@ -12,5 +12,19 @@ module.exports = (sequelize, DataTypes) => {
         rate_comment: DataTypes.CHAR
     });
 
+    novels_ratings.associate = function(models) {
+        console.log('Inicia asociaciones');
+        novels_ratings.belongsTo(models.novels, {
+            foreignKey: 'novel_id',
+            as: 'novels'
+        });
+        novels_ratings.belongsTo(models.users, {
+            foreignKey: 'user_id',
+            as: 'user'
+        });
+    };
+
+
+
     return novels_ratings;
 };

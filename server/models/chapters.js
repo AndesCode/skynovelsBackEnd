@@ -97,6 +97,10 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'nvl_id',
             as: 'novels'
         });
+        chapters.belongsTo(models.users, {
+            foreignKey: 'chp_author',
+            as: 'user'
+        });
     };
 
     chapters.beforeCreate((chapter, options) => {

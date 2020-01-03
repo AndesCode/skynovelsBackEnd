@@ -11,5 +11,16 @@ module.exports = (sequelize, DataTypes) => {
         nvl_chapter: DataTypes.INTEGER,
     });
 
+    user_reading_lists.associate = function(models) {
+        user_reading_lists.belongsTo(models.users, {
+            foreignKey: 'user_id',
+            as: 'user'
+        });
+        user_reading_lists.belongsTo(models.novels, {
+            foreignKey: 'nvl_id',
+            as: 'novels'
+        });
+    };
+
     return user_reading_lists;
 };

@@ -46,6 +46,23 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'nvl_id',
             as: 'chapters',
         });
+        novels.belongsToMany(models.users, {
+            through: 'novels_collaborators',
+            as: 'collaborators',
+            foreignKey: 'novel_id'
+        });
+        novels.hasMany(models.novels_ratings, {
+            foreignKey: 'novel_id',
+            as: 'novel_ratings',
+        });
+        novels.belongsTo(models.users, {
+            foreignKey: 'nvl_author',
+            as: 'author'
+        });
+        novels.hasMany(models.user_reading_lists, {
+            foreignKey: 'nvl_id',
+            as: 'user_reading_lists',
+        });
     };
 
     novels.beforeCreate((novel, options) => {

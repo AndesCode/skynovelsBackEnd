@@ -4,8 +4,10 @@ const novels_collaborators = require('../models').novels_collaborators;
 const novels_ratings = require('../models').novels_ratings;
 const novels = require('../models').novels;
 const chapters = require('../models').chapters;
+const users = require('../models').users;
 const genres_novels = require('../models').genres_novels;
 const genres = require('../models').genres;
+const user_reading_lists = require('../models').user_reading_lists;
 // More requires
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
@@ -14,6 +16,141 @@ const path = require('path');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 // home functions
+
+
+
+
+// TESTS!!
+
+function getNovelTest(req, res) {
+    var id = req.params.id;
+    novels.findByPk(id, {
+        include: [{
+            model: genres,
+            as: 'genres',
+            through: { attributes: [] }
+        }, {
+            model: chapters,
+            as: 'chapters',
+        }, {
+            model: novels_ratings,
+            as: 'novel_ratings',
+            include: [{
+                model: users,
+                as: 'user',
+                attributes: ['user_login']
+            }]
+        }, {
+            model: users,
+            as: 'collaborators',
+            attributes: ['id', 'user_login'],
+            through: { attributes: [] },
+        }, {
+            model: users,
+            as: 'author',
+            attributes: ['id', 'user_login']
+        }, {
+            model: user_reading_lists,
+            as: 'user_reading_lists',
+            include: [{
+                model: users,
+                as: 'user',
+                attributes: ['user_login']
+            }]
+        }]
+    }).then(novel => {
+        res.status(200).send({ novel });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+    });
+}
+
+function getNovelsTest(req, res) {
+    novels.findAll({
+        include: [{
+            model: genres,
+            as: 'genres',
+            through: { attributes: [] }
+        }, {
+            model: chapters,
+            as: 'chapters',
+            attributes: ['id']
+        }, {
+            model: novels_ratings,
+            as: 'novel_ratings',
+            include: [{
+                model: users,
+                as: 'user',
+                attributes: ['user_login']
+            }]
+        }, {
+            model: users,
+            as: 'collaborators',
+            attributes: ['id', 'user_login'],
+            through: { attributes: [] },
+        }, {
+            model: users,
+            as: 'author',
+            attributes: ['id', 'user_login']
+        }, {
+            model: user_reading_lists,
+            as: 'user_reading_lists',
+            include: [{
+                model: users,
+                as: 'user',
+                attributes: ['user_login']
+            }]
+        }],
+    }).then(novels => {
+        res.status(200).send({ novels });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+    });
+}
+
+function createNovelTest(req, res) {
+    const body = req.body;
+    console.log(body);
+    const genresTest = [1, 2];
+    console.log(genresTest[1]);
+    novels.create(body).then(novel => {
+        if (genresTest && genresTest.length > 0) {
+            console.log(genresTest);
+            novel.setGenres(genresTest);
+        }
+        res.status(200).send({ novel });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
+    });
+}
+
+function updateNovelTest(req, res) {
+    const body = req.body;
+    novels.findByPk(body.id).then(novel => {
+        novel.update(body).then(() => {
+            // variables deberian borrarse y ser remplazadas por arrays enviados desde el front-end
+            novel.genresTest = [2];
+            novel.new_collaborator = [10];
+            //----------------------------- fin de variables de prueba
+            if (novel.genresTest && novel.genresTest.length > 0) {
+                console.log(novel.genresTest);
+                novel.setGenres(novel.genresTest);
+            }
+            if (novel.new_collaborator && novel.new_collaborator.length > 0) {
+                console.log(novel.new_collaborator);
+                novel.addCollaborator(novel.new_collaborator);
+            }
+            res.status(200).send({ novel });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+    });
+}
+
+
+// -------------------------------------------------------------------------------------------------------------
 
 function getAllChaptersByDate(req, res) {
     chapters.sequelize.query("SELECT chapters.id, DATE_FORMAT(chapters.createdAt, '%d %M, %Y') AS chp_created_date, chapters.chp_title, chp_number, novels.nvl_title FROM chapters, novels WHERE chapters.nvl_id = novels.id ORDER BY chapters.createdAt DESC", { type: novels.sequelize.QueryTypes.SELECT }).then(chapters => {
@@ -181,89 +318,6 @@ function getNovel(req, res) {
         res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
     });
 }
-
-
-
-// TESTS!!
-
-function getNovelTest(req, res) {
-    var id = req.params.id;
-    novels.findByPk(id, {
-        include: [{
-            model: genres,
-            as: 'genres',
-            through: { attributes: [] }
-        }, {
-            model: chapters,
-            as: 'chapters',
-            // through: { attributes: [] }
-        }],
-    }).then(novel => {
-        res.status(200).send({ novel });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
-    });
-}
-
-function getNovelsTest(req, res) {
-    novels.findAll({
-        attributes: {
-            include: [
-                [Sequelize.fn('COUNT', 'chapters.id'), 'chapters_count']
-            ]
-        },
-        include: [{
-            model: genres,
-            as: 'genres',
-            through: { attributes: [] }
-        }, {
-            model: chapters,
-            as: 'chapters',
-            attributes: []
-        }],
-    }).then(novels => {
-        res.status(200).send({ novels });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
-    });
-}
-
-function createNovelTest(req, res) {
-    const body = req.body;
-    console.log(body);
-    const genresTest = [1, 2];
-    console.log(genresTest[1]);
-    novels.create(body).then(novel => {
-        if (genresTest && genresTest.length > 0) {
-            console.log(genresTest);
-            novel.setGenres(genresTest);
-        }
-        res.status(200).send({ novel });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
-    });
-}
-
-function updateNovelTest(req, res) {
-    const body = req.body;
-    novels.findByPk(body.id).then(novel => {
-        novel.update(body).then(() => {
-            const genresTest = [5, 2];
-            if (genresTest && genresTest.length > 0) {
-                console.log(genresTest);
-                novel.setGenres(genresTest);
-            }
-            res.status(200).send({ novel });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
-    });
-}
-
-
-// -------------------------------------------------------------------------------------------------------------
 
 function getNovelEdition(req, res) {
     var id = req.params.id;

@@ -69,6 +69,35 @@ module.exports = (sequelize, DataTypes) => {
         user_description: DataTypes.STRING
     });
 
+    users.associate = function(models) {
+        console.log('Inicia asociaciones colaboradores-novelas');
+        users.belongsToMany(models.novels, {
+            through: 'novels_collaborators',
+            as: 'collaborations',
+            foreignKey: 'user_id'
+        });
+        users.hasMany(models.invitations, {
+            foreignKey: 'user_id',
+            as: 'invitations',
+        });
+        users.hasMany(models.novels_ratings, {
+            foreignKey: 'user_id',
+            as: 'novels_ratings',
+        });
+        users.hasMany(models.chapters, {
+            foreignKey: 'chp_author',
+            as: 'chapters',
+        });
+        users.hasMany(models.novels, {
+            foreignKey: 'nvl_author',
+            as: 'novels',
+        });
+        users.hasMany(models.user_reading_lists, {
+            foreignKey: 'user_id',
+            as: 'user_reading_lists',
+        });
+    };
+
     users.beforeCreate((user, options) => {
         console.log('Ejecutando before create');
         console.log(user.id);
