@@ -13,19 +13,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
             validate: {
-                /*isValidNovel: function(value, next) {
-                    novels.findOne({ where: { id: value } })
-                        .then(function(novel) {
-                            if (novel) {
-                                return next();
-                            } else {
-                                return next({ message: 'error, No existe una novela para asociar el capitulo' });
-                            }
-                        })
-                        .catch(function(err) {
-                            return next(err);
-                        });
-                },*/
                 isNumeric: true
             }
         },
@@ -54,12 +41,13 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             validate: {
                 isUniqueNovelChapter: function(value, next) {
+                    const self = this;
                     chapters.findOne({
                             where: {
                                 [Op.and]: [{ nvl_id: this.nvl_id }, { chp_number: value }]
                             }
                         }).then(function(chapter) {
-                            if (chapter) {
+                            if (chapter && self.id !== chapter.id) {
                                 return next({ message: 'error, ya tienes un capitulo con este numero de capitulo' });
                             } else {
                                 return next();
@@ -95,11 +83,17 @@ module.exports = (sequelize, DataTypes) => {
         console.log('Inicia asociaciones');
         chapters.belongsTo(models.novels, {
             foreignKey: 'nvl_id',
-            as: 'novels'
+            as: 'novel',
+            onDelete: 'cascade',
+            hooks: true,
         });
         chapters.belongsTo(models.users, {
             foreignKey: 'chp_author',
-            as: 'user'
+            as: 'author'
+        });
+        chapters.hasMany(models.user_reading_lists, {
+            foreignKey: 'nvl_chapter',
+            as: 'users_reading',
         });
     };
 

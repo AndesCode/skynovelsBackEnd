@@ -18,7 +18,11 @@ module.exports = (sequelize, DataTypes) => {
         });
         user_reading_lists.belongsTo(models.novels, {
             foreignKey: 'nvl_id',
-            as: 'novels'
+            as: 'novel'
+        });
+        user_reading_lists.belongsTo(models.chapters, {
+            foreignKey: 'nvl_chapter',
+            as: 'chapter'
         });
     };
 

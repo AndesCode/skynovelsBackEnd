@@ -5,17 +5,15 @@ const cm = require('connect-multiparty');
 const md_upload = cm({ uploadDir: './server/uploads/novels' });
 
 module.exports = (app) => {
-    app.post('/api/new-novel', md_auth.auth, novelsController.create);
+    /*app.post('/api/new-novel', md_auth.auth, novelsController.create);
     app.put('/api/update-novel', md_auth.auth, novelsController.update);
-    app.post('/api/upload-novel-img/:id', [md_auth.auth, md_upload], novelsController.uploadNovelImage);
     app.get('/api/novel/:id', novelsController.getNovel);
     app.get('/api/novels', novelsController.getActiveNovels);
     app.get('/api/all-novels', novelsController.getAllNovels);
     app.post('/api/novels-user', md_auth.auth, novelsController.getUserNovels);
     app.post('/api/novels-collaborators', md_auth.auth, novelsController.getUserCollaborationsNovels);
     app.get('/api/get-novel-collaborators/:id', md_auth.auth, novelsController.getCollaboratorsFromNovel);
-    app.get('/api/novel/image/:novel_img/:thumb', novelsController.getNovelImage);
-    app.delete('/api/delete-novel/:id', md_auth.auth, novelsController.deleteNovel);
+    
     app.get('/api/home-last-novels', novelsController.getAllByDate);
     app.get('/api/novel-genres/:id', novelsController.getNovelGenres);
     app.get('/api/search-novels/:term', novelsController.searchNovels);
@@ -29,10 +27,29 @@ module.exports = (app) => {
     app.post('/api/create-novel-rate', md_auth.auth, novelsController.postNovelRating);
     app.get('/api/novel-comments/:id', novelsController.getNovelComments);
 
-    app.get('/api/novel-test/:id', novelsController.getNovelEdition);
-    // tests
-    app.get('/api/novel-test-association/:id', novelsController.getNovelTest);
-    app.post('/api/new-novel-test', novelsController.createNovelTest);
-    app.put('/api/update-novel-test', novelsController.updateNovelTest);
-    app.get('/api/get-novels-test', novelsController.getNovelsTest);
+    app.get('/api/novel-test/:id', novelsController.getNovelEdition);*/
+
+
+    // Novels
+    app.get('/api/novel/:id', novelsController.getNovel);
+    app.get('/api/novels/:status', novelsController.getNovels);
+    app.get('/api/novel/image/:novel_img/:thumb', md_auth.auth, novelsController.getNovelImage);
+    app.put('/api/update-novel', md_auth.auth, novelsController.updateNovel);
+    app.post('/api/create-novel', md_auth.auth, novelsController.createNovel);
+    app.post('/api/upload-novel-img/:id', [md_auth.auth, md_upload], novelsController.uploadNovelImage);
+    app.delete('/api/delete-novel/:id', md_auth.auth, novelsController.deleteNovel);
+    // chapters
+    app.get('/api/chapter/:id', novelsController.getChapter);
+    app.get('/api/chapters', novelsController.getChapters);
+    app.put('/api/update-chapter', md_auth.auth, novelsController.updateChapter);
+    app.post('/api/create-chapter', md_auth.auth, novelsController.createChapter);
+    app.delete('/api/delete-chapter/:id', md_auth.auth, novelsController.deleteChapter);
+    // Genres
+    app.get('/api/genres', novelsController.getGenres);
+    app.post('/api/create-genre', md_auth.auth, novelsController.createGenre);
+    app.put('/api/update-genre', md_auth.auth, novelsController.updateGenre);
+    app.delete('/api/delete-genre/:id', md_auth.auth, novelsController.deleteGenre);
+
+
+
 };

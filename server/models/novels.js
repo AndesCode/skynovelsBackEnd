@@ -45,6 +45,8 @@ module.exports = (sequelize, DataTypes) => {
         novels.hasMany(models.chapters, {
             foreignKey: 'nvl_id',
             as: 'chapters',
+            onDelete: 'cascade',
+            hooks: true,
         });
         novels.belongsToMany(models.users, {
             through: 'novels_collaborators',
@@ -53,7 +55,7 @@ module.exports = (sequelize, DataTypes) => {
         });
         novels.hasMany(models.novels_ratings, {
             foreignKey: 'novel_id',
-            as: 'novel_ratings',
+            as: 'novel_ratings'
         });
         novels.belongsTo(models.users, {
             foreignKey: 'nvl_author',
