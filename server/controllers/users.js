@@ -23,6 +23,122 @@ const thumb = require('node-thumbnail').thumb;
 const path = require('path');
 
 
+// TESTS
+
+function createUser(req, res) {
+    const body = req.body;
+    if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/.test(body.user_pass)) {
+        res.status(500).send({ message: 'La contraseña no cumple con el parametro regex'});
+        return;
+    }
+    console.log(body);
+    users.create(body).then(user => {
+        const activation_user_key = cryptr.encrypt(user.user_verification_key);
+        res.status(200).send({ activation_user_key }); // Aqui debe ir NodeMailer enviando la clave a traves de una URL
+    }).catch(err => {
+        res.status(500).send({ message: 'Error en el registro del usuario.<br>' + err.message });
+    });
+}
+
+function activateUser(req, res) {
+    const key = req.params.key;
+    const decryptedkey = cryptr.decrypt(key);
+    console.log(decryptedkey);
+    users.findOne({
+        where: {
+            user_verification_key: decryptedkey
+        }
+    }).then(user => {
+        console.log('activando el usuario con el email = ');
+        const new_user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        user.update({
+            user_status: 'Active',
+            user_verification_key: new_user_verification_key
+        }).then(() => {
+            res.status(200).send({ message: 'Usuario activado con exito! bienvenido ' + user.user_login });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio algún error activando el usuario ' + err });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio algún error al encontrar esta clave secreta ' + err });
+    });
+}
+
+function updateUser(req, res) {
+    const body = req.body;
+    users.findByPk(body.id).then(user => {
+        if (body.user_pass) {
+            if (/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/.test(body.user_pass)) {
+                const salt = bcrypt.genSaltSync(saltRounds);
+                body.user_pass = bcrypt.hashSync(body.user_pass, salt);
+                body.user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            } else {
+                res.status(500).send({ message: 'La contraseña no cumple con el parametro regex'});
+                return;
+            }
+        }
+        user.update(body).then(() => {
+            res.status(200).send({ user });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario ' + err });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar el usuario ' + err });
+    });
+}
+
+function deleteUser(req, res) {
+    var id = req.params.id;
+    users.findByPk(id).then(user => {
+        user.destroy({
+            where: {
+                id: id
+            }
+        }).then(user => {
+            res.status(200).send({ user });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al eliminar el usuario' });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario' });
+    });
+}
+
+function login(req, res) {
+    users.findOne({
+        where: {
+            [Op.or]: [{ user_login: req.body.user_login }, { user_email: req.body.user_login }]
+        }
+    }).then(user => {
+        hash = user.dataValues.user_pass;
+        user_password = bcrypt.compare(req.body.user_pass, hash, function(err, response) {
+            if (user && user.dataValues.user_status === 'Active' && response === true) {
+                const token_data = jwt.createToken(user);
+                user.update({
+                    user_verification_key: token_data.key
+                }).then(() => {
+                    res.status(200).send({
+                        token: token_data.token,
+                        // user: user
+                    });
+                }).catch(err => {
+                    res.status(500).send({ message: 'Error al actualizar la key de usuario ' + err });
+                });
+            } else {
+                res.status(401).send({ message: 'Error, Usuario o contraseña incorrectos ' + err });
+            }
+        });
+    }).catch(err => {
+        res.status(401).send({ message: 'Error, Usuario o contraseña incorrectos ' + err });
+    });
+}
+
+
+
+
+
+
+
 // Esta función create tiene la función de enviar email de confirmación deshabilitada temporalmente *nodemailer*
 /*function create(req, res) {
     if (req.body.user_pass == req.body.user_confirm_pass) {
@@ -79,77 +195,6 @@ const path = require('path');
     }
 }*/
 
-function create(req, res) {
-    if (req.body.user_pass === req.body.user_confirm_pass) {
-        console.log(req.body);
-        users.create(req.body).then(user => {
-            res.status(200).send({ user });
-        }).catch(err => {
-            res.status(500).send({ message: 'Error en el registro del usuario.<br>' + err.message });
-        });
-    } else {
-        res.status(500).send({ message: 'La contraseña no coincide con el campo de confirmación de contraseña.<br>' });
-    }
-}
-
-function activateUser(req, res) {
-    var key = req.params.key;
-    var decryptedkey = cryptr.decrypt(key);
-    if (decryptedkey.length > 4) {
-        console.log(decryptedkey);
-        users.findOne({
-            where: {
-                user_verification_key: decryptedkey
-            }
-        }).then(user => {
-            console.log('activando el usuario con el email = ');
-            var new_user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-            user.update({
-                user_status: 'Active',
-                user_verification_key: new_user_verification_key
-            }).then(() => {
-                res.status(200).send({ message: 'Usuario activado con exito! bienvenido ' + user.user_login });
-            }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio algún error activando el usuario ' + err });
-            });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio algún error al encontrar esta clave secreta ' + err });
-        });
-    } else {
-        res.status(500).send({ message: 'Codigo de verificación invalido ' });
-    }
-}
-
-function update(req, res) {
-    var body = req.body;
-    users.findByPk(body.id).then(user => {
-        user.update(body).then(() => {
-            res.status(200).send({ user });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario' });
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar el usuario' });
-    });
-}
-
-function deleteUser(req, res) {
-    var id = req.params.id;
-    users.findByPk(id).then(user => {
-        users.destroy({
-            where: {
-                id: id
-            }
-        }).then(() => {
-            res.status(200).send({ user });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar el usuario' });
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario' });
-    });
-}
-
 function passwordResetRequest(req, res) {
     console.log(req.body);
     users.findOne({
@@ -189,35 +234,7 @@ function passwordResetRequest(req, res) {
     });
 }
 
-function login(req, res) {
-    users.findOne({
-        where: {
-            [Op.or]: [{ user_login: req.body.user_login }, { user_email: req.body.user_login }]
-        }
-    }).then(user => {
-        hash = user.dataValues.user_pass;
-        user_password = bcrypt.compare(req.body.user_pass, hash, function(err, response) {
-            if (user && user.dataValues.user_status == 'Active' && response == true) {
-                var token_data = jwt.createToken(user);
-                var crypted_verification_key = cryptr.encrypt(token_data.key);
-                user.update({
-                    user_verification_key: crypted_verification_key,
-                }).then(() => {
-                    res.status(200).send({
-                        token: token_data.token,
-                        user: user
-                    });
-                }).catch(err => {
-                    res.status(500).send({ message: 'Error al actualizar la key de usuario' });
-                });
-            } else {
-                res.status(401).send({ message: 'Error, Usuario o contraseña incorrectos' });
-            }
-        });
-    }).catch(err => {
-        res.status(401).send({ message: 'Error, Usuario o contraseña incorrectos' });
-    });
-}
+
 
 function getAll(req, res) {
     users.sequelize.query("SELECT id, user_login, user_profile_image, user_email, user_rol, user_status, user_forum_auth, (SELECT COUNT(*) FROM novels WHERE novels.nvl_author = users.id) AS user_novels_count, (SELECT COUNT(*) from chapters where chapters.chp_author = users.id) AS user_chapters_count, (SELECT COUNT(*) FROM novels_collaborators WHERE novels_collaborators.user_id = users.id) AS user_collaborations_count FROM users", {
@@ -262,38 +279,7 @@ function getUserByEmailToken(req, res) {
     });
 }
 
-function updateUserPassword(req, res) {
-    if (req.body.user_pass == req.body.user_confirm_pass) {
-        var id = req.body.user_id;
-        users.findOne({
-            where: {
-                id: id
-            }
-        }).then(user => {
-            var hashed_password = bcrypt.hash(req.body.user_pass, saltRounds, function(err, hash) {
-                if (err) {
-                    console.log('error ' + err);
-                } else {
-                    hashed_password = hash;
-                    var new_user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                    user.update({
-                        user_pass: hashed_password,
-                        user_verification_key: new_user_verification_key
-                    }).then(() => {
-                        res.status(200).send({ user });
-                        console.log('contraseña de usuario ' + user.id + ' actualizada');
-                    }).catch(err => {
-                        res.status(500).send({ message: 'Error al generar la clave secreta de usuario ' + err });
-                    });
-                }
-            });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio algún error al encontrar esta clave secreta ' + err });
-        });
-    } else {
-        res.status(500).send({ message: 'La contraseña no coincide con el campo de confirmación de contraseña.<br>' });
-    }
-}
+
 
 function uploadUserProfileImg(req, res) {
     var id = req.params.id;
@@ -586,10 +572,7 @@ function DeleteNovelCollaborator(req, res) {
 }
 
 module.exports = {
-    create,
-    login,
-    update,
-    deleteUser,
+    /*deleteUser,
     getAll,
     activateUser,
     getUser,
@@ -608,5 +591,12 @@ module.exports = {
     getUserInvitations,
     createNovelCollaborator,
     updateUserInvitation,
-    DeleteNovelCollaborator
+    DeleteNovelCollaborator*/
+
+    createUser,
+    activateUser,
+    login,
+    updateUser,
+    deleteUser
+
 };

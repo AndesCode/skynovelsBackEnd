@@ -36,9 +36,10 @@ module.exports = (sequelize, DataTypes) => {
         },
         user_pass: {
             type: DataTypes.STRING,
-            validate: {
+            allowNull: false
+            /*validate: {
                 is: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/i
-            }
+            }*/
         },
         user_email: {
             type: DataTypes.STRING,
@@ -99,14 +100,11 @@ module.exports = (sequelize, DataTypes) => {
     };
 
     users.beforeCreate((user, options) => {
-        console.log('Ejecutando before create');
-        console.log(user.id);
-        const user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        const crypted_verification_key = cryptr.encrypt(user_verification_key);
-        user.user_verification_key = crypted_verification_key;
         const salt = bcrypt.genSaltSync(saltRounds);
+        user.user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);    
         user.user_pass = bcrypt.hashSync(user.user_pass, salt);
         // console.log(options);
     });
+
     return users;
 };

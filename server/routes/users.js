@@ -5,10 +5,8 @@ const cm = require('connect-multiparty');
 const md_upload = cm({ uploadDir: './server/uploads/users' });
 
 module.exports = (app) => {
-    app.post('/api/create-user', userController.create);
-    app.put('/api/update-user', md_auth.auth, userController.update);
-    app.delete('/api/delete-user/:id', md_auth.adminAuth, userController.deleteUser);
-    app.post('/api/login', userController.login);
+    /*
+    
     app.get('/api/users', md_auth.auth, userController.getAll);
     app.get('/api/user/email-verification/:key', userController.activateUser);
     app.post('/api/user/password-reset', userController.passwordResetRequest);
@@ -27,5 +25,11 @@ module.exports = (app) => {
     app.put('/api/update-user-invitation', md_auth.auth, userController.updateUserInvitation);
     app.get('/api/get-user-invitations/:id', md_auth.auth, userController.getUserInvitations);
     app.post('/api/create-novel-collaborator', md_auth.auth, userController.createNovelCollaborator);
-    app.delete('/api/delete-novel-collaborator/:id', md_auth.auth, userController.DeleteNovelCollaborator);
+    app.delete('/api/delete-novel-collaborator/:id', md_auth.auth, userController.DeleteNovelCollaborator);*/
+
+    app.post('/api/create-user', userController.createUser);
+    app.post('/api/login', userController.login);
+    app.post('/api/activate-user/:key', userController.activateUser);
+    app.put('/api/update-user', md_auth.auth, userController.updateUser);
+    app.delete('/api/delete-user/:id', md_auth.adminAuth, userController.deleteUser);
 };

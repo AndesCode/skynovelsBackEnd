@@ -1,11 +1,9 @@
 /*jshint esversion: 6 */
 //Models
-const novels_collaborators = require('../models').novels_collaborators;
 const novels_ratings = require('../models').novels_ratings;
 const novels = require('../models').novels;
 const chapters = require('../models').chapters;
 const users = require('../models').users;
-const genres_novels = require('../models').genres_novels;
 const genres = require('../models').genres;
 const user_reading_lists = require('../models').user_reading_lists;
 // More requires
@@ -15,10 +13,6 @@ const path = require('path');
 //Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-// home functions
-
-
-
 
 // Novels
 
@@ -32,6 +26,7 @@ function getNovel(req, res) {
         }, {
             model: chapters,
             as: 'chapters',
+            attributes: ['id', 'chp_title', 'chp_number']
         }, {
             model: novels_ratings,
             as: 'novel_ratings',
@@ -498,393 +493,25 @@ function deleteGenre(req, res) {
     });
 }
 
-
-
-
-
-
-
-// -------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-function getAllChaptersByDate(req, res) {
-    chapters.sequelize.query("SELECT chapters.id, DATE_FORMAT(chapters.createdAt, '%d %M, %Y') AS chp_created_date, chapters.chp_title, chp_number, novels.nvl_title FROM chapters, novels WHERE chapters.nvl_id = novels.id ORDER BY chapters.createdAt DESC", { type: novels.sequelize.QueryTypes.SELECT }).then(chapters => {
-        res.status(200).send({ chapters });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un erro al buscar el capitulo' + err });
-    });
-}
-
-function getAllByDate(req, res) {
-    novels.findAll({
-        order: [
-            ['createdAt', 'DESC']
-        ]
-    }).then(novels => {
-        res.status(200).send({ novels });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
-    });
-}
-
-function create(req, res) {
-    var body = req.body;
+function createNovelRating(req, res) {
+    const body = req.body;
+    console.log(body);
+    // variables deberian borrarse y ser remplazadas por arrays enviados desde el front-end
+    const genresTest = [2];
+    //----------------------------- fin de variables de prueba
+    console.log(genresTest[1]);
     novels.create(body).then(novel => {
+        if (genresTest && genresTest.length > 0) {
+            console.log(genresTest);
+            novel.setGenres(genresTest);
+        }
         res.status(200).send({ novel });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al guardar la novela' + err });
+        res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
     });
 }
-
-function update(req, res) {
-    var body = req.body;
-    novels.findByPk(body.id).then(novel => {
-        novel.update(body).then(() => {
-            res.status(200).send({ novel });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
-    });
-}
-
-function uploadNovelImageOld(req, res) {
-    var id = req.params.id;
-    if (req.files) {
-        var file_path = req.files.novel_image.path;
-        var file_split = file_path.split('\\');
-        var file_name = file_split[3];
-        var ext_split = file_name.split('\.');
-        var file_ext = ext_split[1];
-        if (file_ext == 'jpg') {
-            if (req.body.old_novel_image) {
-                console.log('deleting old image from the novel');
-                var old_img = req.body.old_novel_image;
-                old_file_path = './server/uploads/novels/' + old_img;
-                old_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
-                console.log(old_file_path);
-                console.log(old_file_thumb_path);
-                fs.exists(old_file_path, (exists) => {
-                    if (exists) {
-                        fs.unlink(old_file_path, (err) => {
-                            if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' + err });
-                            } else {
-                                console.log('imagen de novela eliminada');
-                            }
-                        });
-                    } else {
-                        console.log('archivo con el nombre de imagen de novela inexistente.');
-                    }
-                });
-                fs.exists(old_file_thumb_path, (exists) => {
-                    if (exists) {
-                        fs.unlink(old_file_thumb_path, (err) => {
-                            if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo.' + err });
-                            } else {
-                                console.log('thumb de novela eliminada');
-                            }
-                        });
-                    } else {
-                        console.log('archivo con el nombre de imagen de novela inexistente.');
-                    }
-                });
-            } else {
-                console.log('creating a new image in db');
-            }
-            var novel_image = {};
-            novel_image.nvl_img = file_name;
-
-            novels.findByPk(id).then(novel => {
-                novel.update(novel_image).then(() => {
-
-                    var newPath = './server/uploads/novels/' + file_name;
-                    var thumbPath = './server/uploads/novels/thumbs';
-
-                    thumb({
-                        source: path.resolve(newPath),
-                        destination: path.resolve(thumbPath),
-                        width: 210,
-                        height: 280,
-                        suffix: ''
-                    }).then(() => {
-                        res.status(200).send({ novel });
-                    }).catch(err => {
-                        fs.unlink(file_path, (err) => {
-                            if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
-                            }
-                        });
-                        res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail.' });
-                    });
-                }).catch(err => {
-                    fs.unlink(file_path, (err) => {
-                        if (err) {
-                            res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                        }
-                    });
-                    res.status(500).send({ message: 'Ocurrio un error al actualziar la novela.' });
-                });
-            }).catch(err => {
-                fs.unlink(file_path, (err) => {
-                    if (err) {
-                        res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                    }
-                });
-                res.status(500).send({ message: 'No existe la novela.' });
-            });
-        } else {
-            fs.unlink(file_path, (err) => {
-                if (err) {
-                    res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                }
-            });
-            res.status(500).send({ message: 'La extensión del archivo no es valida.' });
-        }
-    } else {
-        res.status(400).send({ message: 'Debe Seleccionar una novela.' });
-    }
-}
-
-function getNovelOld(req, res) {
-    var id = req.params.id;
-    novels.sequelize.query('SELECT (SELECT users.user_login from users WHERE users.id = novels.nvl_author) AS user_author_login, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ", " ) AS CONCAT FROM genres, genres_novels, novels n WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres ,novels.id, novels.nvl_name, novels.nvl_content, novels.nvl_author, novels.nvl_status, novels.nvl_writer, novels.nvl_name, novels.nvl_img, novels.nvl_comment_count, novels.nvl_title, (SELECT COUNT(chapters.nvl_id) FROM chapters WHERE chapters.nvl_id = novels.id LIMIT 1) AS chp_count, novels.updatedAt, novels.createdAt, novels.nvl_rating FROM novels WHERE novels.nvl_name = ?', { replacements: [id], type: novels.sequelize.QueryTypes.SELECT }).then(novel => {
-        if (novel.length > 0) {
-            novels_collaborators.sequelize.query('SELECT *, (SELECT users.user_login FROM users WHERE users.id = novels_collaborators.user_id) AS user_collaborator_login FROM novels_collaborators WHERE novels_collaborators.novel_id = ?', { replacements: [novel[0].id], type: novels_collaborators.sequelize.QueryTypes.SELECT }).then(collaborators => {
-                genres_novels.sequelize.query("SELECT genres.id, genres.genre_name FROM genres, genres_novels, novels WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = ?", { replacements: [novel[0].id], type: genres_novels.sequelize.QueryTypes.SELECT }).then(genres => {
-                    chapters.sequelize.query("SELECT * FROM chapters WHERE nvl_id = ? ORDER BY chapters.createdAt ASC", { replacements: [novel[0].id], type: novels.sequelize.QueryTypes.SELECT }).then(chapters => {
-                        // chapters id, chp_author, chp_number, chp_title, chp_status, createdAt, updatedAt
-                        res.status(200).send({ novel, collaborators, genres, chapters });
-                    }).catch(err => {
-                        res.status(500).send({ message: 'Ocurrio un error al buscar los capitulos de la novela' + err });
-                    });
-                }).catch(err => {
-                    res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
-                });
-            }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
-            });
-        } else {
-            res.status(404).send({ message: 'No se encontro ninguna novela por el nombre especificado' });
-        }
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
-    });
-}
-
-function getNovelEdition(req, res) {
-    var id = req.params.id;
-    console.log('hola');
-    novels.sequelize.query('SELECT (SELECT users.user_login from users WHERE users.id = novels.nvl_author) AS user_author_login, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ", " ) AS CONCAT FROM genres, genres_novels, novels n WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres ,novels.id, novels.nvl_name, novels.nvl_content, novels.nvl_author, novels.nvl_status, novels.nvl_writer, novels.nvl_name, novels.nvl_img, novels.nvl_comment_count, novels.nvl_title, (SELECT COUNT(chapters.nvl_id) FROM chapters WHERE chapters.nvl_id = novels.id LIMIT 1) AS chp_count, novels.updatedAt, novels.createdAt, novels.nvl_rating FROM novels WHERE novels.nvl_name = ?', { replacements: [id], type: novels.sequelize.QueryTypes.SELECT }).then(novel => {
-        novels_collaborators.sequelize.query('SELECT *, (SELECT users.user_login FROM users WHERE users.id = novels_collaborators.user_id) AS user_collaborator_login FROM novels_collaborators WHERE novels_collaborators.novel_id = ?', { replacements: [novel[0].id], type: novels_collaborators.sequelize.QueryTypes.SELECT }).then(collaborators => {
-            res.status(200).send({ novel, collaborators });
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
-    });
-}
-
-function getUserNovels(req, res) {
-    var id = req.body.user_id;
-    novels.sequelize.query('SELECT novels.id, novels.nvl_author, novels.nvl_status, novels.nvl_name, novels.nvl_title, novels.nvl_content, IFNULL(COUNT(chapters.nvl_id), 0) AS chp_count, novels.nvl_img, novels.updatedAt, novels.createdAt FROM novels LEFT JOIN chapters ON chapters.nvl_id = novels.id WHERE novels.nvl_author = ? GROUP BY novels.id', { replacements: [id], type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
-        res.status(200).send({ novels });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un erro al buscar las novelas' });
-    });
-}
-
-function getUserCollaborationsNovels(req, res) {
-    var id = req.body.user_id;
-    novels.sequelize.query('SELECT novels.updatedAt, novels.id, novels.nvl_author, novels.nvl_status, novels.nvl_name, novels.nvl_title, novels.nvl_content, IFNULL(COUNT(chapters.nvl_id), 0) AS chp_count, novels.nvl_img FROM novels_collaborators, novels LEFT JOIN chapters ON chapters.nvl_id = novels.id WHERE novels.id = novels_collaborators.novel_id AND novels_collaborators.user_id = ? GROUP BY novels.id', { replacements: [id], type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
-        res.status(200).send({ novels });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un erro al buscar las novelas' });
-    });
-}
-
-function getCollaboratorsFromNovel(req, res) {
-    var id = req.params.id;
-    console.log(id);
-    novels_collaborators.sequelize.query('SELECT *, (SELECT users.user_login FROM users WHERE users.id = novels_collaborators.user_id) AS user_collaborator_login FROM novels_collaborators WHERE novels_collaborators.novel_id = ?', { replacements: [id], type: novels_collaborators.sequelize.QueryTypes.SELECT }).then(collaborators => {
-        res.status(200).send({ collaborators });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar los colaboradores de novela ' });
-    });
-}
-
-function getActiveNovels(req, res) {
-
-    novels.sequelize.query("SELECT novels.nvl_writer, novels.createdAt, novels.updatedAt, novels.id, novels.nvl_status, novels.nvl_name, novels.nvl_img, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ', ' ) AS CONCAT FROM genres, genres_novels, novels n WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres , novels.nvl_title, novels.nvl_content, COUNT(chapters.nvl_id) AS chp_count, nvl_rating FROM novels JOIN chapters ON chapters.nvl_id = novels.id AND (novels.nvl_status = 'Finalizada' OR novels.nvl_status = 'Publicada') group by novels.id;", { type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
-        res.status(200).send({ novels });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
-    });
-}
-
-function getAllNovels(req, res) {
-
-    novels.sequelize.query('SELECT novels.nvl_writer, novels.createdAt, novels.updatedAt, novels.id, novels.nvl_author author, (SELECT users.user_login from users where users.id = author) as author_login, novels.nvl_status, novels.nvl_name, novels.nvl_title, novels.nvl_content, IFNULL(COUNT(chapters.nvl_id), 0) AS chp_count, novels.nvl_img FROM novels LEFT JOIN chapters ON chapters.nvl_id = novels.id GROUP BY novels.id', { type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
-        res.status(200).send({ novels });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
-    });
-}
-
-function searchNovels(req, res) {
-    var term = req.params.term;
-    novels.sequelize.query('SELECT novels.id, novels.nvl_status, novels.nvl_name, (SELECT GROUP_CONCAT( ( SELECT genres.genre_name FROM genres WHERE genres.id = genres_novels.genre_id) SEPARATOR ", " ) AS CONCAT FROM genres, genres_novels, novels n WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = n.id) as novel_genres , novels.nvl_title, novels.nvl_content, COUNT(chapters.nvl_id) AS chp_count FROM novels JOIN chapters ON chapters.nvl_id = novels.id AND (novels.nvl_status = "Finalizada" OR novels.nvl_status = "Publicada") AND novels.nvl_title LIKE "%"?"%" group by novels.id', { replacements: [term], type: novels.sequelize.QueryTypes.SELECT }).then(novels => {
-        res.status(200).send({ novels });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' });
-    });
-}
-
-function getNovelGenres(req, res) {
-    var id = req.params.id;
-    genres_novels.sequelize.query("SELECT genres.id, genres.genre_name FROM genres, genres_novels, novels WHERE genres_novels.novel_id = novels.id AND genres.id = genres_novels.genre_id AND genres_novels.novel_id = ?", { replacements: [id], type: genres_novels.sequelize.QueryTypes.SELECT }).then(genres => {
-        res.status(200).send({ genres });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar las novelas' + err });
-    });
-}
-
-function addGenreToNovel(req, res) {
-    var body = req.body;
-    console.log(body);
-    genres_novels.create(body).then(genre => {
-        res.status(200).send({ genre });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al agregar el genero a la novela' + err });
-    });
-}
-
-function deleteNovelGenres(req, res) {
-    var id = req.params.id;
-    console.log(id);
-    genres_novels.findAll({
-        where: {
-            novel_id: id
-        }
-    }).then(genres => {
-        genres_novels.destroy({
-            where: {
-                novel_id: id
-            }
-        }).then(genres => {
-            res.status(200).send({ genres });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar los generos antiguos de la novela ' });
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar los generos antiguos de la novela ' + err });
-    });
-}
-
-
-
-function getUserChapter(req, res) {
-    const id = req.params.id;
-    chapters.sequelize.query('SELECT * FROM chapters WHERE chapters.id = ? ORDER BY chapters.createdAt ASC', { replacements: [id], type: chapters.sequelize.QueryTypes.SELECT }).then(chapters => {
-        res.status(200).send({ chapters });
-    }).catch(err => {
-        res.status(404).send({ message: 'Ocurrio un error al buscar el capitulo ' + err });
-    });
-}
-
-function createChapterOld(req, res) {
-    chapters.create(req.body).then(chapter => {
-        res.status(200).send({ chapter });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al guardar el capitulo ' + err });
-    });
-}
-
-function getNovelsRatings(req, res) {
-    var id = req.params.id;
-    console.log(id);
-    novels_ratings.findAll({
-        where: {
-            novel_id: id
-        }
-    }).then(rates => {
-        res.status(200).send({ rates });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar las clasificaciones de la novela ' + err });
-    });
-}
-
-function getNovelComments(req, res) {
-    var id = req.params.id;
-    console.log(id);
-    novels_ratings.sequelize.query("SELECT novels_ratings.rate_comment, novels_ratings.updatedAt, novels_ratings.createdAt, novels_ratings.user_id, novels_ratings.rate_value, (SELECT users.user_login FROM users WHERE users.id = novels_ratings.user_id) AS user_comment_login from novels_ratings where novels_ratings.novel_id = ?", { replacements: [id], type: novels_ratings.sequelize.QueryTypes.SELECT }).then(novelComments => {
-        res.status(200).send({ novelComments });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error' });
-    });
-}
-
-function postNovelRating(req, res) {
-    var body = req.body;
-    novels_ratings.findOne({
-        where: {
-            novel_id: body.novel_id,
-            user_id: body.user_id
-        }
-    }).then(novel_rating => {
-        if (novel_rating == null) {
-            novels_ratings.create(body).then(rate => {
-                res.status(200).send({ rate });
-            }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio un error al guardar ' + err });
-            });
-        } else {
-            novel_rating.update(body).then(rate => {
-                res.status(200).send({ rate });
-            }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio un error al guardar ' + err });
-            });
-        }
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la invitación' + err });
-    });
-}
-
-
 
 module.exports = {
-    /*create,
-    update,
-    uploadNovelImage,
-    getNovel,
-    getUserNovels,
-    getActiveNovels,
-    getAllNovels,
-    getUserChapter,
-    getNovelImage,
-    deleteNovel,
-    getAllChaptersByDate,
-    getAllByDate,
-    getNovelGenres,
-    searchNovels,
-    getGenres,
-    addGenreToNovel,
-    deleteNovelGenres,
-    getUserCollaborationsNovels,
-    getCollaboratorsFromNovel,
-    getNovelsRatings,
-    getNovelComments,
-    postNovelRating,
-    getNovelEdition,*/
-    // tests
     getNovel,
     getNovels,
     createNovel,
