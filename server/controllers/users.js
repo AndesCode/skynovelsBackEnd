@@ -28,7 +28,7 @@ const path = require('path');
 function createUser(req, res) {
     const body = req.body;
     if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/.test(body.user_pass)) {
-        res.status(500).send({ message: 'La contraseña no cumple con el parametro regex'});
+        res.status(500).send({ message: 'La contraseña no cumple con el parametro regex' });
         return;
     }
     console.log(body);
@@ -73,7 +73,7 @@ function updateUser(req, res) {
                 body.user_pass = bcrypt.hashSync(body.user_pass, salt);
                 body.user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             } else {
-                res.status(500).send({ message: 'La contraseña no cumple con el parametro regex'});
+                res.status(500).send({ message: 'La contraseña no cumple con el parametro regex' });
                 return;
             }
         }
@@ -133,7 +133,54 @@ function login(req, res) {
     });
 }
 
+function passwordResetRequest(req, res) {
+    console.log(req.body);
+    users.findOne({
+        where: {
+            user_email: req.body.req_email,
+        }
+    }).then(user => {
+        const token_data = jwt.createToken(user);
+        user.update({
+            user_verification_key: token_data.key
+        }).then(() => {
+            res.status(200).send({
+                token: token_data.token,
+                // user: user
+            });
+        }).catch(err => {
+            res.status(500).send({ message: 'Error al actualizar la key de usuario ' + err });
+        });
+        /*const transporter = nodemailer.createTransport({
+            host: 'smtp.ethereal.email',
+            port: 587,
+            auth: {
+                user: 'halle.lehner@ethereal.email',
+                pass: 'EQhdryhNC456BX7wKR'
+            }
+        });
 
+        let mailOptions = {
+            from: 'halle.lehner@ethereal.email',
+            to: req.body.user_email,
+            subject: 'Password reset test',
+            // template: '../templates/email-confirmation',
+            text: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + requestToken
+        };
+
+        transporter.sendMail(mailOptions, function(err, data) {
+            if (err) {
+                console.log(err);
+                res.status(500).send({ message: 'Error al enviar el correo ' + err });
+            } else {
+                console.log('Email enviado');
+                res.status(200).send({ message: 'Email enviado con exito' });
+            }
+        });*/
+    }).catch(err => {
+        res.status(500).send({ message: 'Error, No se encuentra el email especificado' });
+    });
+}
 
 
 
@@ -195,44 +242,7 @@ function login(req, res) {
     }
 }*/
 
-function passwordResetRequest(req, res) {
-    console.log(req.body);
-    users.findOne({
-        where: {
-            user_email: req.body.req_email,
-        }
-    }).then(user => {
-        requestToken = jwt.createPasswordResetToken(user);
-        const transporter = nodemailer.createTransport({
-            host: 'smtp.ethereal.email',
-            port: 587,
-            auth: {
-                user: 'halle.lehner@ethereal.email',
-                pass: 'EQhdryhNC456BX7wKR'
-            }
-        });
 
-        let mailOptions = {
-            from: 'halle.lehner@ethereal.email',
-            to: req.body.user_email,
-            subject: 'Password reset test',
-            // template: '../templates/email-confirmation',
-            text: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + requestToken
-        };
-
-        transporter.sendMail(mailOptions, function(err, data) {
-            if (err) {
-                console.log(err);
-                res.status(500).send({ message: 'Error al enviar el correo ' + err });
-            } else {
-                console.log('Email enviado');
-                res.status(200).send({ message: 'Email enviado con exito' });
-            }
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Error, No se encuentra el email especificado' });
-    });
-}
 
 
 

@@ -1,4 +1,7 @@
 /*jshint esversion: 6 */
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
+
 module.exports = (sequelize, DataTypes) => {
     const novels_ratings = sequelize.define('novels_ratings', {
         id: {
@@ -6,10 +9,54 @@ module.exports = (sequelize, DataTypes) => {
             primaryKey: true,
             type: DataTypes.INTEGER
         },
-        user_id: DataTypes.INTEGER,
-        novel_id: DataTypes.TEXT,
-        rate_value: DataTypes.TEXT,
-        rate_comment: DataTypes.CHAR
+        user_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            validate: {
+                isNumeric: true,
+                isUniqueUserRating: function(value, next) {
+                    const self = this;
+                    novels_ratings.findOne({
+                            where: {
+                                [Op.and]: [{ user_id: value }, { novel_id: this.novel_id }]
+                            }
+                        }).then(function(novel_rating) {
+                            if (novel_rating && self.id !== novel_rating.id) {
+                                return next({ message: 'error, el usuario ya ha dejado una clasificacion para la novela' });
+                            } else {
+                                return next();
+                            }
+                        })
+                        .catch(function(err) {
+                            return next(err);
+                        });
+                },
+            }
+        },
+        novel_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            validate: {
+                isNumeric: true
+            }
+        },
+        rate_value: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            validate: {
+                isNumeric: true,
+                max: 5,
+                min: 1
+            }
+        },
+        rate_comment: {
+            type: DataTypes.CHAR,
+            allowNull: false,
+            validate: {
+                len: [5, 256]
+            }
+
+        },
     });
 
     novels_ratings.associate = function(models) {

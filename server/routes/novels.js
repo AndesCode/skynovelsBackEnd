@@ -24,7 +24,8 @@ module.exports = (app) => {
     app.post('/api/create-genre', md_auth.auth, novelsController.createGenre);
     app.put('/api/update-genre', md_auth.auth, novelsController.updateGenre);
     app.delete('/api/delete-genre/:id', md_auth.auth, novelsController.deleteGenre);
-
-
-
+    // Novels ratings
+    app.post('/api/create-novel-rating', md_auth.auth, novelsController.createNovelRating);
+    app.put('/api/update-novel-rating', md_auth.auth, novelsController.updateNovelRating);
+    app.delete('/api/delete-novel-rating/:id', md_auth.auth, novelsController.deleteNovelRating);
 };

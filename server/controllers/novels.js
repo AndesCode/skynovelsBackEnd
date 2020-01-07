@@ -346,7 +346,7 @@ function getChapter(req, res) {
 
 function getChapters(req, res) {
     chapters.findAll({
-        attributes: ['id', 'chp_author', 'nvl_id', 'chp_number', 'chp_title'],
+        attributes: ['id', 'chp_author', 'nvl_id', 'chp_number', 'chp_title', 'createdAt', 'updatedAt'],
         include: [{
             model: novels,
             as: 'novel',
@@ -495,19 +495,41 @@ function deleteGenre(req, res) {
 
 function createNovelRating(req, res) {
     const body = req.body;
-    console.log(body);
-    // variables deberian borrarse y ser remplazadas por arrays enviados desde el front-end
-    const genresTest = [2];
-    //----------------------------- fin de variables de prueba
-    console.log(genresTest[1]);
-    novels.create(body).then(novel => {
-        if (genresTest && genresTest.length > 0) {
-            console.log(genresTest);
-            novel.setGenres(genresTest);
-        }
-        res.status(200).send({ novel });
+    novels_ratings.create(body).then(novel_rating => {
+        res.status(200).send({ novel_rating });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
+        res.status(500).send({ message: 'Ocurrio un error al crear clasificacion de la novela ' + err });
+    });
+}
+
+function updateNovelRating(req, res) {
+    var body = req.body;
+    novels_ratings.findByPk(body.id).then(novel_rating => {
+        novel_rating.update(body).then(() => {
+            res.status(200).send({ novel_rating });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al actualizar la clasificacion de la novela ' + err });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la clasificacion de la novela ' + err });
+    });
+}
+
+function deleteNovelRating(req, res) {
+    var id = req.params.id;
+    console.log(id);
+    novels_ratings.findByPk(id).then(novel_rating => {
+        novel_rating.destroy({
+            where: {
+                id: id
+            }
+        }).then(novel_rating => {
+            res.status(200).send({ novel_rating });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al eliminar la clasificacion de la novela ' + err });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la clasificacion de la novela ' + err });
     });
 }
 
@@ -527,5 +549,8 @@ module.exports = {
     getGenres,
     createGenre,
     updateGenre,
-    deleteGenre
+    deleteGenre,
+    createNovelRating,
+    updateNovelRating,
+    deleteNovelRating
 };
