@@ -20,7 +20,7 @@ function getNovel(req, res) {
     var id = req.params.id;
     novels.findByPk(id, {
         include: [{
-            model: genres,
+            model: novels,
             as: 'genres',
             through: { attributes: [] }
         }, {

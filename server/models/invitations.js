@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
     invitations.associate = function(models) {
         console.log('Inicia asociaciones');
         invitations.belongsTo(models.users, {
-            foreignKey: 'user_id',
+            foreignKey: 'invitation_to_id',
             as: 'users'
         });
     };

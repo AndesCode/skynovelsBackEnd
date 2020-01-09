@@ -37,9 +37,9 @@ module.exports = (sequelize, DataTypes) => {
         user_pass: {
             type: DataTypes.STRING,
             allowNull: false
-            /*validate: {
-                is: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/i
-            }*/
+                /*validate: {
+                    is: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/i
+                }*/
         },
         user_email: {
             type: DataTypes.STRING,
@@ -78,7 +78,7 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'user_id'
         });
         users.hasMany(models.invitations, {
-            foreignKey: 'user_id',
+            foreignKey: 'invitation_to_id',
             as: 'invitations',
         });
         users.hasMany(models.novels_ratings, {
@@ -97,11 +97,19 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'user_id',
             as: 'user_reading_lists',
         });
+        users.hasMany(models.forum_posts, {
+            foreignKey: 'post_author_id',
+            as: 'forum_posts',
+        });
+        users.hasMany(models.posts_comments, {
+            foreignKey: 'comment_author_id',
+            as: 'forum_comments',
+        });
     };
 
     users.beforeCreate((user, options) => {
         const salt = bcrypt.genSaltSync(saltRounds);
-        user.user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);    
+        user.user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         user.user_pass = bcrypt.hashSync(user.user_pass, salt);
         // console.log(options);
     });

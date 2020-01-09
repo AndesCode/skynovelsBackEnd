@@ -5,6 +5,8 @@ const user_reading_lists = require('../models').user_reading_lists;
 const invitations = require('../models').invitations;
 const novels_collaborators = require('../models').novels_collaborators;
 const users = require('../models').users;
+const novels = require('../models').novels;
+const novels_ratings = require('../models').novels_ratings;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
@@ -37,6 +39,77 @@ function createUser(req, res) {
         res.status(200).send({ activation_user_key }); // Aqui debe ir NodeMailer enviando la clave a traves de una URL
     }).catch(err => {
         res.status(500).send({ message: 'Error en el registro del usuario.<br>' + err.message });
+    });
+}
+
+function getUser(req, res) {
+    var id = req.params.id;
+    users.findByPk(id, {
+        include: [{
+            model: novels,
+            as: 'collaborations',
+            attributes: ['id', 'nvl_author', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_writer', 'nvl_rating'],
+            through: { attributes: [] }
+        }, {
+            model: novels,
+            as: 'novels',
+            attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_writer', 'nvl_rating']
+        }, {
+            model: invitations,
+            as: 'invitations'
+        }, {
+            model: novels_ratings,
+            as: 'novels_ratings',
+            attributes: ['id', 'novel_id', 'rate_value', 'createdAt', 'updatedAt'],
+            include: [{
+                model: novels,
+                as: 'novel',
+                attributes: ['nvl_title']
+            }]
+        }],
+        attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth', 'user_description', 'createdAt', 'updatedAt']
+    }).then(user => {
+        res.status(200).send({ user });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario ' + err });
+    });
+}
+
+
+function getUsers(req, res) {
+    let status = req.params.status;
+    if (status === 'All') {
+        status = {
+            [Op.ne]: null
+        };
+    }
+    users.findAll({
+        include: [{
+            model: novels,
+            as: 'collaborations',
+            attributes: ['id'],
+            through: { attributes: [] }
+        }, {
+            model: novels,
+            as: 'novels',
+            attributes: ['id']
+        }, {
+            model: invitations,
+            as: 'invitations',
+            attributes: ['id', 'invitation_status']
+        }, {
+            model: novels_ratings,
+            as: 'novels_ratings',
+            attributes: ['id', 'novel_id', 'rate_value']
+        }],
+        attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth', 'user_description', 'createdAt', 'updatedAt'],
+        where: {
+            user_status: status
+        }
+    }).then(users => {
+        res.status(200).send({ users });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
@@ -186,6 +259,9 @@ function passwordResetRequest(req, res) {
 
 
 
+
+
+
 // Esta función create tiene la función de enviar email de confirmación deshabilitada temporalmente *nodemailer*
 /*function create(req, res) {
     if (req.body.user_pass == req.body.user_confirm_pass) {
@@ -253,22 +329,6 @@ function getAll(req, res) {
         res.status(200).send({ users });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar a todos los usuarios' });
-    });
-}
-
-function getUser(req, res) {
-    var id = req.params.id;
-    users.sequelize.query("SELECT user_description, users.user_profile_image, users.id, users.user_login, users.user_email, users.user_status, users.user_rol, (SELECT COUNT(*) FROM posts where posts.post_author_id = users.id) AS post_count, (SELECT COUNT(*) FROM posts_comments WHERE posts_comments.post_comment_author_id = users.id) AS comment_count, (SELECT COUNT(*) FROM novels where novels.nvl_author = users.id) AS novel_count, (SELECT p.post_title FROM posts p where p.post_author_id=users.id ORDER BY createdAt DESC LIMIT 1) AS last_post FROM users WHERE users.id = ?", {
-        replacements: [id],
-        type: users.sequelize.QueryTypes.SELECT
-    }).then(user => {
-        res.status(200).send({
-            user
-        });
-    }).catch(err => {
-        res.status(500).send({
-            message: 'Ocurrio un error al buscar al usuario' + err
-        });
     });
 }
 
@@ -607,6 +667,8 @@ module.exports = {
     activateUser,
     login,
     updateUser,
-    deleteUser
+    deleteUser,
+    getUser,
+    getUsers
 
 };

@@ -63,7 +63,7 @@ module.exports = (sequelize, DataTypes) => {
         console.log('Inicia asociaciones');
         novels_ratings.belongsTo(models.novels, {
             foreignKey: 'novel_id',
-            as: 'novels'
+            as: 'novel'
         });
         novels_ratings.belongsTo(models.users, {
             foreignKey: 'user_id',

@@ -27,9 +27,11 @@ module.exports = (app) => {
     app.post('/api/create-novel-collaborator', md_auth.auth, userController.createNovelCollaborator);
     app.delete('/api/delete-novel-collaborator/:id', md_auth.auth, userController.DeleteNovelCollaborator);*/
 
+    app.get('/api/user/:id', userController.getUser);
+    app.get('/api/users/:status', userController.getUsers); // admin authorization require
     app.post('/api/create-user', userController.createUser);
     app.post('/api/login', userController.login);
     app.post('/api/activate-user/:key', userController.activateUser);
-    app.put('/api/update-user', md_auth.auth, userController.updateUser);
-    app.delete('/api/delete-user/:id', md_auth.adminAuth, userController.deleteUser);
+    app.put('/api/update-user', userController.updateUser); // loged user require md_auth.auth,
+    app.delete('/api/delete-user/:id', userController.deleteUser); // admin authorization require md_auth.adminAuth,
 };

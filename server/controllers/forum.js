@@ -1,22 +1,22 @@
 /*jshint esversion: 6 */
 // Models
-const forum = require('../models').forum;
+const forum_categories = require('../models').forum_categories;
 
-function create(req, res) {
+function createCategory(req, res) {
     var body = req.body;
-    forum.create(body).then(forum => {
-        res.status(200).send({ forum });
+    forum_categories.create(body).then(forum_category => {
+        res.status(200).send({ forum_category });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro' });
     });
 }
 
-function update(req, res) {
+function updateCategory(req, res) {
     var body = req.body;
     console.log(body);
-    forum.findById(body.id).then(forum => {
-        forum.update(body).then(() => {
-            res.status(200).send({ forum });
+    forum_categories.findByPk(body.id).then(forum_category => {
+        forum_categories.update(body).then(() => {
+            res.status(200).send({ forum_category });
         }).catch(err => {
             res.status(500).send({ message: 'Ocurrio un error al actualizar el post ' + err });
         });
@@ -53,8 +53,8 @@ function deleteForumCategory(req, res) {
     });
 }
 module.exports = {
-    create,
+    /*create,
     update,
     getForum,
-    deleteForumCategory
+    deleteForumCategory*/
 };

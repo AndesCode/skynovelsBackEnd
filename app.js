@@ -20,7 +20,6 @@ app.use((req, res, next) => {
 // Routes
 require('./server/routes/users')(app);
 require('./server/routes/novels')(app);
-require('./server/routes/chapters')(app);
 require('./server/routes/posts')(app);
 require('./server/routes/forum')(app);
 require('./server/routes/adminPanel')(app);
