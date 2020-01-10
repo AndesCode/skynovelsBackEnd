@@ -7,7 +7,7 @@ module.exports = (sequelized, DataTypes) => {
             type: DataTypes.INTEGER
         },
         category_name: DataTypes.STRING(15),
-        forum_category_description: DataTypes.TEXT('tiny')
+        category_description: DataTypes.TEXT('tiny')
     }, {
         timestamps: false,
     });

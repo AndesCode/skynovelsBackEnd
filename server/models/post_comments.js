@@ -17,6 +17,10 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'forum_post_id',
             as: 'forum_post',
         });
+        posts_comments.belongsTo(models.users, {
+            foreignKey: 'comment_author_id',
+            as: 'user',
+        });
     };
 
     return posts_comments;

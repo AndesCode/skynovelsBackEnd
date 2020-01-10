@@ -17,10 +17,10 @@ const Op = Sequelize.Op;
 // Novels
 
 function getNovel(req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
     novels.findByPk(id, {
         include: [{
-            model: novels,
+            model: genres,
             as: 'genres',
             through: { attributes: [] }
         }, {
@@ -133,10 +133,10 @@ function createNovel(req, res) {
 function updateNovel(req, res) {
     const body = req.body;
     novels.findByPk(body.id).then(novel => {
-        novel.update(body).then(() => {
+        novel.update(body).then((novel) => {
             // variables deberian borrarse y ser remplazadas por arrays enviados desde el front-end
-            novel.genresTest = [5, 3];
-            novel.new_collaborator = [10];
+            novel.genresTest = [];
+            novel.new_collaborator = [998, 18];
             //----------------------------- fin de variables de prueba
             if (novel.genresTest) {
                 console.log(novel.genresTest);
@@ -144,11 +144,11 @@ function updateNovel(req, res) {
             }
             if (novel.new_collaborator && novel.new_collaborator.length > 0) {
                 console.log(novel.new_collaborator);
-                novel.addCollaborator(novel.new_collaborator);
+                novel.setCollaborators(novel.new_collaborator);
             }
             res.status(200).send({ novel });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
+            res.status(500).send({ message: 'Ocurrio un error al actualizar la novela ' + err });
         });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
