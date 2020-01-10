@@ -6,7 +6,24 @@ module.exports = (sequelized, DataTypes) => {
             primaryKey: true,
             type: DataTypes.INTEGER
         },
-        category_name: DataTypes.STRING(15),
+        category_name: {
+            type: DataTypes.STRING(15),
+            validate: {
+                isUniqueCategory: function(value, next) {
+                    var self = this;
+                    forum_categories.findOne({ where: { category_name: value } })
+                        .then(function(forum_category) {
+                            if (forum_category && self.id !== forum_category.id) {
+                                return next({ message: 'error, ya existe una categoria con nombre ' + value });
+                            }
+                            return next();
+                        })
+                        .catch(function(err) {
+                            return next(err);
+                        });
+                }
+            }
+        },
         category_description: DataTypes.TEXT('tiny')
     }, {
         timestamps: false,

@@ -12,7 +12,7 @@ function createCategory(req, res) {
     forum_categories.create(body).then(forum_category => {
         res.status(200).send({ forum_category });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro' });
+        res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro ' + err });
     });
 }
 
