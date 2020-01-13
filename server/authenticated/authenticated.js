@@ -88,8 +88,36 @@ function adminAuth(req, res, next) {
     }
 }
 
+function cookieAuth(req, res, next) {
+    if (!req.headers.authorization) {
+        return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
+    } else {
+        const token = req.headers.authorization.replace(/['"]+/g, '');
+        const jwtData = token.split('.')[1];
+        const decodedJwtData = JSON.parse(atob(jwtData));
+        const user_id = decodedJwtData.sub;
+
+        users.findByPk(user_id).then((user) => {
+            if (user.dataValues.user_status === 'Active') {
+                const payload = nJwT.verify(token, user.dataValues.user_verification_key, (err, verifiedJwT) => {
+                    if (!err) {
+                        next();
+                    } else {
+                        return res.status(401).send({ message: 'No autorizado' });
+                    }
+                });
+            } else {
+                return res.status(401).send({ message: 'No autorizado' });
+            }
+        }).catch(err => {
+            res.status(500).send({ message: 'No se encuentra usuario por el id indicado' });
+        });
+    }
+}
+
 module.exports = {
     auth,
     forumAuth,
-    adminAuth
+    adminAuth,
+    cookieAuth
 };

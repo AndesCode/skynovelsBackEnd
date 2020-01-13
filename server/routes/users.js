@@ -34,4 +34,6 @@ module.exports = (app) => {
     app.post('/api/activate-user/:key', userController.activateUser);
     app.put('/api/update-user', userController.updateUser); // loged user require md_auth.auth,
     app.delete('/api/delete-user/:id', userController.deleteUser); // admin authorization require md_auth.adminAuth,
+    // cookie test
+    app.post('/api/cookie-test', userController.cookieTest);
 };

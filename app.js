@@ -2,11 +2,13 @@
 require('dotenv').config();
 const http = require('http');
 const express = require('express');
+const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser');
 const exphbs = require('express-handlebars');
 const path = require('path');
 const app = express();
 // Body Parser Middleware
+app.use(cookieParser())
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
