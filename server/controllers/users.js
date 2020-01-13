@@ -183,15 +183,15 @@ function login(req, res) {
             [Op.or]: [{ user_login: req.body.user_login }, { user_email: req.body.user_login }]
         }
     }).then(user => {
+        req.session.user = user.id;
         if (bcrypt.compareSync(req.body.user_pass, user.user_pass)) {
-            const token_data = jwt.createToken(user);
+            // const token_data = jwt.createToken(user);
             user.update({
-                user_verification_key: token_data.key
+                user_verification_key: 'test_key'
             }).then(() => {
-                res.cookie('cookie', 'user_values');
                 res.status(200).send({
-                    token: token_data.token,
-                    // user: user
+                    // token: token_data.token,
+                    user: user
                 });
             }).catch(err => {
                 res.status(500).send({ message: 'Error al actualizar la key de usuario ' + err });
@@ -216,7 +216,7 @@ function login(req, res) {
 
 function cookieTest(req, res) {
     console.log(req.cookies);
-    res.status(200).send(req.cookies);
+    res.status(200).send({ message: 'sesion conseguida. ' });
 }
 
 function passwordResetRequest(req, res) {
