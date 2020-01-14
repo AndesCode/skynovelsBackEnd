@@ -140,17 +140,10 @@ function activateUser(req, res) {
 
 function updateUser(req, res) {
     const body = req.body;
+    if(body.user_rol || body.user_forum_auth || body.user_pass) {
+        return res.status(401).send({ message: 'Operación no permitida' });
+    }
     users.findByPk(body.id).then(user => {
-        if (body.user_pass) {
-            if (/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/.test(body.user_pass)) {
-                const salt = bcrypt.genSaltSync(saltRounds);
-                body.user_pass = bcrypt.hashSync(body.user_pass, salt);
-                body.user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-            } else {
-                res.status(500).send({ message: 'La contraseña no cumple con el parametro regex' });
-                return;
-            }
-        }
         user.update(body).then(() => {
             res.status(200).send({ user });
         }).catch(err => {
@@ -177,16 +170,6 @@ function deleteUser(req, res) {
         res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario' });
     });
 }
-
-/*            if (err) { return res.send({ 'status': 'err', 'message': err.message }); }
-            if (!user) { return res.send({ 'status': 'fail', 'message': info.message }); }
-            req.logIn(user, function(err) {
-                if (err) { return res.send({ 'status': 'err', 'message': err.message }); }
-                return res.send({ 'status': 'ok' });
-            });
-            
-            */
-
 
 function login(req, res, next) {
     passport.authenticate('local-login', function(err, user, info) {
@@ -218,20 +201,19 @@ function cookieTest(req, res) {
 }
 
 function passwordResetRequest(req, res) {
-    console.log(req.body);
     users.findOne({
         where: {
-            user_email: req.body.req_email,
+            user_email: req.body.user_email,
         }
     }).then(user => {
         const token_data = jwt.createToken(user);
         user.update({
             user_verification_key: token_data.key
         }).then(() => {
-            res.status(200).send({
-                token: token_data.token,
-                // user: user
-            });
+            res.status(200).send(
+                { 
+                    message: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + token_data.token
+                });
         }).catch(err => {
             res.status(500).send({ message: 'Error al actualizar la key de usuario ' + err });
         });
@@ -266,7 +248,36 @@ function passwordResetRequest(req, res) {
     });
 }
 
-
+function updateUserPassword(req, res) {
+    const token = req.headers.authorization.replace(/['"]+/g, '');
+    const jwtData = token.split('.')[1];
+    const decodedJwtData = JSON.parse(atob(jwtData));
+    const id = decodedJwtData.sub;
+    const body = req.body;
+    if(!body.user_pass) {
+        return res.status(401).send({ message: 'Operación no permitida' });
+    }
+    users.findByPk(id).then(user => {
+        if (/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/.test(body.user_pass)) {
+            const salt = bcrypt.genSaltSync(saltRounds);
+            body.user_pass = bcrypt.hashSync(body.user_pass, salt);
+            body.user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        } else {
+            res.status(500).send({ message: 'La contraseña no cumple con el parametro regex' });
+            return;
+        }
+        user.update({
+            user_pass: body.user_pass,
+            user_verification_key: body.user_verification_key
+        }).then(() => {
+            res.status(200).send({ message: '¡Contraseña actualizada con exito!' });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al actualizar la contraseña ' + err });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario ' + err });
+    });
+}
 
 
 
@@ -342,25 +353,6 @@ function getAll(req, res) {
         res.status(500).send({ message: 'Ocurrio un error al buscar a todos los usuarios' });
     });
 }
-
-function getUserByEmailToken(req, res) {
-    var token = req.params.token.replace(/['"]+/g, '');
-    var jwtData = token.split('.')[1];
-    var decodedJwtData = JSON.parse(atob(jwtData));
-    var id = decodedJwtData.sub;
-    users.findOne({
-        where: {
-            id: id,
-        },
-        attributes: ['id'],
-    }).then(user => {
-        res.status(200).send({ user });
-    }).catch(err => {
-        res.status(500).send({ message: 'EL usuario indicado no existe.' });
-    });
-}
-
-
 
 function uploadUserProfileImg(req, res) {
     var id = req.params.id;
@@ -682,6 +674,8 @@ module.exports = {
     deleteUser,
     getUser,
     getUsers,
-    cookieTest
+    cookieTest,
+    passwordResetRequest,
+    updateUserPassword
 
 };

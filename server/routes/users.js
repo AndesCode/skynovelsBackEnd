@@ -9,7 +9,7 @@ module.exports = (app) => {
     
     app.get('/api/users', md_auth.auth, userController.getAll);
     app.get('/api/user/email-verification/:key', userController.activateUser);
-    app.post('/api/user/password-reset', userController.passwordResetRequest);
+    
     app.get('/api/user/:id', userController.getUser);
     app.put('/api/update-user-password', md_auth.emailVerificationAuth, userController.updateUserPassword);
     app.get('/api/user/get-user-by-email-token/:token', md_auth.emailVerificationAuth, userController.getUserByEmailToken);
@@ -29,8 +29,10 @@ module.exports = (app) => {
 
     app.get('/api/user/:id', userController.getUser);
     app.get('/api/users/:status', userController.getUsers); // admin authorization require
-    // app.post('/api/create-user', userController.createUser);
+    app.post('/api/create-user', userController.createUser);
     app.post('/api/login', userController.login);
+    app.post('/api/password-reset-request', userController.passwordResetRequest);
+    app.post('/api/password-reset', md_auth.changePasswordTokenAuth,  userController.updateUserPassword);
     app.get('/api/logout', userController.logout);
     app.post('/api/activate-user/:key', userController.activateUser);
     app.put('/api/update-user', userController.updateUser); // loged user require md_auth.auth,
