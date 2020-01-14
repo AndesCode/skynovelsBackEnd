@@ -29,11 +29,12 @@ module.exports = (app) => {
 
     app.get('/api/user/:id', userController.getUser);
     app.get('/api/users/:status', userController.getUsers); // admin authorization require
-    app.post('/api/create-user', userController.createUser);
+    // app.post('/api/create-user', userController.createUser);
     app.post('/api/login', userController.login);
+    app.get('/api/logout', userController.logout);
     app.post('/api/activate-user/:key', userController.activateUser);
     app.put('/api/update-user', userController.updateUser); // loged user require md_auth.auth,
     app.delete('/api/delete-user/:id', userController.deleteUser); // admin authorization require md_auth.adminAuth,
     // cookie test
-    app.post('/api/cookie-test', md_auth.cookieAuth, userController.cookieTest);
+    app.get('/api/cookie-test', md_auth.adminAuth, userController.cookieTest);
 };

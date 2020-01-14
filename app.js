@@ -2,47 +2,37 @@
 require('dotenv').config();
 const http = require('http');
 const express = require('express');
-// const cookieParser = require('cookie-parser')
-const bodyParser = require('body-parser');
-const exphbs = require('express-handlebars');
 const path = require('path');
 const session = require('express-session');
 const cors = require('cors');
+const morgan = require('morgan');
+const passport = require('passport');
 
 /**
  * Creating a new express app
  */
 const app = express();
-
-/**
- * Setting up CORS, such that it can work together with an Application at another domain / port
- */
-app.use(cors({
-    origin: [
-        "http://localhost:4200"
-    ],
-    credentials: true
-}));
+require('./server/passport/local-auth');
 
 /**
  * For being able to read request bodies
  */
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(morgan('dev'));
+
 
 /**
  * Initializing the session magic of express-session package
  */
-
 app.use(session({
     secret: 'keyboard cat',
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: true }
+    saveUninitialized: false
+        // cookie: { secure: true }
 }));
-
-// Body Parser Middleware
-// app.use(cookieParser())
+app.use(passport.initialize());
+app.use(passport.session());
 
 
 app.use((req, res, next) => {
@@ -58,7 +48,6 @@ require('./server/routes/novels')(app);
 require('./server/routes/forum')(app);
 require('./server/routes/adminPanel')(app);
 // View engine setup
-app.engine('handlebards', exphbs());
 app.set('view engine', 'handlebars');
 // Static folder
 app.use('server', express.static(path.join(__dirname, 'server')));

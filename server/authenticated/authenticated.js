@@ -4,7 +4,7 @@ var atob = require('atob');
 var users = require('../models').users;
 
 // Autorización de usuario logeado
-function auth(req, res, next) {
+/*function auth(req, res, next) {
     if (!req.headers.authorization) {
         return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
     } else {
@@ -86,21 +86,34 @@ function adminAuth(req, res, next) {
             res.status(500).send({ message: 'No se encuentra usuario por el id indicado' + err });
         });
     }
-}
+}*/
 
-function cookieAuth(req, res, next) {
-    if (req.session && req.session.user) {
+function auth(req, res, next) {
+    if (req.user && req.isAuthenticated()) {
         next();
     } else {
-        res.status(403).send({
-            errorMessage: 'You must be logged in.'
-        });
+        return res.status(401).send({ message: 'No autorizado' });
+    }
+}
+
+function adminAuth(req, res, next) {
+    if (req.user && req.user.user_rol === 'admin' && req.isAuthenticated()) {
+        next();
+    } else {
+        return res.status(401).send({ message: 'No autorizado' });
+    }
+}
+
+function forumAuth(req, res, next) {
+    if (req.user && req.user.user_forum_auth === 'Active' && req.isAuthenticated()) {
+        next();
+    } else {
+        return res.status(401).send({ message: 'No autorizado' });
     }
 }
 
 module.exports = {
     auth,
     forumAuth,
-    adminAuth,
-    cookieAuth
+    adminAuth
 };

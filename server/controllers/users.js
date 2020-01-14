@@ -23,6 +23,7 @@ const atob = require('atob');
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
 const path = require('path');
+const passport = require('passport');
 
 
 // TESTS
@@ -177,45 +178,42 @@ function deleteUser(req, res) {
     });
 }
 
-function login(req, res) {
-    users.findOne({
-        where: {
-            [Op.or]: [{ user_login: req.body.user_login }, { user_email: req.body.user_login }]
-        }
-    }).then(user => {
-        req.session.user = user.id;
-        if (bcrypt.compareSync(req.body.user_pass, user.user_pass)) {
-            // const token_data = jwt.createToken(user);
-            user.update({
-                user_verification_key: 'test_key'
-            }).then(() => {
-                res.status(200).send({
-                    // token: token_data.token,
-                    user: user
-                });
-            }).catch(err => {
-                res.status(500).send({ message: 'Error al actualizar la key de usuario ' + err });
+/*            if (err) { return res.send({ 'status': 'err', 'message': err.message }); }
+            if (!user) { return res.send({ 'status': 'fail', 'message': info.message }); }
+            req.logIn(user, function(err) {
+                if (err) { return res.send({ 'status': 'err', 'message': err.message }); }
+                return res.send({ 'status': 'ok' });
             });
-        } else {
-            res.status(401).send({ message: 'Error, Usuario o contraseña incorrectos ' });
-        }
+            
+            */
 
-        /*hash = user.dataValues.user_pass;
-        user_password = bcrypt.compare(req.body.user_pass, hash, function(err, response) {
-            if (user && user.dataValues.user_status === 'Active' && response === true) {
-                
 
-            } else {
-                res.status(401).send({ message: 'Error, Usuario o contraseña incorrectos ' + err });
-            }
-        });*/
-    }).catch(err => {
-        res.status(401).send({ message: 'Error, Usuario o contraseña incorrectos ' + err });
-    });
+function login(req, res, next) {
+    passport.authenticate('local-login', function(err, user, info) {
+        if (err) { return res.send({ 'status': 'err', 'message': err.message }); }
+        if (!user) { return res.send({ 'status': 'fail', 'message': info.message }); }
+        req.logIn(user, function(err) {
+            if (err) { return res.send({ 'status': 'err', 'message': err.message }); }
+            return res.send({
+                'user': {
+                    id: user.id,
+                    user_login: user.user_login,
+                    user_rol: user.user_rol
+                }
+            });
+        });
+    })(req, res, next);
+}
+
+function logout(req, res) {
+    req.logOut();
+    req.session.destroy();
+    res.clearCookie('connect.sid');
+    res.status(200).send({ message: 'sesion finalizada' });
 }
 
 function cookieTest(req, res) {
-    console.log(req.cookies);
+    console.log('User is => ' + req.user.user_rol);
     res.status(200).send({ message: 'sesion conseguida. ' });
 }
 
@@ -679,6 +677,7 @@ module.exports = {
     createUser,
     activateUser,
     login,
+    logout,
     updateUser,
     deleteUser,
     getUser,
