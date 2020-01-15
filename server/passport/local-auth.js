@@ -29,7 +29,7 @@ passport.use('local-login', new LocalStrategy({
             [Op.or]: [{ user_login: user_login }, { user_email: user_login }]
         }
     }).then(user => {
-        if (user && bcrypt.compareSync(user_pass, user.user_pass)) {
+        if (user && bcrypt.compareSync(user_pass, user.user_pass) && user.user_status === 'Active') {
             return done(null, user);
         } else {
             return done(null, false, { message: 'Usuario o contraseña incorrectos' });

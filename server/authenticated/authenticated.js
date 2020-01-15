@@ -34,7 +34,7 @@ function adminAuth(req, res, next) {
     if (!req.headers.authorization) {
         return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
     } else {
-        if (req.user && req.user.user_rol === 'admin' && req.isAuthenticated()) {
+        if (req.user && req.user.user_rol === 'admin' && req.user.user_status === 'Active' && req.isAuthenticated()) {
             const token = req.headers.authorization.replace(/['"]+/g, '');
             const payload = nJwT.verify(token, req.user.user_verification_key, 'HS512', (err, verifiedJwT) => {
                 if (!err) {
@@ -51,7 +51,7 @@ function adminAuth(req, res, next) {
 }
 
 function auth(req, res, next) {
-    if (req.user && req.isAuthenticated()) {
+    if (req.user && req.isAuthenticated() && req.user.user_status === 'Active') {
         next();
     } else {
         return res.status(401).send({ message: 'No autorizado' });
@@ -59,7 +59,7 @@ function auth(req, res, next) {
 }
 
 function forumAuth(req, res, next) {
-    if (req.user && req.user.user_forum_auth === 'Active' && req.isAuthenticated()) {
+    if (req.user && req.user.user_status === 'Active' && req.user.user_forum_auth === 'Active' && req.isAuthenticated()) {
         next();
     } else {
         return res.status(401).send({ message: 'No autorizado' });
