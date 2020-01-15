@@ -22,15 +22,14 @@ passport.deserializeUser((id, done) => {
 
 passport.use('local-login', new LocalStrategy({
     usernameField: 'user_login',
-    passwordField: 'user_pass',
-    passReqToCallback: true
-}, function execute(req, user_login, user_pass, done) {
+    passwordField: 'user_pass'
+}, function execute(user_login, user_pass, done) {
     users.findOne({
         where: {
             [Op.or]: [{ user_login: user_login }, { user_email: user_login }]
         }
     }).then(user => {
-        if (user && bcrypt.compareSync(req.body.user_pass, user.user_pass)) {
+        if (user && bcrypt.compareSync(user_pass, user.user_pass)) {
             return done(null, user);
         } else {
             return done(null, false, { message: 'Usuario o contraseña incorrectos' });

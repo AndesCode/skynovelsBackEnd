@@ -54,7 +54,20 @@ function getNovel(req, res) {
             }]
         }]
     }).then(novel => {
-        res.status(200).send({ novel });
+        const collaborators = novel.collaborators.map(collaborator => collaborator.id);
+        if (req.user && req.user.id === novel.nvl_author) {
+            const authorized_author = true;
+            res.status(200).send({ novel, authorized_author });
+            return;
+        }
+        if (req.user && collaborators.includes(req.user.id)) {
+            const authorized_collaborator = true;
+            res.status(200).send({ novel, authorized_collaborator });
+            return;
+        } else {
+            res.status(200).send({ novel });
+            return;
+        }
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });

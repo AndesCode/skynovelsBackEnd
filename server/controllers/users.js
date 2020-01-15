@@ -44,7 +44,7 @@ function createUser(req, res) {
 }
 
 function getUser(req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
     users.findByPk(id, {
         include: [{
             model: novels,
@@ -68,9 +68,14 @@ function getUser(req, res) {
                 attributes: ['nvl_title']
             }]
         }],
-        attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth', 'user_description', 'createdAt', 'updatedAt']
+        attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_description', 'createdAt', 'updatedAt']
     }).then(user => {
-        res.status(200).send({ user });
+        if (req.user && user.id === req.user.id) {
+            const self_user = true;
+            res.status(200).send({ user, self_user });
+        } else {
+            res.status(200).send({ user });
+        }
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario ' + err });
     });
@@ -140,7 +145,7 @@ function activateUser(req, res) {
 
 function updateUser(req, res) {
     const body = req.body;
-    if(body.user_rol || body.user_forum_auth || body.user_pass) {
+    if (body.user_rol || body.user_forum_auth || body.user_pass) {
         return res.status(401).send({ message: 'Operación no permitida' });
     }
     users.findByPk(body.id).then(user => {
@@ -177,13 +182,29 @@ function login(req, res, next) {
         if (!user) { return res.send({ 'status': 'fail', 'message': info.message }); }
         req.logIn(user, function(err) {
             if (err) { return res.send({ 'status': 'err', 'message': err.message }); }
-            return res.send({
-                'user': {
-                    id: user.id,
-                    user_login: user.user_login,
-                    user_rol: user.user_rol
-                }
-            });
+            if (user.user_rol === 'admin') {
+                token_data = jwt.createAdminToken(user);
+                user.update({ user_verification_key: token_data.key }).then(user => {
+                    return res.send({
+                        'user': {
+                            id: user.id,
+                            user_login: user.user_login,
+                            user_rol: user.user_rol
+                        },
+                        token: token_data.token
+                    });
+                }).catch(err => {
+                    res.status(500).send({ message: 'Error al actualizar la key de administrador ' + err });
+                });
+            } else {
+                return res.send({
+                    'user': {
+                        id: user.id,
+                        user_login: user.user_login,
+                        user_rol: user.user_rol
+                    }
+                });
+            }
         });
     })(req, res, next);
 }
@@ -210,10 +231,9 @@ function passwordResetRequest(req, res) {
         user.update({
             user_verification_key: token_data.key
         }).then(() => {
-            res.status(200).send(
-                { 
-                    message: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + token_data.token
-                });
+            res.status(200).send({
+                message: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + token_data.token
+            });
         }).catch(err => {
             res.status(500).send({ message: 'Error al actualizar la key de usuario ' + err });
         });
@@ -254,7 +274,7 @@ function updateUserPassword(req, res) {
     const decodedJwtData = JSON.parse(atob(jwtData));
     const id = decodedJwtData.sub;
     const body = req.body;
-    if(!body.user_pass) {
+    if (!body.user_pass) {
         return res.status(401).send({ message: 'Operación no permitida' });
     }
     users.findByPk(id).then(user => {

@@ -8,6 +8,10 @@ const posts_comments = require('../models').posts_comments;
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
+function adminPanelAccess(req, res) {
+    res.status(200).send({ message: 'Accediendo a panel de control' });
+}
+
 function adminVerification(req, res) {
     body = req.body;
     users.findOne({
@@ -73,6 +77,7 @@ function getUserModificable(req, res) {
 }
 
 module.exports = {
+    adminPanelAccess,
     getAllPosts,
     adminUserDataUpdate,
     adminVerification,
