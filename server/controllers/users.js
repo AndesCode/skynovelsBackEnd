@@ -212,7 +212,7 @@ function login(req, res, next) {
 function logout(req, res) {
     req.logOut();
     req.session.destroy();
-    res.clearCookie('connect.sid');
+    res.clearCookie('sessionId');
     res.status(200).send({ message: 'sesion finalizada' });
 }
 

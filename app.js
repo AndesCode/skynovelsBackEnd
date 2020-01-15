@@ -26,6 +26,7 @@ app.use(morgan('dev'));
  * Initializing the session magic of express-session package
  */
 app.use(session({
+    name: 'sessionId',
     secret: 'keyboard cat',
     resave: false,
     saveUninitialized: false
