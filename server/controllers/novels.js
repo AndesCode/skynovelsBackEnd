@@ -53,10 +53,11 @@ function getNovel(req, res) {
         }, {
             model: users,
             as: 'author',
-            attributes: ['id', 'user_login']
+            attributes: ['user_login']
         }, {
             model: user_reading_lists,
             as: 'user_reading_lists',
+            attributes: ['id', 'user_id', 'nvl_chapter'],
             include: [{
                 model: users,
                 as: 'user',
@@ -123,7 +124,7 @@ function getNovels(req, res) {
         }, {
             model: users,
             as: 'author',
-            attributes: ['id', 'user_login']
+            attributes: ['user_login']
         }, {
             model: user_reading_lists,
             as: 'user_reading_lists',
@@ -627,6 +628,7 @@ function deleteNovelRating(req, res) {
 }
 
 module.exports = {
+    // Novels
     getNovel,
     getNovels,
     createNovel,
@@ -634,15 +636,18 @@ module.exports = {
     uploadNovelImage,
     getNovelImage,
     deleteNovel,
+    // Chapters
     getChapter,
     getChapters,
     createChapter,
     updateChapter,
     deleteChapter,
+    // Genres
     getGenres,
     createGenre,
     updateGenre,
     deleteGenre,
+    // Novel ratings
     createNovelRating,
     updateNovelRating,
     deleteNovelRating

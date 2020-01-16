@@ -3,7 +3,6 @@ var config = require('../config/config');
 // Models
 const user_reading_lists = require('../models').user_reading_lists;
 const invitations = require('../models').invitations;
-const novels_collaborators = require('../models').novels_collaborators;
 const users = require('../models').users;
 const novels = require('../models').novels;
 const novels_ratings = require('../models').novels_ratings;
@@ -476,177 +475,155 @@ function getUserProfileImage(req, res) {
     }
 }*/
 
-function createUserReadingList(req, res) {
-    var body = req.body;
-    console.log(body);
-    user_reading_lists.create(body).then(user_reading_list => {
-        res.status(200).send({ user_reading_list });
+function createUserbookmark(req, res) {
+    const body = req.body;
+    body.user_id = req.user.id
+    user_reading_lists.create(body).then(bookmark => {
+        return res.status(200).send({ bookmark });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
     });
 }
 
-function findUserReadingList(req, res) {
-    var id = req.params.id;
-    user_reading_lists.sequelize.query("SELECT novels.id, novels.nvl_title, novels.nvl_name, user_reading_lists.nvl_chapter from novels, user_reading_lists WHERE novels.id = user_reading_lists.nvl_id AND user_reading_lists.user_id = ?", {
-        replacements: [id],
-        type: user_reading_lists.sequelize.QueryTypes.SELECT
-    }).then(user_reading_list => {
-        res.status(200).send({ user_reading_list });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
-    });
-}
-
-function checkNovelIsBookmarked(req, res) {
-    var novel_id = req.params.nvl;
-    var user_id = req.params.uid;
-    user_reading_lists.findOne({
-        where: {
-            nvl_id: novel_id,
-            user_id: user_id
-        }
-    }).then(user_reading_list => {
-        res.status(200).send({ user_reading_list });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar si la novela esta marcada' + err });
-    });
-}
-
-function removeUserReadingList(req, res) {
-    var novel_id = req.params.nvl;
-    var user_id = req.params.uid;
-    user_reading_lists.destroy({
-        where: {
-            nvl_id: novel_id,
-            user_id: user_id
-        }
-    }).then(user_reading_list => {
-        res.status(200).send({ user_reading_list });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al eliminar la novela de la lista de lectura' + err });
-    });
-}
-
-function updateUserReadingListItem(req, res) {
-    var body = req.body;
-
-    user_reading_lists.findByPk(body.id).then(user_reading_list => {
-        user_reading_list.update(body).then(() => {
-            res.status(200).send({ user_reading_list });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar el marcapaginas' });
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar el marcapaginas' });
-    });
-}
-
-function searchUserByName(req, res) {
-    var body = req.body;
-    console.log(body);
-    users.findOne({
-        where: {
-            user_login: body.user_login,
-        }
-    }).then(user => {
-        if (user == null) {
-            res.status(500).send({ message: 'No se encuentra ningún usuario por ese nombre' });
+function removeUserbookmark(req, res) {
+    const id = req.params.id
+    user_reading_lists.findByPk(id).then(bookmark => {
+        if (req.user.id === bookmark.user_id || req.user.user_rol === 'admin') {
+            bookmark.destroy({
+                where: {
+                    id: id
+                }
+            }).then(bookmark => {
+                return res.status(200).send({ bookmark });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar la novela de la lista de lectura' + err });
+            });
         } else {
-            res.status(200).send({ user });
+            return res.status(500).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        res.status(500).send({ message: 'No se encuentra ningún usuario por ese nombre' });
+        return res.status(500).send({ message: 'Ocurrio un error al eliminar la novela de la lista de lectura' + err });
+    });
+}
+
+function updateUserbookmark(req, res) {
+    const body = req.body;
+    user_reading_lists.findByPk(body.id).then(bookmark => {
+        if (req.user.id === bookmark.user_id || req.user.user_rol === 'admin') {
+            console.log(body.nvl_chapter);
+            bookmark.update({
+                nvl_chapter: body.nvl_chapter
+            }).then(() => {
+                return res.status(200).send({ bookmark });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el marcapaginas' });
+            });
+        } else {
+            return res.status(500).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el marcapaginas' });
     });
 }
 
 function createUserInvitation(req, res) {
-    var body = req.body;
-    console.log(body);
-    invitations.findOne({
+    const body = req.body;
+    novels.findOne({
         where: {
-            invitation_from_id: req.user.id,
-            invitation_to_id: body.invitation_to_id,
-            invitation_novel: body.invitation_novel
-        }
-    }).then(invitation => {
-        if (invitation == null) {
-            invitations.create(body).then(invitation => {
-                res.status(200).send({ invitation });
+            nvl_author: req.user.id,
+            id: req.body.invitation_novel
+        },
+        attributes: ['id']
+    }).then(novel => {
+        if (novel) {
+            users.findOne({
+                where: {
+                    user_login: body.user_login,
+                },
+                attributes: ['id', 'user_login',]
+            }).then(user => {
+                if (user !== null) {
+                    if (user.id !== req.user.id) {
+                        invitations.findOne({
+                            where: {
+                                invitation_to_id: user.id,
+                                invitation_novel: body.invitation_novel
+                            }
+                        }).then(invitation => {
+                            if (invitation === null) {
+                                invitations.create({
+                                    invitation_from_id: req.user.id,
+                                    invitation_to_id: user.id,
+                                    invitation_novel: body.invitation_novel
+                                }).then(invitation => {
+                                    return res.status(200).send({ invitation });
+                                }).catch(err => {
+                                    return res.status(500).send({ message: 'Ocurrio un error al crear la invitación del usuario' });
+                                });
+                            } else {
+                                return res.status(500).send({ message: 'Ya has invitado al usuario' });
+                            }
+                        }).catch(err => {
+                            return res.status(500).send({ message: 'Ocurrio un error al buscar la invitación ' + err });
+                        });
+                    } else {
+                        return res.status(500).send({ message: '¡No te puedes invitar a ti mismo!' });
+                    }
+                } else {    
+                    return res.status(500).send({ message: 'No se encuentra ningún usuario por ese nombre' });
+                }
             }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio un error al crear la invitación del usuario' });
+                return res.status(500).send({ message: 'Ha ocurrido algún error durante la busqueda de usuario ' + err });
             });
         } else {
-            res.status(500).send({ message: 'Ya has invitado al usuario' });
+            return res.status(401).send({ message: 'No autorizado' });
         }
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la invitación' });
     });
 }
 
 function updateUserInvitation(req, res) {
-    var body = req.body;
-    invitations.findByPk(body.id).then(invitations => {
-        invitations.update(body).then(() => {
-            res.status(200).send({ invitations });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar la invitación ' });
-        });
+    const body = req.body;
+    invitations.findByPk(body.id).then(invitation => {
+        if (req.user.id === invitation.invitation_to_id || req.user.user_rol === 'admin') {
+            invitation.update({
+                invitation_status: body.invitation_status
+            }).then(() => {
+                return res.status(200).send({ invitation });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la invitación ' });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la invitación ' });
-    });
-}
-
-function DeleteNovelCollaborator(req, res) {
-    var id = req.params.id;
-    novels_collaborators.findByPk(id).then(novels_collaborator => {
-        novels_collaborator.destroy({
-            where: {
-                id: id
-            }
-        }).then(() => {
-            res.status(200).send({ novels_collaborator });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar al colaborador de la novela ' + err });
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar al colaborador de la novela ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la invitación ' + err});
     });
 }
 
 module.exports = {
-    /*deleteUser,
-    getAll,
-    activateUser,
-    getUser,
-    passwordResetRequest,
-    getUserByEmailToken,
-    updateUserPassword,
-    uploadUserProfileImg,
-    getUserProfileImage,
-    createUserReadingList,
-    findUserReadingList,
-    removeUserReadingList,
-    updateUserReadingListItem,
-    checkNovelIsBookmarked,
-    searchUserByName,
-    createUserInvitation,
-    getUserInvitations,
-    createNovelCollaborator,
-    updateUserInvitation,
-    DeleteNovelCollaborator*/
-
-    createUser,
-    activateUser,
+    // LogIn - LogOut
     login,
     logout,
+    // User register
+    createUser,
+    activateUser,
+    // Users
     updateUser,
     deleteUser,
     getUser,
     getUsers,
     cookieTest,
+    // Passwords
     passwordResetRequest,
     updateUserPassword,
+    // Imgs
     getUserProfileImage,
-    uploadUserProfileImg
+    uploadUserProfileImg,
+    // Bookmarks
+    createUserbookmark,
+    removeUserbookmark,
+    updateUserbookmark,
+    // Invitations
+    createUserInvitation,
+    updateUserInvitation
 };

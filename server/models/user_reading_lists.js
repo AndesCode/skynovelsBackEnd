@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         user_id: DataTypes.INTEGER,
         nvl_id: DataTypes.INTEGER,
-        nvl_chapter: DataTypes.INTEGER,
+        nvl_chapter: DataTypes.INTEGER
     });
 
     user_reading_lists.associate = function(models) {
@@ -25,6 +25,10 @@ module.exports = (sequelize, DataTypes) => {
             as: 'chapter'
         });
     };
+
+    user_reading_lists.beforeCreate((bookmark, options) => {
+        bookmark.nvl_chapter = null;
+    });
 
     return user_reading_lists;
 };

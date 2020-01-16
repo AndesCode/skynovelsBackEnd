@@ -24,7 +24,7 @@ exports.createAdminToken = (user) => {
     };
     const jwt = njwt.create(params, signingKey, 'HS512');
     const t = new Date();
-    t.setHours(t.getHours() + 2);
+    t.setHours(t.getHours() + 1);
     jwt.setExpiration(t);
     const token_data = {
         token: jwt.compact(),
