@@ -17,18 +17,18 @@ const Op = Sequelize.Op;
 // Novels
 
 function getNovel(req, res) {
-    const id = req.params.id;
-    let action = req.params.action;
-    if (action === 'reading' || action === 'edition') {
-        if (action === 'reading') {
-            action = ['id', 'chp_title', 'chp_number']
+    const name = req.params.name;
+    let attributes = [];
+    if (req.params.action === 'reading' || req.params.action === 'edition') {
+        if (req.params.action === 'reading') {
+            attributes = ['id', 'chp_title', 'chp_number'];
         } else {
-            action = ['id', 'chp_title', 'chp_number', 'chp_content', 'chp_review', 'chp_author']
-        }     
+            attributes = ['id', 'chp_title', 'chp_number', 'chp_content', 'chp_review', 'chp_author'];
+        }
     } else {
-        return res.status(500).send({ message: 'petición invalida'});
+        return res.status(500).send({ message: 'petición invalida' });
     }
-    novels.findByPk(id, {
+    novels.findOne({
         include: [{
             model: genres,
             as: 'genres',
@@ -36,7 +36,7 @@ function getNovel(req, res) {
         }, {
             model: chapters,
             as: 'chapters',
-            attributes: action
+            attributes: attributes
         }, {
             model: novels_ratings,
             as: 'novel_ratings',
@@ -62,24 +62,32 @@ function getNovel(req, res) {
                 as: 'user',
                 attributes: ['user_login']
             }]
-        }]
+        }],
+        where: {
+            nvl_name: name
+        }
     }).then(novel => {
         const collaborators = novel.collaborators.map(collaborator => collaborator.id);
-        if (req.user && req.user.id === novel.nvl_author) {
-            const authorized_author = req.user.id;
-            res.status(200).send({ novel, authorized_author });
-            return;
-        }
-        if (req.user && collaborators.includes(req.user.id)) {
-            const authorized_collaborator = req.user.id;
-            res.status(200).send({ novel, authorized_collaborator });
-            return;
+        if (req.params.action === 'edition') {
+            if (req.user && (req.user.id === novel.nvl_author || collaborators.includes(req.user.id))) {
+                const authorized_user = req.user.id;
+                return res.status(200).send({ novel, authorized_user });
+            } else {
+                return res.status(401).send({ message: 'No autorizado ' });
+            }
         } else {
-            res.status(200).send({ novel });
-            return;
+            if (req.user) {
+                const user = {
+                    id: req.user.id,
+                    rol: req.user.user_rol
+                };
+                return res.status(200).send({ novel, user });
+            } else {
+                return res.status(200).send({ novel });
+            }
         }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
     });
 }
 
@@ -129,9 +137,9 @@ function getNovels(req, res) {
             nvl_status: status
         }
     }).then(novels => {
-        res.status(200).send({ novels });
+        return res.status(200).send({ novels });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
@@ -148,9 +156,9 @@ function createNovel(req, res) {
             console.log(genresTest);
             novel.setGenres(genresTest);
         }*/
-        res.status(200).send({ novel });
+        return res.status(200).send({ novel });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
     });
 }
 
@@ -171,16 +179,16 @@ function updateNovel(req, res) {
                     console.log(novel.new_collaborator);
                     novel.setCollaborators(novel.new_collaborator);
                 }
-                res.status(200).send({ novel });
+                return res.status(200).send({ novel });
             }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio un error al actualizar la novela ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela ' + err });
             });
         } else {
-            res.status(500).send({ message: 'No autorizado'});
+            return res.status(500).send({ message: 'No autorizado' });
         }
-        
+
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
@@ -238,7 +246,7 @@ function uploadNovelImage(req, res) {
 
                         var newPath = './server/uploads/novels/' + file_name;
                         var thumbPath = './server/uploads/novels/thumbs';
-    
+
                         thumb({
                             source: path.resolve(newPath),
                             destination: path.resolve(thumbPath),
@@ -250,40 +258,40 @@ function uploadNovelImage(req, res) {
                         }).catch(err => {
                             fs.unlink(file_path, (err) => {
                                 if (err) {
-                                    res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
+                                    return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
                                 }
                             });
-                            res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail.' });
+                            return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail.' });
                         });
                     }).catch(err => {
                         fs.unlink(file_path, (err) => {
                             if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
+                                return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                             }
                         });
-                        res.status(500).send({ message: 'Ocurrio un error al actualziar la novela.' });
+                        return res.status(500).send({ message: 'Ocurrio un error al actualziar la novela.' });
                     });
                 } else {
-                    res.status(401).send({ message: 'No autorizado a cambiar la imagen de la novela' });
+                    return res.status(401).send({ message: 'No autorizado a cambiar la imagen de la novela' });
                 }
             }).catch(err => {
                 fs.unlink(file_path, (err) => {
                     if (err) {
-                        res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
+                        return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                     }
                 });
-                res.status(500).send({ message: 'No existe la novela.' });
+                return res.status(500).send({ message: 'No existe la novela.' });
             });
         } else {
             fs.unlink(file_path, (err) => {
                 if (err) {
-                    res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
+                    return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                 }
             });
-            res.status(500).send({ message: 'La extensión del archivo no es valida.' });
+            return res.status(500).send({ message: 'La extensión del archivo no es valida.' });
         }
     } else {
-        res.status(400).send({ message: 'Debe Seleccionar una novela.' });
+        return res.status(400).send({ message: 'Debe Seleccionar una novela.' });
     }
 }
 
@@ -300,9 +308,9 @@ function getNovelImage(req, res) {
 
     fs.exists(img_path, (exists) => {
         if (exists) {
-            res.sendFile(path.resolve(img_path));
+            return res.sendFile(path.resolve(img_path));
         } else {
-            res.status(404).send({ message: "No se encuentra la imagen de novela" });
+            return res.status(404).send({ message: "No se encuentra la imagen de novela" });
         }
     });
 }
@@ -318,13 +326,13 @@ function deleteNovel(req, res) {
                 delete_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
                 fs.unlink(delete_file_path, (err) => {
                     if (err) {
-                        res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua. ' });
+                        return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua. ' });
                     } else {
                         fs.unlink(delete_file_thumb_path, (err) => {
                             if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen thumb antigua. ' });
+                                return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen thumb antigua. ' });
                             } else {
-                                res.status(200);
+                                return res.status(200);
                             }
                         });
                     }
@@ -335,15 +343,15 @@ function deleteNovel(req, res) {
                     id: id
                 }
             }).then(novel => {
-                res.status(200).send({ novel });
+                return res.status(200).send({ novel });
             }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio un error al eliminar la novela ' });
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar la novela ' });
             });
         } else {
-            res.status(401).send({ message: 'No autorizado a eliminar la novela' });
-        } 
+            return res.status(401).send({ message: 'No autorizado a eliminar la novela' });
+        }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar la novela a eliminar ' });
+        return res.status(500).send({ message: 'Ocurrio un error al encontrar la novela a eliminar ' });
     });
 }
 
@@ -375,9 +383,9 @@ function getChapter(req, res) {
             }]
         }]
     }).then(chapter => {
-        res.status(200).send({ chapter });
+        return res.status(200).send({ chapter });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
@@ -432,15 +440,15 @@ function getChapters(req, res) {
             }]
         }]
     }).then(chapters => {
-        res.status(200).send({ chapters });
+        return res.status(200).send({ chapters });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
 function createChapter(req, res) {
     const body = req.body;
-    body.chp_author = req.user.id
+    body.chp_author = req.user.id;
     novels.findByPk(body.nvl_id, {
         include: [{
             model: users,
@@ -453,15 +461,15 @@ function createChapter(req, res) {
         const collaborators = novel.collaborators.map(collaborator => collaborator.id);
         if (req.user.id === novel.nvl_author || collaborators.includes(req.user.id)) {
             chapters.create(body).then(chapter => {
-                res.status(200).send({ chapter });
+                return res.status(200).send({ chapter });
             }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado a crear capitulos para esta novela' });
         }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
@@ -477,15 +485,15 @@ function updateChapter(req, res) {
     }).then(chapter => {
         if (req.user.id === chapter.novel.nvl_author || req.user.id === chapter.chp_author) {
             chapter.update(body).then(() => {
-                res.status(200).send({ chapter });
+                return res.status(200).send({ chapter });
             }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulos ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulos ' + err });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado a actualizar el capitulo para esta novela' });
         }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
     });
 }
 
@@ -505,15 +513,15 @@ function deleteChapter(req, res) {
                     id: id
                 }
             }).then(chapter => {
-                res.status(200).send({ chapter });
+                return res.status(200).send({ chapter });
             }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio un error al eliminar el genero indicado ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el genero indicado ' + err });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado a eliminar el capitulo' });
         }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
     });
 }
 
@@ -521,9 +529,9 @@ function deleteChapter(req, res) {
 
 function getGenres(req, res) {
     genres.findAll().then(genres => {
-        res.status(200).send({ genres });
+        return res.status(200).send({ genres });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar los generos' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar los generos' + err });
     });
 }
 
@@ -531,9 +539,9 @@ function createGenre(req, res) {
     var body = req.body;
     console.log(body);
     genres.create(body).then(genre => {
-        res.status(200).send({ genre });
+        return res.status(200).send({ genre });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al crear el genero para las novelas ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al crear el genero para las novelas ' + err });
     });
 }
 
@@ -542,12 +550,12 @@ function updateGenre(req, res) {
     console.log(body);
     genres.findByPk(body.id).then(genre => {
         genre.update(body).then(() => {
-            res.status(200).send({ genre });
+            return res.status(200).send({ genre });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
+            return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
@@ -560,34 +568,39 @@ function deleteGenre(req, res) {
                 id: id
             }
         }).then(genre => {
-            res.status(200).send({ genre });
+            return res.status(200).send({ genre });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar el genero indicado' });
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar el genero indicado' });
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar el genero indicado' });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el genero indicado' });
     });
 }
 
 function createNovelRating(req, res) {
     const body = req.body;
+    body.user_id = req.user.id;
     novels_ratings.create(body).then(novel_rating => {
-        res.status(200).send({ novel_rating });
+        return res.status(200).send({ novel_rating });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al crear clasificacion de la novela ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al crear clasificacion de la novela ' + err });
     });
 }
 
 function updateNovelRating(req, res) {
     var body = req.body;
     novels_ratings.findByPk(body.id).then(novel_rating => {
-        novel_rating.update(body).then(() => {
-            res.status(200).send({ novel_rating });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar la clasificacion de la novela ' + err });
-        });
+        if (req.user.id === novel_rating.user_id || req.user.user_rol === 'admin') {
+            novel_rating.update(body).then(() => {
+                return res.status(200).send({ novel_rating });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la clasificacion de la novela ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la clasificacion de la novela ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la clasificacion de la novela ' + err });
     });
 }
 
@@ -595,17 +608,21 @@ function deleteNovelRating(req, res) {
     var id = req.params.id;
     console.log(id);
     novels_ratings.findByPk(id).then(novel_rating => {
-        novel_rating.destroy({
-            where: {
-                id: id
-            }
-        }).then(novel_rating => {
-            res.status(200).send({ novel_rating });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar la clasificacion de la novela ' + err });
-        });
+        if (req.user.id === novel_rating.user_id || req.user.user_rol === 'admin') {
+            novel_rating.destroy({
+                where: {
+                    id: id
+                }
+            }).then(novel_rating => {
+                return res.status(200).send({ novel_rating });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar la clasificacion de la novela ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la clasificacion de la novela ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la clasificacion de la novela ' + err });
     });
 }
 

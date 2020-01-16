@@ -98,7 +98,7 @@ function getUsers(req, res) {
         }, {
             model: novels,
             as: 'novels',
-            attributes: ['id']
+            attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'createdAt', 'updatedAt']
         }, {
             model: invitations,
             as: 'invitations',
@@ -299,6 +299,122 @@ function updateUserPassword(req, res) {
     });
 }
 
+function uploadUserProfileImg(req, res) {
+    const id = req.params.id;
+    if (req.files) {
+        const file_path = req.files.user_profile_image.path;
+        const file_split = file_path.split('\\');
+        const file_name = file_split[3];
+        const ext_split = file_name.split('\.');
+        const file_ext = ext_split[1];
+        if (file_ext == 'jpg') {
+            if (req.body.old_user_profile_image) {
+                const old_img = req.body.old_user_profile_image;
+                old_file_path = './server/uploads/users/' + old_img;
+                old_file_thumb_path = './server/uploads/users/thumbs/' + old_img;
+                fs.exists(old_file_path, (exists) => {
+                    if (exists) {
+                        fs.unlink(old_file_path, (err) => {
+                            if (err) {
+                                res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' + err });
+                            } else {
+                                console.log('imagen de novela eliminada');
+                            }
+                        });
+                    } else {
+                        console.log('archivo con el nombre de imagen de novela inexistente.');
+                    }
+                });
+                fs.exists(old_file_thumb_path, (exists) => {
+                    if (exists) {
+                        fs.unlink(old_file_thumb_path, (err) => {
+                            if (err) {
+                                res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo.' + err });
+                            } else {
+                                console.log('thumb de novela eliminada');
+                            }
+                        });
+                    } else {
+                        console.log('archivo con el nombre de imagen de novela inexistente.');
+                    }
+                });
+            }
+            const user_profile_image = {};
+            user_profile_image.user_profile_image = file_name;
+
+            users.findByPk(id).then(user => {
+                user.update(user_profile_image).then(() => {
+
+                    const newPath = './server/uploads/users/' + file_name;
+                    const thumbPath = './server/uploads/users/thumbs';
+
+                    thumb({
+                        source: path.resolve(newPath),
+                        destination: path.resolve(thumbPath),
+                        width: 210,
+                        height: 280,
+                        suffix: ''
+                    }).then(() => {
+                        res.status(200).send({ user });
+                    }).catch(err => {
+                        fs.unlink(file_path, (err) => {
+                            if (err) {
+                                res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
+                            }
+                        });
+                        res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail.' });
+                    });
+                }).catch(err => {
+                    fs.unlink(file_path, (err) => {
+                        if (err) {
+                            res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
+                        }
+                    });
+                    res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario.' });
+                });
+            }).catch(err => {
+                fs.unlink(file_path, (err) => {
+                    if (err) {
+                        res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
+                    }
+                });
+                res.status(500).send({ message: 'No existe el usuario.' });
+            });
+        } else {
+            fs.unlink(file_path, (err) => {
+                if (err) {
+                    res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
+                }
+            });
+            res.status(500).send({ message: 'La extensión del archivo no es valida.' });
+        }
+    } else {
+        res.status(400).send({ message: 'Debe Seleccionar un usuario.' });
+    }
+}
+
+function getUserProfileImage(req, res) {
+    const image = req.params.profile_img;
+    const thumb = req.params.thumb;
+    let img_path = null;
+
+    if (thumb == "false") {
+        img_path = './server/uploads/users/' + image;
+    } else if (thumb == "true") {
+        img_path = './server/uploads/users/thumbs/' + image;
+    }
+
+    fs.exists(img_path, (exists) => {
+        if (exists) {
+            res.sendFile(path.resolve(img_path));
+        } else {
+            res.status(404).send({
+                message: "No se encuentra la imagen del usuario"
+            });
+        }
+    });
+}
+
 
 
 
@@ -359,141 +475,6 @@ function updateUserPassword(req, res) {
         res.status(500).send({ message: 'La contraseña no coincide con el campo de confirmación de contraseña.<br>' });
     }
 }*/
-
-
-
-
-
-function getAll(req, res) {
-    users.sequelize.query("SELECT id, user_login, user_profile_image, user_email, user_rol, user_status, user_forum_auth, (SELECT COUNT(*) FROM novels WHERE novels.nvl_author = users.id) AS user_novels_count, (SELECT COUNT(*) from chapters where chapters.chp_author = users.id) AS user_chapters_count, (SELECT COUNT(*) FROM novels_collaborators WHERE novels_collaborators.user_id = users.id) AS user_collaborations_count FROM users", {
-        type: users.sequelize.QueryTypes.SELECT
-    }).then(users => {
-        res.status(200).send({ users });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar a todos los usuarios' });
-    });
-}
-
-function uploadUserProfileImg(req, res) {
-    var id = req.params.id;
-    if (req.files) {
-        var file_path = req.files.user_profile_image.path;
-        var file_split = file_path.split('\\');
-        var file_name = file_split[3];
-        var ext_split = file_name.split('\.');
-        var file_ext = ext_split[1];
-        if (file_ext == 'jpg') {
-            if (req.body.old_user_profile_image) {
-                var old_img = req.body.old_user_profile_image;
-                old_file_path = './server/uploads/users/' + old_img;
-                old_file_thumb_path = './server/uploads/users/thumbs/' + old_img;
-                fs.exists(old_file_path, (exists) => {
-                    if (exists) {
-                        fs.unlink(old_file_path, (err) => {
-                            if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' + err });
-                            } else {
-                                console.log('imagen de novela eliminada');
-                            }
-                        });
-                    } else {
-                        console.log('archivo con el nombre de imagen de novela inexistente.');
-                    }
-                });
-                fs.exists(old_file_thumb_path, (exists) => {
-                    if (exists) {
-                        fs.unlink(old_file_thumb_path, (err) => {
-                            if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo.' + err });
-                            } else {
-                                console.log('thumb de novela eliminada');
-                            }
-                        });
-                    } else {
-                        console.log('archivo con el nombre de imagen de novela inexistente.');
-                    }
-                });
-            } else {
-                console.log('creating a new image in db');
-            }
-            var user_profile_image = {};
-            user_profile_image.user_profile_image = file_name;
-
-            users.findByPk(id).then(user => {
-                user.update(user_profile_image).then(() => {
-
-                    var newPath = './server/uploads/users/' + file_name;
-                    var thumbPath = './server/uploads/users/thumbs';
-
-                    thumb({
-                        source: path.resolve(newPath),
-                        destination: path.resolve(thumbPath),
-                        width: 210,
-                        height: 280,
-                        suffix: ''
-                    }).then(() => {
-                        res.status(200).send({ user });
-                    }).catch(err => {
-                        fs.unlink(file_path, (err) => {
-                            if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
-                            }
-                        });
-                        res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail.' });
-                    });
-                }).catch(err => {
-                    fs.unlink(file_path, (err) => {
-                        if (err) {
-                            res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                        }
-                    });
-                    res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario.' });
-                });
-            }).catch(err => {
-                fs.unlink(file_path, (err) => {
-                    if (err) {
-                        res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                    }
-                });
-                res.status(500).send({ message: 'No existe el usuario.' });
-            });
-        } else {
-            fs.unlink(file_path, (err) => {
-                if (err) {
-                    res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                }
-            });
-            res.status(500).send({ message: 'La extensión del archivo no es valida.' });
-        }
-    } else {
-        res.status(400).send({ message: 'Debe Seleccionar us usuario.' });
-    }
-}
-
-function getUserProfileImage(req, res) {
-    var image = req.params.profile_img;
-    var thumb = req.params.thumb;
-    var img_path = null;
-
-    console.log(image);
-    console.log(thumb);
-
-    if (thumb == "false") {
-        img_path = './server/uploads/users/' + image;
-    } else if (thumb == "true") {
-        img_path = './server/uploads/users/thumbs/' + image;
-    }
-
-    fs.exists(img_path, (exists) => {
-        if (exists) {
-            res.sendFile(path.resolve(img_path));
-        } else {
-            res.status(404).send({
-                message: "No se encuentra la imagen del usuario"
-            });
-        }
-    });
-}
 
 function createUserReadingList(req, res) {
     var body = req.body;
@@ -584,7 +565,7 @@ function createUserInvitation(req, res) {
     console.log(body);
     invitations.findOne({
         where: {
-            invitation_from_id: body.invitation_from_id,
+            invitation_from_id: req.user.id,
             invitation_to_id: body.invitation_to_id,
             invitation_novel: body.invitation_novel
         }
@@ -613,37 +594,6 @@ function updateUserInvitation(req, res) {
         });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar la invitación ' });
-    });
-}
-
-
-function getUserInvitations(req, res) {
-    var id = req.params.id;
-    invitations.sequelize.query("SELECT invitations.id, (select users.user_login from users where users.id = invitations.invitation_from_id) AS invitation_from_login, (select users.user_login from users where users.id = invitations.invitation_to_id) AS invitation_to_login, (select novels.nvl_title from novels where novels.id = invitations.invitation_novel) AS invitation_novel_name, invitations.invitation_status, invitations.invitation_novel, invitations.createdAt from invitations where invitation_to_id = ?", {
-        replacements: [id],
-        type: invitations.sequelize.QueryTypes.SELECT
-    }).then(invitations => {
-        res.status(200).send({ invitations });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
-    });
-}
-
-function createNovelCollaborator(req, res) {
-    var body = req.body;
-    novels_collaborators.create(body).then(novel_collaborator => {
-        res.status(200).send({ novel_collaborator });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al crear el colaborador de novela ' + err });
-    });
-}
-
-function createNovelCollaborator(req, res) {
-    var body = req.body;
-    novels_collaborators.create(body).then(novel_collaborator => {
-        res.status(200).send({ novel_collaborator });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al crear el colaborador de novela ' + err });
     });
 }
 
@@ -696,6 +646,7 @@ module.exports = {
     getUsers,
     cookieTest,
     passwordResetRequest,
-    updateUserPassword
-
+    updateUserPassword,
+    getUserProfileImage,
+    uploadUserProfileImg
 };

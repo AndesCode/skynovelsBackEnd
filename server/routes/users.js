@@ -13,7 +13,7 @@ module.exports = (app) => {
     app.get('/api/user/:id', userController.getUser);
     app.put('/api/update-user-password', md_auth.emailVerificationAuth, userController.updateUserPassword);
     app.get('/api/user/get-user-by-email-token/:token', md_auth.emailVerificationAuth, userController.getUserByEmailToken);
-    app.post('/api/upload-profile-img/:id', [md_auth.auth, md_upload], userController.uploadUserProfileImg);
+    
     app.get('/api/user/image/:profile_img/:thumb', userController.getUserProfileImage);
     app.post('/api/create-user-reading-list', md_auth.auth, userController.createUserReadingList);
     app.get('/api/find-user-reading-list/:id', md_auth.auth, userController.findUserReadingList);
@@ -28,15 +28,17 @@ module.exports = (app) => {
     app.delete('/api/delete-novel-collaborator/:id', md_auth.auth, userController.DeleteNovelCollaborator);*/
 
     app.get('/api/user/:id', userController.getUser);
-    app.get('/api/users/:status', userController.getUsers); // admin authorization require
+    app.get('/api/users/:status', md_auth.adminAuth, userController.getUsers);
+    app.get('/api/logout', userController.logout);
+    app.get('/api/user-profile-img/:profile_img/:thumb', userController.getUserProfileImage);
     app.post('/api/create-user', userController.createUser);
     app.post('/api/login', userController.login);
     app.post('/api/password-reset-request', userController.passwordResetRequest);
-    app.post('/api/password-reset', md_auth.changePasswordTokenAuth,  userController.updateUserPassword);
-    app.get('/api/logout', userController.logout);
+    app.post('/api/password-reset', md_auth.changePasswordTokenAuth, userController.updateUserPassword);
     app.post('/api/activate-user/:key', userController.activateUser);
-    app.put('/api/update-user', userController.updateUser); // loged user require md_auth.auth,
-    app.delete('/api/delete-user/:id', userController.deleteUser); // admin authorization require md_auth.adminAuth,
+    app.post('/api/upload-user-profile-img/:id', [md_auth.auth, md_upload], userController.uploadUserProfileImg);
+    app.put('/api/update-user', md_auth.auth, userController.updateUser);
+    app.delete('/api/delete-user/:id', md_auth.adminAuth, userController.deleteUser);
     // cookie test
     app.get('/api/cookie-test', md_auth.adminAuth, userController.cookieTest);
 };
