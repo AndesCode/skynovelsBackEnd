@@ -7,27 +7,7 @@ const users = require('../models').users;
 
 // Categories
 
-function createCategory(req, res) {
-    const body = req.body;
-    forum_categories.create(body).then(forum_category => {
-        res.status(200).send({ forum_category });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro ' + err });
-    });
-}
 
-function updateCategory(req, res) {
-    const body = req.body;
-    forum_categories.findByPk(body.id).then(forum_category => {
-        forum_category.update(body).then((forum_category) => {
-            res.status(200).send({ forum_category });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar el post ' + err });
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
-    });
-}
 
 
 function getCategories(req, res) {
@@ -52,9 +32,9 @@ function getCategories(req, res) {
             }]
         }]
     }).then(forum_categories => {
-        res.status(200).send({ forum_categories });
+        return res.status(200).send({ forum_categories });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
@@ -84,26 +64,9 @@ function getCategory(req, res) {
             category_name: category
         }
     }).then(forum_category => {
-        res.status(200).send({ forum_category });
+        return res.status(200).send({ forum_category });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
-    });
-}
-
-function deleteCategory(req, res) {
-    const id = req.params.id;
-    forum_categories.findByPk(id).then(forum_category => {
-        forum_category.destroy({
-            where: {
-                id: id
-            }
-        }).then(() => {
-            res.status(200).send({ forum_category });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro ' });
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro ' });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
@@ -127,48 +90,57 @@ function getPost(req, res) {
             }]
         }]
     }).then(post => {
-        res.status(200).send({ post });
+        return res.status(200).send({ post });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
 function createPost(req, res) {
     const body = req.body;
+    body.post_author_id = req.user.id;
     forum_posts.create(body).then(post => {
-        res.status(200).send({ post });
+        return res.status(200).send({ post });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro' });
+        return res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro' });
     });
 }
 
 function updatePost(req, res) {
     const body = req.body;
     forum_posts.findByPk(body.id).then(post => {
-        post.update(body).then((post) => {
-            res.status(200).send({ post });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar el post ' + err });
-        });
+        if (post.post_author_id === req.user.id || req.user.user_rol === 'admin') {
+            post.update(body).then((post) => {
+                res.status(200).send({ post });
+            }).catch(err => {
+                res.status(500).send({ message: 'Ocurrio un error al actualizar el post ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
     });
 }
 
 function deletePost(req, res) {
     const id = req.params.id;
     forum_posts.findByPk(id).then(post => {
-        post.destroy({
-            where: {
-                id: id
-            }
-        }).then(() => {
-            res.status(200).send({ post });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro ' });
-        });
+        if (post.post_author_id === req.user.id || req.user.user_rol === 'admin') {
+            post.destroy({
+                where: {
+                    id: id
+                }
+            }).then(() => {
+                return res.status(200).send({ post });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro ' });
+        return res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro ' + err });
     });
 }
 
@@ -176,49 +148,55 @@ function deletePost(req, res) {
 
 function createComment(req, res) {
     const body = req.body;
+    body.comment_author_id = req.user.id;
     posts_comments.create(body).then(post_comment => {
-        res.status(200).send({ post_comment });
+        return res.status(200).send({ post_comment });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro' });
+        return res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro ' + err });
     });
 }
 
 function updateComment(req, res) {
     const body = req.body;
     posts_comments.findByPk(body.id).then(post_comment => {
-        post_comment.update(body).then((post_comment) => {
-            res.status(200).send({ post_comment });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar el post ' + err });
-        });
+        if (post_comment.comment_author_id === req.user.id || req.user.user_rol === 'admin') {
+            post_comment.update(body).then((post_comment) => {
+                return res.status(200).send({ post_comment });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el post ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
     });
 }
 
 function deleteComment(req, res) {
     const id = req.params.id;
     posts_comments.findByPk(id).then(post_comment => {
-        post_comment.destroy({
-            where: {
-                id: id
-            }
-        }).then(() => {
-            res.status(200).send({ post_comment });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro ' });
-        });
+        if (post_comment.comment_author_id === req.user.id || req.user.user_rol === 'admin') {
+            post_comment.destroy({
+                where: {
+                    id: id
+                }
+            }).then(() => {
+                return res.status(200).send({ post_comment });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro ' });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro ' });
+        return res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro ' + err });
     });
 }
 
 
 module.exports = {
     // Categories
-    createCategory,
-    updateCategory,
-    deleteCategory,
     getCategories,
     getCategory,
     // Posts

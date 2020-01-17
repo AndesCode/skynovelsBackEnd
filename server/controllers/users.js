@@ -80,44 +80,6 @@ function getUser(req, res) {
     });
 }
 
-
-function getUsers(req, res) {
-    let status = req.params.status;
-    if (status === 'All') {
-        status = {
-            [Op.ne]: null
-        };
-    }
-    users.findAll({
-        include: [{
-            model: novels,
-            as: 'collaborations',
-            attributes: ['id'],
-            through: { attributes: [] }
-        }, {
-            model: novels,
-            as: 'novels',
-            attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'createdAt', 'updatedAt']
-        }, {
-            model: invitations,
-            as: 'invitations',
-            attributes: ['id', 'invitation_status']
-        }, {
-            model: novels_ratings,
-            as: 'novels_ratings',
-            attributes: ['id', 'novel_id', 'rate_value']
-        }],
-        attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth', 'user_description', 'createdAt', 'updatedAt'],
-        where: {
-            user_status: status
-        }
-    }).then(users => {
-        res.status(200).send({ users });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
-    });
-}
-
 function activateUser(req, res) {
     const key = req.params.key;
     const decryptedkey = cryptr.decrypt(key);
@@ -155,23 +117,6 @@ function updateUser(req, res) {
         });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar el usuario ' + err });
-    });
-}
-
-function deleteUser(req, res) {
-    var id = req.params.id;
-    users.findByPk(id).then(user => {
-        user.destroy({
-            where: {
-                id: id
-            }
-        }).then(user => {
-            res.status(200).send({ user });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar el usuario' });
-        });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario' });
     });
 }
 
@@ -213,11 +158,6 @@ function logout(req, res) {
     req.session.destroy();
     res.clearCookie('sessionId');
     res.status(200).send({ message: 'sesion finalizada' });
-}
-
-function cookieTest(req, res) {
-    console.log('User is => ' + req.user.user_rol);
-    res.status(200).send({ message: 'sesion conseguida. ' });
 }
 
 function passwordResetRequest(req, res) {
@@ -477,7 +417,7 @@ function getUserProfileImage(req, res) {
 
 function createUserbookmark(req, res) {
     const body = req.body;
-    body.user_id = req.user.id
+    body.user_id = req.user.id;
     user_reading_lists.create(body).then(bookmark => {
         return res.status(200).send({ bookmark });
     }).catch(err => {
@@ -486,7 +426,7 @@ function createUserbookmark(req, res) {
 }
 
 function removeUserbookmark(req, res) {
-    const id = req.params.id
+    const id = req.params.id;
     user_reading_lists.findByPk(id).then(bookmark => {
         if (req.user.id === bookmark.user_id || req.user.user_rol === 'admin') {
             bookmark.destroy({
@@ -540,7 +480,7 @@ function createUserInvitation(req, res) {
                 where: {
                     user_login: body.user_login,
                 },
-                attributes: ['id', 'user_login',]
+                attributes: ['id', 'user_login', ]
             }).then(user => {
                 if (user !== null) {
                     if (user.id !== req.user.id) {
@@ -569,7 +509,7 @@ function createUserInvitation(req, res) {
                     } else {
                         return res.status(500).send({ message: '¡No te puedes invitar a ti mismo!' });
                     }
-                } else {    
+                } else {
                     return res.status(500).send({ message: 'No se encuentra ningún usuario por ese nombre' });
                 }
             }).catch(err => {
@@ -596,7 +536,7 @@ function updateUserInvitation(req, res) {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la invitación ' + err});
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la invitación ' + err });
     });
 }
 
@@ -609,10 +549,7 @@ module.exports = {
     activateUser,
     // Users
     updateUser,
-    deleteUser,
     getUser,
-    getUsers,
-    cookieTest,
     // Passwords
     passwordResetRequest,
     updateUserPassword,

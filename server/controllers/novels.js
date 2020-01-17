@@ -147,16 +147,10 @@ function getNovels(req, res) {
 function createNovel(req, res) {
     const body = req.body;
     body.nvl_author = req.user.id;
-    console.log(body);
-    // variables deberian borrarse y ser remplazadas por arrays enviados desde el front-end
-    // const genresTest = [2];
-    //----------------------------- fin de variables de prueba
-    // console.log(genresTest[1]);
     novels.create(body).then(novel => {
-        /*if (genresTest && genresTest.length > 0) {
-            console.log(genresTest);
-            novel.setGenres(genresTest);
-        }*/
+        if (body.genres && body.genres.length > 0) {
+            novel.setGenres(body.genres);
+        }
         return res.status(200).send({ novel });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
@@ -168,17 +162,11 @@ function updateNovel(req, res) {
     novels.findByPk(body.id).then(novel => {
         if (novel.nvl_author === req.user.id) {
             novel.update(body).then((novel) => {
-                // variables deberian borrarse y ser remplazadas por arrays enviados desde el front-end
-                novel.genresTest = [];
-                novel.new_collaborator = [998, 18];
-                //----------------------------- fin de variables de prueba
-                if (novel.genresTest) {
-                    console.log(novel.genresTest);
-                    novel.setGenres(novel.genresTest);
+                if (body.genres && body.genres.length > 0) {
+                    novel.setGenres(body.genres);
                 }
-                if (novel.new_collaborator && novel.new_collaborator.length > 0) {
-                    console.log(novel.new_collaborator);
-                    novel.setCollaborators(novel.new_collaborator);
+                if (body.collaborators && body.collaborators.length > 0) {
+                    novel.setCollaborators(body.collaborators);
                 }
                 return res.status(200).send({ novel });
             }).catch(err => {
@@ -255,7 +243,7 @@ function uploadNovelImage(req, res) {
                             height: 280,
                             suffix: ''
                         }).then(() => {
-                            res.status(200).send({ novel });
+                            return res.status(200).send({ novel });
                         }).catch(err => {
                             fs.unlink(file_path, (err) => {
                                 if (err) {

@@ -13,9 +13,7 @@ module.exports = (app) => {
     app.post('/api/activate-user/:key', userController.activateUser);
     // Users
     app.get('/api/user/:id', userController.getUser);
-    app.get('/api/users/:status', md_auth.adminAuth, userController.getUsers);
     app.put('/api/update-user', md_auth.auth, userController.updateUser);
-    app.delete('/api/delete-user/:id', md_auth.adminAuth, userController.deleteUser);
     // Passwords
     app.post('/api/password-reset-request', userController.passwordResetRequest);
     app.post('/api/password-reset', md_auth.changePasswordTokenAuth, userController.updateUserPassword);

@@ -1,9 +1,8 @@
 /*jshint esversion: 6 */
 // Models
-const forum = require('../models').forum;
-const posts = require('../models').posts;
+const forum_categories = require('../models').forum_categories;
 const users = require('../models').users;
-const posts_comments = require('../models').posts_comments;
+const novels = require('../models').novels;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
@@ -12,74 +11,108 @@ function adminPanelAccess(req, res) {
     res.status(200).send({ message: 'Acceso otorgado' });
 }
 
-function adminVerification(req, res) {
-    body = req.body;
-    users.findOne({
+function createCategory(req, res) {
+    const body = req.body;
+    forum_categories.create(body).then(forum_category => {
+        res.status(200).send({ forum_category });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro ' + err });
+    });
+}
+
+function updateCategory(req, res) {
+    const body = req.body;
+    forum_categories.findByPk(body.id).then(forum_category => {
+        forum_category.update(body).then((forum_category) => {
+            res.status(200).send({ forum_category });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al actualizar el post ' + err });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
+    });
+}
+
+function deleteCategory(req, res) {
+    const id = req.params.id;
+    forum_categories.findByPk(id).then(forum_category => {
+        forum_category.destroy({
+            where: {
+                id: id
+            }
+        }).then(() => {
+            res.status(200).send({ forum_category });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro ' });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro ' });
+    });
+}
+
+// Users
+
+function getUsers(req, res) {
+    let status = req.params.status;
+    if (status === 'All') {
+        status = {
+            [Op.ne]: null
+        };
+    }
+    users.findAll({
+        include: [{
+            model: novels,
+            as: 'collaborations',
+            attributes: ['id'],
+            through: { attributes: [] }
+        }, {
+            model: novels,
+            as: 'novels',
+            attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'createdAt', 'updatedAt']
+        }, {
+            model: invitations,
+            as: 'invitations',
+            attributes: ['id', 'invitation_status']
+        }, {
+            model: novels_ratings,
+            as: 'novels_ratings',
+            attributes: ['id', 'novel_id', 'rate_value']
+        }],
+        attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth', 'user_description', 'createdAt', 'updatedAt'],
         where: {
-            [Op.and]: [{ id: req.body.user_id }, { user_rol: 'admin' }]
+            user_status: status
         }
-    }).then((user) => {
-        res.status(200).send({ user });
+    }).then(users => {
+        res.status(200).send({ users });
     }).catch(err => {
-        res.status(401).send({ message: 'Ocurrio un error al eliminar el usuario' + err });
+        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
-function getAllPosts(req, res) {
-    var orderBy = req.body.orderBy;
-    var orderOption = req.body.orderOption;
-    posts.sequelize.query(`SELECT DISTINCT ( SELECT COUNT(*) FROM posts_comments WHERE posts_comments.forum_topic_id = posts.id ) AS comment_count, forum.forum_type, posts.createdAt AS postCreatedAt, posts.updatedAt AS postUpdatedAt, posts.id, posts.post_author_id, posts.post_title, posts.forum_type_id, users.user_login AS USER FROM forum, posts_comments, posts JOIN users ON posts.post_author_id = users.id WHERE posts.forum_type_id = forum.id ORDER BY ${orderBy} ${orderOption}`, { type: posts.sequelize.QueryTypes.SELECT }).then(posts => {
-        res.status(200).send({ posts });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error' + err });
-    });
-}
-
-function adminUserDataUpdate(req, res) {
-    var body = req.body;
-    users.findByPk(body.id).then(user => {
-        if (body.action && body.action == 'Desactivate') {
-            var user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-            user.update({
-                user_verification_key: user_verification_key,
-                user_status: 'Desactive'
-            }).then(() => {
-                res.status(200).send({ user });
-            }).catch(err => {
-                res.status(500).send({ message: 'Error al actualizar la key de usuario' });
-            });
-        } else {
-            user.update(body).then(() => {
-                res.status(200).send({ user });
-            }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario' });
-            });
-        }
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar el usuario' });
-    });
-}
-
-function getUserModificable(req, res) {
+function deleteUser(req, res) {
     var id = req.params.id;
-    users.sequelize.query("SELECT user_description, users.user_profile_image, users.id, users.user_login, users.user_email, users.user_status, users.user_rol, (SELECT COUNT(*) FROM posts where posts.post_author_id = users.id) AS post_count, (SELECT COUNT(*) FROM posts_comments WHERE posts_comments.post_comment_author_id = users.id) AS comment_count, (SELECT COUNT(*) FROM novels where novels.nvl_author = users.id) AS novel_count, (SELECT p.post_title FROM posts p where p.post_author_id=users.id ORDER BY createdAt DESC LIMIT 1) AS last_post FROM users WHERE users.id = ?", {
-        replacements: [id],
-        type: users.sequelize.QueryTypes.SELECT
-    }).then(user => {
-        res.status(200).send({
-            user
+    users.findByPk(id).then(user => {
+        user.destroy({
+            where: {
+                id: id
+            }
+        }).then(user => {
+            res.status(200).send({ user });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al eliminar el usuario' });
         });
     }).catch(err => {
-        res.status(500).send({
-            message: 'Ocurrio un error al buscar al usuario' + err
-        });
+        res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario' });
     });
 }
+
+
 
 module.exports = {
     adminPanelAccess,
-    getAllPosts,
-    adminUserDataUpdate,
-    adminVerification,
-    getUserModificable
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    getUsers,
+    deleteUser
 };

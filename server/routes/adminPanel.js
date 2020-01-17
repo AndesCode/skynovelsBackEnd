@@ -3,12 +3,13 @@ const adminPanelController = require('../controllers').adminPanel;
 const md_auth = require('../authenticated/authenticated');
 
 module.exports = (app) => {
-    /*app.post('/api/admin-get-all-posts', md_auth.adminAuth, adminPanelController.getAllPosts);
-    app.put('/api/admin-update-user', md_auth.adminAuth, adminPanelController.adminUserDataUpdate);
-    app.post('/api/admin-verification', md_auth.adminAuth, adminPanelController.adminVerification);
-    app.get('/api/self-service-user/:id', md_auth.auth, adminPanelController.getUserModificable);*/
-
+    // Admin panel access
     app.get('/api/admin-panel', md_auth.adminAuth, adminPanelController.adminPanelAccess);
-
-
+    // Forum categories
+    app.post('/api/create-forum-category', md_auth.adminAuth, adminPanelController.createCategory);
+    app.put('/api/update-forum-category', md_auth.adminAuth, adminPanelController.updateCategory);
+    app.delete('/api/delete-forum-category/:id', md_auth.adminAuth, adminPanelController.deleteCategory);
+    // Users 
+    app.delete('/api/delete-user/:id', md_auth.adminAuth, adminPanelController.deleteUser);
+    app.get('/api/users/:status', md_auth.adminAuth, adminPanelController.getUsers);
 };
