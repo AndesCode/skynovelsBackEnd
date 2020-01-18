@@ -30,6 +30,21 @@ function changePasswordTokenAuth(req, res, next) {
     }
 }
 
+function changePasswordAccessToken(req, res, next) {
+    if (!req.params.token) {
+        return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
+    } else {
+        const token = req.params.token.replace(/['"]+/g, '');
+        const payload = nJwT.verify(token, user.dataValues.user_verification_key, 'HS384', (err, verifiedJwT) => {
+            if (!err) {
+                next();
+            } else {
+                return res.status(401).send({ message: 'No autorizado' });
+            }
+        });
+    }
+}
+
 function adminAuth(req, res, next) {
     if (!req.headers.authorization) {
         return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
@@ -70,5 +85,6 @@ module.exports = {
     auth,
     forumAuth,
     adminAuth,
-    changePasswordTokenAuth
+    changePasswordTokenAuth,
+    changePasswordAccessToken
 };

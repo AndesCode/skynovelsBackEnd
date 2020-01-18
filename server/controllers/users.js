@@ -122,14 +122,14 @@ function updateUser(req, res) {
 
 function login(req, res, next) {
     passport.authenticate('local-login', function(err, user, info) {
-        if (err) { return res.send({ 'status': 'err', 'message': err.message }); }
-        if (!user) { return res.send({ 'status': 'fail', 'message': info.message }); }
+        if (err) { return res.status(500).send({ 'status': 'err', 'message': err.message }); }
+        if (!user) { return res.status(500).send({ 'status': 'fail', 'message': info.message }); }
         req.logIn(user, function(err) {
-            if (err) { return res.send({ 'status': 'err', 'message': err.message }); }
+            if (err) { return res.status(500).send({ 'status': 'err', 'message': err.message }); }
             if (user.user_rol === 'admin') {
                 token_data = jwt.createAdminToken(user);
                 user.update({ user_verification_key: token_data.key }).then(user => {
-                    return res.send({
+                    return res.status(200).send({
                         'user': {
                             id: user.id,
                             user_login: user.user_login,
@@ -154,10 +154,11 @@ function login(req, res, next) {
 }
 
 function logout(req, res) {
+    console.log("Usuario deslogeado " + req.user.user_login);
     req.logOut();
     req.session.destroy();
     res.clearCookie('sessionId');
-    res.status(200).send({ message: 'sesion finalizada' });
+    res.status(200).send({ message: 'sesion finalizada' }); 
 }
 
 function passwordResetRequest(req, res) {
@@ -236,6 +237,10 @@ function updateUserPassword(req, res) {
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario ' + err });
     });
+}
+
+function passwordResetAccess(req, res) {
+    res.status(200).send({ message: 'Acceso otorgado' });
 }
 
 function uploadUserProfileImg(req, res) {
@@ -553,6 +558,7 @@ module.exports = {
     // Passwords
     passwordResetRequest,
     updateUserPassword,
+    passwordResetAccess,
     // Imgs
     getUserProfileImage,
     uploadUserProfileImg,
