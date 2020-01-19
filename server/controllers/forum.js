@@ -90,7 +90,12 @@ function getPost(req, res) {
             }]
         }]
     }).then(post => {
-        return res.status(200).send({ post });
+        if (req.user) {
+            const user = req.user.id
+            return res.status(200).send({ post, user });
+        } else {
+            return res.status(200).send({ post });
+        }   
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });

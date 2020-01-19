@@ -43,7 +43,15 @@ function createUser(req, res) {
 }
 
 function getUser(req, res) {
-    const id = req.params.id;
+    let id = req.params.id;
+    console.log(id);
+    if (req.params.id === 'self') {
+        if (req.user) {
+            id = req.user.id
+        } else {
+            return res.status(500).send({ message: 'Ocurrio un error al cargar los datos de usuario' });
+        }    
+    }
     users.findByPk(id, {
         include: [{
             model: novels,
@@ -71,12 +79,12 @@ function getUser(req, res) {
     }).then(user => {
         if (req.user && user.id === req.user.id) {
             const self_user = true;
-            res.status(200).send({ user, self_user });
+            return res.status(200).send({ user, self_user });
         } else {
-            res.status(200).send({ user });
+            return res.status(200).send({ user });
         }
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario ' + err });
     });
 }
 

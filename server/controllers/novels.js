@@ -19,11 +19,16 @@ const Op = Sequelize.Op;
 function getNovel(req, res) {
     const name = req.params.name;
     let attributes = [];
+    let nvl_status = '';
     if (req.params.action === 'reading' || req.params.action === 'edition') {
         if (req.params.action === 'reading') {
-            attributes = ['id', 'chp_title', 'chp_number'];
+            attributes = ['id', 'chp_title', 'chp_number', 'chp_status'];
+            nvl_status = 'Publicada';
         } else {
-            attributes = ['id', 'chp_title', 'chp_number', 'chp_content', 'chp_review', 'chp_author'];
+            attributes = ['id', 'chp_title', 'chp_number', 'chp_content', 'chp_review', 'chp_author', 'chp_status'];
+            nvl_status = {
+                [Op.ne]: null
+            };
         }
     } else {
         return res.status(500).send({ message: 'petición invalida' });
@@ -65,27 +70,37 @@ function getNovel(req, res) {
             }]
         }],
         where: {
-            nvl_name: name
+            nvl_name: name,
+            nvl_status: nvl_status
         }
     }).then(novel => {
-        const collaborators = novel.collaborators.map(collaborator => collaborator.id);
-        if (req.params.action === 'edition') {
-            if (req.user && (req.user.id === novel.nvl_author || collaborators.includes(req.user.id))) {
-                const authorized_user = req.user.id;
-                return res.status(200).send({ novel, authorized_user });
+        if (novel) {
+            const collaborators = novel.collaborators.map(collaborator => collaborator.id);
+            if (req.params.action === 'edition') {
+                if (req.user && (req.user.id === novel.nvl_author || collaborators.includes(req.user.id))) {
+                    const authorized_user = req.user.id;
+                    return res.status(200).send({ novel, authorized_user });
+                } else {
+                    return res.status(401).send({ message: 'No autorizado ' });
+                }
             } else {
-                return res.status(401).send({ message: 'No autorizado ' });
+                const chapters = novel.chapters.map(chapter => chapter.chp_status);
+                if (chapters.includes('Publicado')) {
+                    if (req.user) {
+                        const user = {
+                            id: req.user.id,
+                            rol: req.user.user_rol
+                        };
+                        return res.status(200).send({ novel, user });
+                    } else {
+                        return res.status(200).send({ novel });
+                    }
+                } else {
+                    return res.status(500).send({ message: 'No se encontro ninguna novela' });
+                }        
             }
         } else {
-            if (req.user) {
-                const user = {
-                    id: req.user.id,
-                    rol: req.user.user_rol
-                };
-                return res.status(200).send({ novel, user });
-            } else {
-                return res.status(200).send({ novel });
-            }
+            return res.status(500).send({ message: 'No se encontro ninguna novela' });
         }
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
@@ -469,8 +484,7 @@ function updateChapter(req, res) {
             model: novels,
             as: 'novel',
             attributes: ['nvl_author']
-        }],
-        attributes: ['nvl_author']
+        }]
     }).then(chapter => {
         if (req.user.id === chapter.novel.nvl_author || req.user.id === chapter.chp_author) {
             chapter.update(body).then(() => {
@@ -493,8 +507,7 @@ function deleteChapter(req, res) {
             model: novels,
             as: 'novel',
             attributes: ['nvl_author']
-        }],
-        attributes: ['nvl_author']
+        }]
     }).then(chapter => {
         if (req.user.id === chapter.novel.nvl_author || req.user.id === chapter.chp_author) {
             chapter.destroy({
