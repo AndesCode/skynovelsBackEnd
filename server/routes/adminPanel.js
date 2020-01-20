@@ -6,10 +6,20 @@ module.exports = (app) => {
     // Admin panel access
     app.get('/api/admin-panel', md_auth.adminAuth, adminPanelController.adminPanelAccess);
     // Forum categories
-    app.post('/api/create-forum-category', md_auth.adminAuth, adminPanelController.createCategory);
-    app.put('/api/update-forum-category', md_auth.adminAuth, adminPanelController.updateCategory);
-    app.delete('/api/delete-forum-category/:id', md_auth.adminAuth, adminPanelController.deleteCategory);
+    app.post('/api/admin-create-forum-category', md_auth.adminAuth, adminPanelController.createCategory);
+    app.put('/api/admin-update-forum-category', md_auth.adminAuth, adminPanelController.updateCategory);
+    app.delete('/api/admin-delete-forum-category/:id', md_auth.adminAuth, adminPanelController.deleteCategory);
+    // forum posts
+    app.put('/api/admin-update-forum-post', md_auth.adminAuth, adminPanelController.adminUpdatePost);
+    app.delete('/api/admin-delete-forum-post/:id', md_auth.adminAuth, adminPanelController.adminDeletePost);
+    // forum comments
+    app.put('/api/admin-update-post-comment', md_auth.adminAuth, adminPanelController.adminUpdateComment);
+    app.delete('/api/admin-delete-post-comment/:id', md_auth.adminAuth, adminPanelController.adminDeleteComment);
     // Users 
-    app.delete('/api/delete-user/:id', md_auth.adminAuth, adminPanelController.deleteUser);
-    app.get('/api/users/:status', md_auth.adminAuth, adminPanelController.getUsers);
+    app.get('/api/admin-users/:status', md_auth.adminAuth, adminPanelController.getUsers);
+    app.delete('/api/admin-delete-user/:id', md_auth.adminAuth, adminPanelController.deleteUser);
+    // novels
+    app.get('/api/admin-novels', md_auth.adminAuth, adminPanelController.adminGetNovels);
+    app.put('/api/admin-update-novel', md_auth.adminAuth, adminPanelController.adminUpdateNovel);
+    app.delete('/api/admin-delete-novel/:id', md_auth.adminAuth, adminPanelController.adminDeleteNovel);
 };

@@ -108,12 +108,6 @@ function getNovel(req, res) {
 }
 
 function getNovels(req, res) {
-    let status = req.params.status;
-    if (status === 'All') {
-        status = {
-            [Op.ne]: null
-        };
-    }
     novels.findAll({
         include: [{
             model: genres,
@@ -150,7 +144,7 @@ function getNovels(req, res) {
             }]
         }],
         where: {
-            nvl_status: status
+            nvl_status: 'Publicada'
         }
     }).then(novels => {
         return res.status(200).send({ novels });

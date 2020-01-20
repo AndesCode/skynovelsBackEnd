@@ -114,7 +114,7 @@ function createPost(req, res) {
 function updatePost(req, res) {
     const body = req.body;
     forum_posts.findByPk(body.id).then(post => {
-        if (post.post_author_id === req.user.id || req.user.user_rol === 'admin') {
+        if (post.post_author_id === req.user.id) {
             post.update(body).then((post) => {
                 res.status(200).send({ post });
             }).catch(err => {
@@ -131,7 +131,7 @@ function updatePost(req, res) {
 function deletePost(req, res) {
     const id = req.params.id;
     forum_posts.findByPk(id).then(post => {
-        if (post.post_author_id === req.user.id || req.user.user_rol === 'admin') {
+        if (post.post_author_id === req.user.id) {
             post.destroy({
                 where: {
                     id: id
@@ -164,7 +164,7 @@ function createComment(req, res) {
 function updateComment(req, res) {
     const body = req.body;
     posts_comments.findByPk(body.id).then(post_comment => {
-        if (post_comment.comment_author_id === req.user.id || req.user.user_rol === 'admin') {
+        if (post_comment.comment_author_id === req.user.id) {
             post_comment.update(body).then((post_comment) => {
                 return res.status(200).send({ post_comment });
             }).catch(err => {
@@ -181,7 +181,7 @@ function updateComment(req, res) {
 function deleteComment(req, res) {
     const id = req.params.id;
     posts_comments.findByPk(id).then(post_comment => {
-        if (post_comment.comment_author_id === req.user.id || req.user.user_rol === 'admin') {
+        if (post_comment.comment_author_id === req.user.id) {
             post_comment.destroy({
                 where: {
                     id: id
