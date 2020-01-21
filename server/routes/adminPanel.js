@@ -22,4 +22,8 @@ module.exports = (app) => {
     app.get('/api/admin-novels', md_auth.adminAuth, adminPanelController.adminGetNovels);
     app.put('/api/admin-update-novel', md_auth.adminAuth, adminPanelController.adminUpdateNovel);
     app.delete('/api/admin-delete-novel/:id', md_auth.adminAuth, adminPanelController.adminDeleteNovel);
+    // Genres
+    app.post('/api/admin-create-genre', md_auth.adminAuth, adminPanelController.adminCreateGenre);
+    app.put('/api/admin-update-genre', md_auth.adminAuth, adminPanelController.adminUpdateGenre);
+    app.delete('/api/admin-delete-genre/:id', md_auth.adminAuth, adminPanelController.adminDeleteGenre);
 };

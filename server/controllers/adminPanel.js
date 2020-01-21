@@ -268,6 +268,48 @@ function adminDeleteNovel(req, res) {
     });
 }
 
+function adminCreateGenre(req, res) {
+    var body = req.body;
+    console.log(body);
+    genres.create(body).then(genre => {
+        return res.status(200).send({ genre });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al crear el genero para las novelas ' + err });
+    });
+}
+
+function adminUpdateGenre(req, res) {
+    var body = req.body;
+    console.log(body);
+    genres.findByPk(body.id).then(genre => {
+        genre.update(body).then(() => {
+            return res.status(200).send({ genre });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
+        });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+    });
+}
+
+function adminDeleteGenre(req, res) {
+    var id = req.params.id;
+    console.log(id);
+    genres.findByPk(id).then(genre => {
+        genre.destroy({
+            where: {
+                id: id
+            }
+        }).then(genre => {
+            return res.status(200).send({ genre });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar el genero indicado' });
+        });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el genero indicado' });
+    });
+}
+
 
 
 module.exports = {
@@ -287,5 +329,10 @@ module.exports = {
     // Novels
     adminGetNovels,
     adminUpdateNovel,
-    adminDeleteNovel
+    adminDeleteNovel,
+    // Genres
+    adminCreateGenre,
+    adminUpdateGenre,
+    adminDeleteGenre
+
 };

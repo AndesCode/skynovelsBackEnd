@@ -97,7 +97,7 @@ function getNovel(req, res) {
                     }
                 } else {
                     return res.status(500).send({ message: 'No se encontro ninguna novela' });
-                }        
+                }
             }
         } else {
             return res.status(500).send({ message: 'No se encontro ninguna novela' });
@@ -116,7 +116,7 @@ function getNovels(req, res) {
         }, {
             model: chapters,
             as: 'chapters',
-            attributes: ['id']
+            attributes: ['chp_number', 'createdAt', 'chp_title'],
         }, {
             model: novels_ratings,
             as: 'novel_ratings',
@@ -145,7 +145,10 @@ function getNovels(req, res) {
         }],
         where: {
             nvl_status: 'Publicada'
-        }
+        },
+        order: [
+            [{ model: chapters, as: 'chapters' }, 'chp_number', 'asc']
+        ]
     }).then(novels => {
         return res.status(200).send({ novels });
     }).catch(err => {
@@ -531,48 +534,6 @@ function getGenres(req, res) {
     });
 }
 
-function createGenre(req, res) {
-    var body = req.body;
-    console.log(body);
-    genres.create(body).then(genre => {
-        return res.status(200).send({ genre });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear el genero para las novelas ' + err });
-    });
-}
-
-function updateGenre(req, res) {
-    var body = req.body;
-    console.log(body);
-    genres.findByPk(body.id).then(genre => {
-        genre.update(body).then(() => {
-            return res.status(200).send({ genre });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
-        });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
-    });
-}
-
-function deleteGenre(req, res) {
-    var id = req.params.id;
-    console.log(id);
-    genres.findByPk(id).then(genre => {
-        genre.destroy({
-            where: {
-                id: id
-            }
-        }).then(genre => {
-            return res.status(200).send({ genre });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al eliminar el genero indicado' });
-        });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el genero indicado' });
-    });
-}
-
 function createNovelRating(req, res) {
     const body = req.body;
     body.user_id = req.user.id;
@@ -639,9 +600,6 @@ module.exports = {
     deleteChapter,
     // Genres
     getGenres,
-    createGenre,
-    updateGenre,
-    deleteGenre,
     // Novel ratings
     createNovelRating,
     updateNovelRating,
