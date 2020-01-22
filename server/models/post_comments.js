@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
         console.log('Inicia asociaciones');
         posts_comments.belongsTo(models.forum_posts, {
             foreignKey: 'forum_post_id',
-            as: 'forum_post',
+            as: 'post',
         });
         posts_comments.belongsTo(models.users, {
             foreignKey: 'comment_author_id',
