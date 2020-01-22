@@ -30,7 +30,10 @@ function getCategories(req, res) {
                     attributes: ['user_login']
                 }]
             }]
-        }]
+        }],
+        order: [
+            ['category_order', 'ASC']
+        ]
     }).then(forum_categories => {
         return res.status(200).send({ forum_categories });
     }).catch(err => {
@@ -95,7 +98,7 @@ function getPost(req, res) {
             return res.status(200).send({ post, user });
         } else {
             return res.status(200).send({ post });
-        }   
+        }
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });

@@ -168,6 +168,19 @@ function adminDeleteUser(req, res) {
     });
 }
 
+function adminUpdateUser(req, res) {
+    const body = req.body;
+    users.findByPk(body.id).then(user => {
+        user.update(body).then(() => {
+            res.status(200).send({ user });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario ' + err });
+        });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar el usuario ' + err });
+    });
+}
+
 // Novels
 
 function adminGetNovels(req, res) {
@@ -268,6 +281,40 @@ function adminDeleteNovel(req, res) {
     });
 }
 
+// Chapters
+
+function adminUpdateChapter(req, res) {
+    const body = req.body;
+    chapters.findByPk(body.id).then(chapter => {
+        chapter.update(body).then(() => {
+            return res.status(200).send({ chapter });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulos ' + err });
+        });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
+    });
+}
+
+function adminDeleteChapter(req, res) {
+    const id = req.params.id;
+    chapters.findByPk(id).then(chapter => {
+        chapter.destroy({
+            where: {
+                id: id
+            }
+        }).then(chapter => {
+            return res.status(200).send({ chapter });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar el genero indicado ' + err });
+        });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
+    });
+}
+
+// Genres
+
 function adminCreateGenre(req, res) {
     var body = req.body;
     console.log(body);
@@ -326,10 +373,14 @@ module.exports = {
     // Users
     adminGetUsers,
     adminDeleteUser,
+    adminUpdateUser,
     // Novels
     adminGetNovels,
     adminUpdateNovel,
     adminDeleteNovel,
+    // Chapters
+    adminUpdateChapter,
+    adminDeleteChapter,
     // Genres
     adminCreateGenre,
     adminUpdateGenre,

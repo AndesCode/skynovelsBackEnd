@@ -145,10 +145,7 @@ function getNovels(req, res) {
         }],
         where: {
             nvl_status: 'Publicada'
-        },
-        order: [
-            [{ model: chapters, as: 'chapters' }, 'chp_number', 'asc']
-        ]
+        }
     }).then(novels => {
         return res.status(200).send({ novels });
     }).catch(err => {

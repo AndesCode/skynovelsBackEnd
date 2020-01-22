@@ -17,11 +17,15 @@ module.exports = (app) => {
     app.delete('/api/admin-delete-post-comment/:id', md_auth.adminAuth, adminPanelController.adminDeleteComment);
     // Users 
     app.get('/api/admin-users/:status', md_auth.adminAuth, adminPanelController.adminGetUsers);
+    app.put('/api/admin-update-user', md_auth.adminAuth, adminPanelController.adminUpdateUser);
     app.delete('/api/admin-delete-user/:id', md_auth.adminAuth, adminPanelController.adminDeleteUser);
     // novels
     app.get('/api/admin-novels', md_auth.adminAuth, adminPanelController.adminGetNovels);
     app.put('/api/admin-update-novel', md_auth.adminAuth, adminPanelController.adminUpdateNovel);
     app.delete('/api/admin-delete-novel/:id', md_auth.adminAuth, adminPanelController.adminDeleteNovel);
+    // Chapters
+    app.put('/api/admin-update-chapters', md_auth.adminAuth, adminPanelController.adminUpdateChapter);
+    app.delete('/api/admin-delete-chapter/:id', md_auth.adminAuth, adminPanelController.adminDeleteChapter);
     // Genres
     app.post('/api/admin-create-genre', md_auth.adminAuth, adminPanelController.adminCreateGenre);
     app.put('/api/admin-update-genre', md_auth.adminAuth, adminPanelController.adminUpdateGenre);

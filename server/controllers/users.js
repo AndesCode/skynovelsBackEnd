@@ -47,10 +47,10 @@ function getUser(req, res) {
     console.log(id);
     if (req.params.id === 'self') {
         if (req.user) {
-            id = req.user.id
+            id = req.user.id;
         } else {
             return res.status(500).send({ message: 'Ocurrio un error al cargar los datos de usuario' });
-        }    
+        }
     }
     users.findByPk(id, {
         include: [{
@@ -118,11 +118,16 @@ function updateUser(req, res) {
         return res.status(401).send({ message: 'Operación no permitida' });
     }
     users.findByPk(body.id).then(user => {
-        user.update(body).then(() => {
-            res.status(200).send({ user });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario ' + err });
-        });
+        if (user.id === req.user.id) {
+            user.update(body).then(() => {
+                res.status(200).send({ user });
+            }).catch(err => {
+                res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al buscar el usuario ' + err });
     });
@@ -131,33 +136,42 @@ function updateUser(req, res) {
 function login(req, res, next) {
     passport.authenticate('local-login', function(err, user, info) {
         if (err) { return res.status(500).send({ 'status': 'err', 'message': err.message }); }
-        if (!user) { return res.status(500).send({ 'status': 'fail', 'message': info.message }); }
-        req.logIn(user, function(err) {
-            if (err) { return res.status(500).send({ 'status': 'err', 'message': err.message }); }
+        if (!user) {
+            return res.status(500).send({ 'status': 'fail', 'message': info.message });
+        } else {
             if (user.user_rol === 'admin') {
                 token_data = jwt.createAdminToken(user);
                 user.update({ user_verification_key: token_data.key }).then(user => {
+                    req.logIn(user, function(err) {
+                        if (err) { return res.status(500).send({ 'status': 'err', 'message': err.message }); }
+                    });
                     return res.status(200).send({
-                        'user': {
+                        /*'user': {
                             id: user.id,
                             user_login: user.user_login,
                             user_rol: user.user_rol
-                        },
-                        token: token_data.token
+                        },*/
+                        sknvl_s: token_data.token
                     });
                 }).catch(err => {
                     res.status(500).send({ message: 'Error al actualizar la key de administrador ' + err });
                 });
             } else {
+                const sToken = jwt.createSessionToken(user);
+                req.logIn(user, function(err) {
+                    if (err) { return res.status(500).send({ 'status': 'err', 'message': err.message }); }
+                });
                 return res.send({
-                    'user': {
+                    /*'user': {
                         id: user.id,
                         user_login: user.user_login,
                         user_rol: user.user_rol
-                    }
+                    },*/
+                    sknvl_s: sToken
                 });
             }
-        });
+        }
+
     })(req, res, next);
 }
 
@@ -166,7 +180,7 @@ function logout(req, res) {
     req.logOut();
     req.session.destroy();
     res.clearCookie('sessionId');
-    res.status(200).send({ message: 'sesion finalizada' }); 
+    res.status(200).send({ message: 'sesion finalizada' });
 }
 
 function passwordResetRequest(req, res) {
@@ -441,7 +455,7 @@ function createUserbookmark(req, res) {
 function removeUserbookmark(req, res) {
     const id = req.params.id;
     user_reading_lists.findByPk(id).then(bookmark => {
-        if (req.user.id === bookmark.user_id || req.user.user_rol === 'admin') {
+        if (req.user.id === bookmark.user_id) {
             bookmark.destroy({
                 where: {
                     id: id
@@ -462,7 +476,7 @@ function removeUserbookmark(req, res) {
 function updateUserbookmark(req, res) {
     const body = req.body;
     user_reading_lists.findByPk(body.id).then(bookmark => {
-        if (req.user.id === bookmark.user_id || req.user.user_rol === 'admin') {
+        if (req.user.id === bookmark.user_id) {
             console.log(body.nvl_chapter);
             bookmark.update({
                 nvl_chapter: body.nvl_chapter
@@ -537,7 +551,7 @@ function createUserInvitation(req, res) {
 function updateUserInvitation(req, res) {
     const body = req.body;
     invitations.findByPk(body.id).then(invitation => {
-        if (req.user.id === invitation.invitation_to_id || req.user.user_rol === 'admin') {
+        if (req.user.id === invitation.invitation_to_id) {
             invitation.update({
                 invitation_status: body.invitation_status
             }).then(() => {
