@@ -15,7 +15,7 @@ function getCategories(req, res) {
         include: [{
             model: forum_posts,
             as: 'posts',
-            attributes: ['id', 'post_author_id', 'post_title', 'createdAt', 'updatedAt'],
+            attributes: ['id', 'post_author_id', 'post_title', 'createdAt'],
             include: [{
                 model: users,
                 as: 'user',
@@ -23,7 +23,7 @@ function getCategories(req, res) {
             }, {
                 model: posts_comments,
                 as: 'post_comments',
-                attributes: ['id', 'comment_author_id', 'createdAt', 'updatedAt'],
+                attributes: ['comment_author_id', 'createdAt'],
                 include: [{
                     model: users,
                     as: 'user',
@@ -31,10 +31,11 @@ function getCategories(req, res) {
                 }, {
                     model: forum_posts,
                     as: 'post',
-                    attributes: ['post_title']
+                    attributes: ['id', 'post_title']
                 }]
             }]
         }],
+        attributes: ['category_name', 'category_description', 'category_order'],
         order: [
             ['category_order', 'ASC']
         ]
@@ -51,7 +52,7 @@ function getCategory(req, res) {
         include: [{
             model: forum_posts,
             as: 'posts',
-            attributes: ['id', 'post_author_id', 'post_title', 'createdAt', 'updatedAt'],
+            attributes: ['id', 'post_author_id', 'post_title', 'createdAt'],
             include: [{
                 model: users,
                 as: 'user',
@@ -59,7 +60,7 @@ function getCategory(req, res) {
             }, {
                 model: posts_comments,
                 as: 'post_comments',
-                attributes: ['id', 'comment_author_id', 'createdAt', 'updatedAt'],
+                attributes: ['id', 'comment_author_id', 'createdAt'],
                 include: [{
                     model: users,
                     as: 'user',
