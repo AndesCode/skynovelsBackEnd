@@ -28,10 +28,6 @@ function getCategories(req, res) {
                     model: users,
                     as: 'user',
                     attributes: ['user_login']
-                }, {
-                    model: forum_posts,
-                    as: 'post',
-                    attributes: ['id', 'post_title']
                 }]
             }]
         }],
