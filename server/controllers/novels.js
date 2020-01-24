@@ -144,7 +144,9 @@ function getNovels(req, res) {
             }]
         }],
         where: {
-            nvl_status: 'Publicada'
+            nvl_status: {
+                [Op.or]: ['Publicada', 'Finalizada']
+            }
         }
     }).then(novels => {
         return res.status(200).send({ novels });
