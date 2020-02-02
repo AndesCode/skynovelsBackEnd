@@ -308,7 +308,7 @@ function getNovelImage(req, res) {
 
     fs.exists(img_path, (exists) => {
         if (exists) {
-            return res.sendFile(path.resolve(img_path));
+            return res.status(200).sendFile(path.resolve(img_path));
         } else {
             return res.status(404).send({ message: "No se encuentra la imagen de novela" });
         }
