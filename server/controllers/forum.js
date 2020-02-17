@@ -31,7 +31,7 @@ function getCategories(req, res) {
                 }]
             }]
         }],
-        attributes: ['category_name', 'category_description', 'category_order'],
+        attributes: ['category_name', 'category_title', 'category_description', 'category_order'],
         order: [
             ['category_order', 'ASC']
         ]
@@ -92,10 +92,14 @@ function getPost(req, res) {
                 as: 'user',
                 attributes: ['user_login']
             }]
+        }, {
+            model: forum_categories,
+            as: 'forum_category',
+            attributes: ['category_name'],
         }]
     }).then(post => {
         if (req.user) {
-            const user = req.user.id
+            const user = req.user.id;
             return res.status(200).send({ post, user });
         } else {
             return res.status(200).send({ post });

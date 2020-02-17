@@ -24,6 +24,7 @@ module.exports = (sequelized, DataTypes) => {
                 }
             }
         },
+        category_title: DataTypes.STRING(35),
         category_description: DataTypes.TEXT('tiny'),
         category_order: DataTypes.INTEGER
     }, {
