@@ -82,7 +82,12 @@ function getPost(req, res) {
         include: [{
             model: users,
             as: 'user',
-            attributes: ['user_login']
+            attributes: ['user_login'],
+            include: [{
+                model: forum_posts,
+                as: 'forum_posts',
+                attributes: ['id']
+            }]
         }, {
             model: posts_comments,
             as: 'post_comments',
@@ -90,12 +95,17 @@ function getPost(req, res) {
             include: [{
                 model: users,
                 as: 'user',
-                attributes: ['user_login']
+                attributes: ['user_login'],
+                include: [{
+                    model: forum_posts,
+                    as: 'forum_posts',
+                    attributes: ['id']
+                }]
             }]
         }, {
             model: forum_categories,
             as: 'forum_category',
-            attributes: ['category_name'],
+            attributes: ['category_name', 'category_title'],
         }]
     }).then(post => {
         if (req.user) {

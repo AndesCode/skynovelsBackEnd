@@ -6,6 +6,7 @@ const invitations = require('../models').invitations;
 const users = require('../models').users;
 const novels = require('../models').novels;
 const novels_ratings = require('../models').novels_ratings;
+const forum_posts = require('../models').forum_posts;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
@@ -74,6 +75,10 @@ function getUser(req, res) {
                 as: 'novel',
                 attributes: ['nvl_title']
             }]
+        }, {
+            model: forum_posts,
+            as: 'forum_posts',
+            attributes: ['id'],
         }],
         attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_description', 'createdAt', 'updatedAt']
     }).then(user => {
