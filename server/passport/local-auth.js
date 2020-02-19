@@ -17,6 +17,8 @@ passport.deserializeUser((id, done) => {
     console.log('deserializando');
     users.findByPk(id).then(user => {
         done(null, user);
+    }).catch(err => {
+        done(err, user);
     });
 });
 
@@ -34,5 +36,7 @@ passport.use('local-login', new LocalStrategy({
         } else {
             return done(null, false, { message: 'Usuario o contraseña incorrectos' });
         }
+    }).catch(err => {
+        return done(err, false, { message: 'Error en proceso de autenticación' });
     });
 }));

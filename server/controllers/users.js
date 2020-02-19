@@ -80,7 +80,7 @@ function getUser(req, res) {
             as: 'forum_posts',
             attributes: ['id'],
         }],
-        attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_description', 'createdAt', 'updatedAt']
+        attributes: ['id', 'user_login', 'user_email', 'user_forum_auth', 'user_rol', 'user_description', 'createdAt', 'updatedAt']
     }).then(user => {
         if (req.user && user.id === req.user.id) {
             const self_user = true;
