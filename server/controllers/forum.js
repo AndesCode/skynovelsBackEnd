@@ -108,12 +108,7 @@ function getPost(req, res) {
             attributes: ['category_name', 'category_title'],
         }]
     }).then(post => {
-        if (req.user) {
-            const user = req.user.id;
-            return res.status(200).send({ post, user });
-        } else {
-            return res.status(200).send({ post });
-        }
+        return res.status(200).send({ post });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
@@ -150,7 +145,7 @@ function deletePost(req, res) {
     const id = req.params.id;
     forum_posts.findByPk(id).then(post => {
         if (post.post_author_id === req.user.id) {
-            post.destroy({
+            forum_posts.destroy({
                 where: {
                     id: id
                 }

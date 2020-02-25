@@ -4,7 +4,7 @@ const njwt = require('njwt');
 exports.createToken = (user) => {
     const signingKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const params = {
-        sub: user.id
+        sub: user.id,
     };
     const jwt = njwt.create(params, signingKey, 'HS384');
     const t = new Date();
@@ -19,7 +19,8 @@ exports.createToken = (user) => {
 
 exports.createSessionToken = (user) => {
     const params = {
-        sub: user.id
+        sub: user.id,
+        user_login: user.user_login,
     };
     const jwt = njwt.create(params, 'roagf_h.54](s[2389dasd]af');
     const t = new Date();
@@ -33,7 +34,8 @@ exports.createAdminToken = (user) => {
     const signingKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const params = {
         sub: user.id,
-        user_rol: user.user_rol
+        user_rol: user.user_rol,
+        user_login: user.user_login
     };
     const jwt = njwt.create(params, signingKey, 'HS512');
     const t = new Date();

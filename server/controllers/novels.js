@@ -86,15 +86,7 @@ function getNovel(req, res) {
             } else {
                 const chapters = novel.chapters.map(chapter => chapter.chp_status);
                 if (chapters.includes('Publicado')) {
-                    if (req.user) {
-                        const user = {
-                            id: req.user.id,
-                            rol: req.user.user_rol
-                        };
-                        return res.status(200).send({ novel, user });
-                    } else {
-                        return res.status(200).send({ novel });
-                    }
+                    return res.status(200).send({ novel });
                 } else {
                     return res.status(500).send({ message: 'No se encontro ninguna novela' });
                 }

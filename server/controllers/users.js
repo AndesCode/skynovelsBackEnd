@@ -37,7 +37,7 @@ function createUser(req, res) {
     console.log(body);
     users.create(body).then(user => {
         const activation_user_key = cryptr.encrypt(user.user_verification_key);
-        res.status(200).send({ activation_user_key }); // Aqui debe ir NodeMailer enviando la clave a traves de una URL
+        res.status(201).send({ activation_user_key }); // Aqui debe ir NodeMailer enviando la clave a traves de una URL
     }).catch(err => {
         res.status(500).send({ message: 'Error en el registro del usuario.<br>' + err.message });
     });
@@ -50,7 +50,7 @@ function getUser(req, res) {
         if (req.user) {
             id = req.user.id;
         } else {
-            return res.status(500).send({ message: 'Ocurrio un error al cargar los datos de usuario' });
+            return res.status(401).send({ message: 'No hay usuario logeado' });
         }
     }
     users.findByPk(id, {
@@ -151,11 +151,6 @@ function login(req, res, next) {
                         if (err) { return res.status(500).send({ 'status': 'err', 'message': err.message }); }
                     });
                     return res.status(200).send({
-                        /*'user': {
-                            id: user.id,
-                            user_login: user.user_login,
-                            user_rol: user.user_rol
-                        },*/
                         sknvl_s: token_data.token
                     });
                 }).catch(err => {
@@ -167,11 +162,6 @@ function login(req, res, next) {
                     if (err) { return res.status(500).send({ 'status': 'err', 'message': err.message }); }
                 });
                 return res.send({
-                    /*'user': {
-                        id: user.id,
-                        user_login: user.user_login,
-                        user_rol: user.user_rol
-                    },*/
                     sknvl_s: sToken
                 });
             }
