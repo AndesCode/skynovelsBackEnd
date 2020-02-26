@@ -103,7 +103,7 @@ module.exports = (sequelize, DataTypes) => {
         });
         users.hasMany(models.posts_comments, {
             foreignKey: 'comment_author_id',
-            as: 'forum_comments',
+            as: 'post_comments',
         });
     };
 

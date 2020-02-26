@@ -6,7 +6,10 @@ const invitations = require('../models').invitations;
 const users = require('../models').users;
 const novels = require('../models').novels;
 const novels_ratings = require('../models').novels_ratings;
+const chapters = require('../models').chapters;
 const forum_posts = require('../models').forum_posts;
+const posts_comments = require('../models').posts_comments;
+const forum_categories = require('../models').forum_categories;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
@@ -62,14 +65,23 @@ function getUser(req, res) {
         }, {
             model: novels,
             as: 'novels',
-            attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_writer', 'nvl_rating']
+            attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_writer', 'nvl_rating'],
+        }, {
+            model: chapters,
+            as: 'chapters',
+            attributes: ['id', 'chp_title', 'createdAt', 'updatedAt'],
+            include: [{
+                model: novels,
+                as: 'novel',
+                attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_writer', 'nvl_rating'],
+            }]
         }, {
             model: invitations,
             as: 'invitations'
         }, {
             model: novels_ratings,
             as: 'novels_ratings',
-            attributes: ['id', 'novel_id', 'rate_value', 'createdAt', 'updatedAt'],
+            attributes: ['id', 'novel_id', 'rate_value', 'rate_comment', 'createdAt', 'updatedAt'],
             include: [{
                 model: novels,
                 as: 'novel',
@@ -78,7 +90,21 @@ function getUser(req, res) {
         }, {
             model: forum_posts,
             as: 'forum_posts',
-            attributes: ['id'],
+            attributes: ['id', 'post_title', 'createdAt', 'updatedAt'],
+            include: [{
+                model: forum_categories,
+                as: 'forum_category',
+                attributes: ['category_name', 'category_title'],
+            }]
+        }, {
+            model: posts_comments,
+            as: 'post_comments',
+            attributes: ['id', 'createdAt', 'updatedAt'],
+            include: [{
+                model: forum_posts,
+                as: 'post',
+                attributes: ['id', 'post_title']
+            }]
         }],
         attributes: ['id', 'user_login', 'user_email', 'user_forum_auth', 'user_rol', 'user_description', 'createdAt', 'updatedAt']
     }).then(user => {
