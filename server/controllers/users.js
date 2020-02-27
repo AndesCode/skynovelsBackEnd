@@ -108,12 +108,17 @@ function getUser(req, res) {
         }],
         attributes: ['id', 'user_login', 'user_email', 'user_forum_auth', 'user_rol', 'user_description', 'createdAt', 'updatedAt']
     }).then(user => {
-        if (req.user && user.id === req.user.id) {
-            const self_user = true;
-            return res.status(200).send({ user, self_user });
+        if (user) {
+            if (req.user && user.id === req.user.id) {
+                const self_user = true;
+                return res.status(200).send({ user, self_user });
+            } else {
+                return res.status(200).send({ user });
+            }
         } else {
-            return res.status(200).send({ user });
+            return res.status(404).send({ message: 'No se encontro ningún usuario'});
         }
+
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario ' + err });
     });
