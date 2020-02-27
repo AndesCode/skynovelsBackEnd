@@ -5,7 +5,7 @@ const md_auth = require('../authenticated/authenticated');
 module.exports = (app) => {
     // Categories
     app.get('/api/forum-categories', forumController.getCategories);
-    app.get('/api/forum-category/:category', forumController.getCategory);
+    app.get('/api/forum-category/:id', forumController.getCategory);
     // Posts
     app.get('/api/forum-post/:id', forumController.getPost);
     app.post('/api/create-forum-post', md_auth.forumAuth, forumController.createPost);

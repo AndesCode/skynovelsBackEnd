@@ -31,7 +31,7 @@ function getCategories(req, res) {
                 }]
             }]
         }],
-        attributes: ['category_name', 'category_title', 'category_description', 'category_order'],
+        attributes: ['id', 'category_name', 'category_title', 'category_description', 'category_order'],
         order: [
             ['category_order', 'ASC']
         ]
@@ -43,8 +43,8 @@ function getCategories(req, res) {
 }
 
 function getCategory(req, res) {
-    const category = req.params.category;
-    forum_categories.findOne({
+    const id = req.params.id;
+    forum_categories.findByPk(id, {
         include: [{
             model: forum_posts,
             as: 'posts',
@@ -63,12 +63,13 @@ function getCategory(req, res) {
                     attributes: ['user_login']
                 }]
             }]
-        }],
-        where: {
-            category_name: category
-        }
+        }]
     }).then(forum_category => {
-        return res.status(200).send({ forum_category });
+        if (forum_category) {
+            return res.status(200).send({ forum_category });
+        } else {
+            return res.status(404).send({ message: 'No se encontro ninguna categoria' });
+        }
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
@@ -108,19 +109,31 @@ function getPost(req, res) {
             attributes: ['category_name', 'category_title'],
         }]
     }).then(post => {
-        return res.status(200).send({ post });
+        if (post) {
+            return res.status(200).send({ post });
+        } else {
+            return res.status(404).send({ message: 'No se encontro ningún post' });
+        }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
     });
 }
 
 function createPost(req, res) {
     const body = req.body;
     body.post_author_id = req.user.id;
-    forum_posts.create(body).then(post => {
-        return res.status(200).send({ post });
+    forum_categories.findByPk(body.forum_category_id).then(forum_category => {
+        if (forum_category) {
+            forum_posts.create(body).then(post => {
+                return res.status(200).send({ post });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro' });
+            });
+        } else {
+            return res.status(500).send({ message: 'Categoria invalida' });
+        }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro' });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar una categoria para la publicación ' + err });
     });
 }
 
