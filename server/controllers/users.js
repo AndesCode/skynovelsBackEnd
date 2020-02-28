@@ -67,15 +67,6 @@ function getUser(req, res) {
             as: 'novels',
             attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_writer', 'nvl_rating'],
         }, {
-            model: chapters,
-            as: 'chapters',
-            attributes: ['id', 'chp_title', 'createdAt', 'updatedAt'],
-            include: [{
-                model: novels,
-                as: 'novel',
-                attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_writer', 'nvl_rating'],
-            }]
-        }, {
             model: invitations,
             as: 'invitations'
         }, {
@@ -116,7 +107,7 @@ function getUser(req, res) {
                 return res.status(200).send({ user });
             }
         } else {
-            return res.status(404).send({ message: 'No se encontro ningún usuario'});
+            return res.status(404).send({ message: 'No se encontro ningún usuario' });
         }
 
     }).catch(err => {

@@ -382,46 +382,22 @@ function getChapter(req, res) {
 }
 
 function getChapters(req, res) {
+    console.log(req.query);
+    let searchMethod = {};
+    if (req.query.user) {
+        searchMethod.chp_author = req.query.user;
+    }
+    console.log(searchMethod);
     chapters.findAll({
         attributes: ['id', 'chp_author', 'nvl_id', 'chp_number', 'chp_title', 'createdAt', 'updatedAt'],
         include: [{
             model: novels,
             as: 'novel',
-            attributes: ['id', 'nvl_author', 'nvl_title', 'nvl_rating'],
-            include: [{
-                model: genres,
-                as: 'genres',
-                through: { attributes: [] }
-            }, {
-                model: novels_ratings,
-                as: 'novel_ratings',
-                include: [{
-                    model: users,
-                    as: 'user',
-                    attributes: ['user_login']
-                }]
-            }, {
-                model: users,
-                as: 'collaborators',
-                attributes: ['id', 'user_login'],
-                through: { attributes: [] },
-            }, {
-                model: users,
-                as: 'author',
-                attributes: ['id', 'user_login']
-            }, {
-                model: user_reading_lists,
-                as: 'user_reading_lists',
-                include: [{
-                    model: users,
-                    as: 'user',
-                    attributes: ['user_login']
-                }]
-            }]
+            attributes: ['nvl_title'],
         }, {
             model: users,
             as: 'author',
-            attributes: ['id', 'user_login']
+            attributes: ['user_login']
         }, {
             model: user_reading_lists,
             as: 'users_reading',
@@ -430,7 +406,8 @@ function getChapters(req, res) {
                 as: 'user',
                 attributes: ['user_login']
             }]
-        }]
+        }],
+        where: searchMethod
     }).then(chapters => {
         return res.status(200).send({ chapters });
     }).catch(err => {
