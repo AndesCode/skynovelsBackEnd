@@ -1,9 +1,9 @@
 /*jshint esversion: 6 */
 // Models
-const forum_categories = require('../models').forum_categories;
-const forum_posts = require('../models').forum_posts;
-const posts_comments = require('../models').posts_comments;
-const users = require('../models').users;
+const forum_categories_model = require('../models').forum_categories;
+const forum_posts_model = require('../models').forum_posts;
+const posts_comments_model = require('../models').posts_comments;
+const users_model = require('../models').users;
 
 // Categories
 
@@ -11,21 +11,21 @@ const users = require('../models').users;
 
 
 function getCategories(req, res) {
-    forum_categories.findAll({
+    forum_categories_model.findAll({
         include: [{
-            model: forum_posts,
+            model: forum_posts_model,
             as: 'posts',
             attributes: ['id', 'post_author_id', 'post_title', 'createdAt'],
             include: [{
-                model: users,
+                model: users_model,
                 as: 'user',
                 attributes: ['user_login']
             }, {
-                model: posts_comments,
+                model: posts_comments_model,
                 as: 'post_comments',
                 attributes: ['comment_author_id', 'createdAt'],
                 include: [{
-                    model: users,
+                    model: users_model,
                     as: 'user',
                     attributes: ['user_login']
                 }]
@@ -44,21 +44,21 @@ function getCategories(req, res) {
 
 function getCategory(req, res) {
     const id = req.params.id;
-    forum_categories.findByPk(id, {
+    forum_categories_model.findByPk(id, {
         include: [{
-            model: forum_posts,
+            model: forum_posts_model,
             as: 'posts',
             attributes: ['id', 'post_author_id', 'post_title', 'createdAt'],
             include: [{
-                model: users,
+                model: users_model,
                 as: 'user',
                 attributes: ['user_login']
             }, {
-                model: posts_comments,
+                model: posts_comments_model,
                 as: 'post_comments',
                 attributes: ['id', 'comment_author_id', 'createdAt'],
                 include: [{
-                    model: users,
+                    model: users_model,
                     as: 'user',
                     attributes: ['user_login']
                 }]
@@ -79,32 +79,32 @@ function getCategory(req, res) {
 
 function getPost(req, res) {
     const id = req.params.id;
-    forum_posts.findByPk(id, {
+    forum_posts_model.findByPk(id, {
         include: [{
-            model: users,
+            model: users_model,
             as: 'user',
             attributes: ['user_login'],
             include: [{
-                model: forum_posts,
+                model: forum_posts_model,
                 as: 'forum_posts',
                 attributes: ['id']
             }]
         }, {
-            model: posts_comments,
+            model: posts_comments_model,
             as: 'post_comments',
             attributes: ['id', 'comment_content', 'comment_author_id', 'createdAt', 'updatedAt'],
             include: [{
-                model: users,
+                model: users_model,
                 as: 'user',
                 attributes: ['user_login'],
                 include: [{
-                    model: forum_posts,
+                    model: forum_posts_model,
                     as: 'forum_posts',
                     attributes: ['id']
                 }]
             }]
         }, {
-            model: forum_categories,
+            model: forum_categories_model,
             as: 'forum_category',
             attributes: ['category_name', 'category_title'],
         }]
@@ -122,7 +122,7 @@ function getPost(req, res) {
 function createPost(req, res) {
     const body = req.body;
     body.post_author_id = req.user.id;
-    forum_categories.findByPk(body.forum_category_id).then(forum_category => {
+    forum_categories_model.findByPk(body.forum_category_id).then(forum_category => {
         if (forum_category) {
             forum_posts.create(body).then(post => {
                 return res.status(200).send({ post });
@@ -139,7 +139,7 @@ function createPost(req, res) {
 
 function updatePost(req, res) {
     const body = req.body;
-    forum_posts.findByPk(body.id).then(post => {
+    forum_posts_model.findByPk(body.id).then(post => {
         if (post.post_author_id === req.user.id) {
             post.update(body).then((post) => {
                 res.status(200).send({ post });
@@ -156,7 +156,7 @@ function updatePost(req, res) {
 
 function deletePost(req, res) {
     const id = req.params.id;
-    forum_posts.findByPk(id).then(post => {
+    forum_posts_model.findByPk(id).then(post => {
         if (post.post_author_id === req.user.id) {
             forum_posts.destroy({
                 where: {
@@ -180,7 +180,7 @@ function deletePost(req, res) {
 function createComment(req, res) {
     const body = req.body;
     body.comment_author_id = req.user.id;
-    posts_comments.create(body).then(post_comment => {
+    posts_comments_model.create(body).then(post_comment => {
         return res.status(200).send({ post_comment });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro ' + err });
@@ -189,7 +189,7 @@ function createComment(req, res) {
 
 function updateComment(req, res) {
     const body = req.body;
-    posts_comments.findByPk(body.id).then(post_comment => {
+    posts_comments_model.findByPk(body.id).then(post_comment => {
         if (post_comment.comment_author_id === req.user.id) {
             post_comment.update(body).then((post_comment) => {
                 return res.status(200).send({ post_comment });
@@ -206,7 +206,7 @@ function updateComment(req, res) {
 
 function deleteComment(req, res) {
     const id = req.params.id;
-    posts_comments.findByPk(id).then(post_comment => {
+    posts_comments_model.findByPk(id).then(post_comment => {
         if (post_comment.comment_author_id === req.user.id) {
             post_comment.destroy({
                 where: {

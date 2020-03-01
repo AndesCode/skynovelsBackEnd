@@ -1,8 +1,9 @@
 /*jshint esversion: 6 */
 // Models
-const forum_categories = require('../models').forum_categories;
-const users = require('../models').users;
-const novels = require('../models').novels;
+const forum_categories_model = require('../models').forum_categories;
+const users_model = require('../models').users;
+const novels_model = require('../models').novels;
+const novels_ratings_model = require('../models').novels_ratings;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
@@ -15,7 +16,7 @@ function adminPanelAccess(req, res) {
 
 function adminCreateCategory(req, res) {
     const body = req.body;
-    forum_categories.create(body).then(forum_category => {
+    forum_categories_model.create(body).then(forum_category => {
         res.status(200).send({ forum_category });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro ' + err });
@@ -24,7 +25,7 @@ function adminCreateCategory(req, res) {
 
 function adminUpdateCategory(req, res) {
     const body = req.body;
-    forum_categories.findByPk(body.id).then(forum_category => {
+    forum_categories_model.findByPk(body.id).then(forum_category => {
         forum_category.update(body).then((forum_category) => {
             res.status(200).send({ forum_category });
         }).catch(err => {
@@ -37,7 +38,7 @@ function adminUpdateCategory(req, res) {
 
 function adminDeleteCategory(req, res) {
     const id = req.params.id;
-    forum_categories.findByPk(id).then(forum_category => {
+    forum_categories_model.findByPk(id).then(forum_category => {
         forum_category.destroy({
             where: {
                 id: id
@@ -54,7 +55,7 @@ function adminDeleteCategory(req, res) {
 
 function adminUpdatePost(req, res) {
     const body = req.body;
-    forum_posts.findByPk(body.id).then(post => {
+    forum_posts_model.findByPk(body.id).then(post => {
         post.update(body).then((post) => {
             res.status(200).send({ post });
         }).catch(err => {
@@ -67,7 +68,7 @@ function adminUpdatePost(req, res) {
 
 function adminDeletePost(req, res) {
     const id = req.params.id;
-    forum_posts.findByPk(id).then(post => {
+    forum_posts_model.findByPk(id).then(post => {
         post.destroy({
             where: {
                 id: id
@@ -84,7 +85,7 @@ function adminDeletePost(req, res) {
 
 function adminDeleteComment(req, res) {
     const id = req.params.id;
-    posts_comments.findByPk(id).then(post_comment => {
+    posts_comments_model.findByPk(id).then(post_comment => {
         post_comment.destroy({
             where: {
                 id: id
@@ -101,7 +102,7 @@ function adminDeleteComment(req, res) {
 
 function adminUpdateComment(req, res) {
     const body = req.body;
-    posts_comments.findByPk(body.id).then(post_comment => {
+    posts_comments_model.findByPk(body.id).then(post_comment => {
         post_comment.update(body).then((post_comment) => {
             return res.status(200).send({ post_comment });
         }).catch(err => {
@@ -121,25 +122,7 @@ function adminGetUsers(req, res) {
             [Op.ne]: null
         };
     }
-    users.findAll({
-        include: [{
-            model: novels,
-            as: 'collaborations',
-            attributes: ['id'],
-            through: { attributes: [] }
-        }, {
-            model: novels,
-            as: 'novels',
-            attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'createdAt', 'updatedAt']
-        }, {
-            model: invitations,
-            as: 'invitations',
-            attributes: ['id', 'invitation_status']
-        }, {
-            model: novels_ratings,
-            as: 'novels_ratings',
-            attributes: ['id', 'novel_id', 'rate_value']
-        }],
+    users_model.findAll({
         attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth', 'user_description', 'createdAt', 'updatedAt'],
         where: {
             user_status: status
@@ -152,8 +135,8 @@ function adminGetUsers(req, res) {
 }
 
 function adminDeleteUser(req, res) {
-    var id = req.params.id;
-    users.findByPk(id).then(user => {
+    const id = req.params.id;
+    users_model.findByPk(id).then(user => {
         user.destroy({
             where: {
                 id: id
@@ -170,7 +153,7 @@ function adminDeleteUser(req, res) {
 
 function adminUpdateUser(req, res) {
     const body = req.body;
-    users.findByPk(body.id).then(user => {
+    users_model.findByPk(body.id).then(user => {
         user.update(body).then(() => {
             res.status(200).send({ user });
         }).catch(err => {
@@ -184,37 +167,37 @@ function adminUpdateUser(req, res) {
 // Novels
 
 function adminGetNovels(req, res) {
-    novels.findAll({
+    novels_model.findAll({
         include: [{
-            model: genres,
+            model: genres_model,
             as: 'genres',
             through: { attributes: [] }
         }, {
-            model: chapters,
+            model: chapters_model,
             as: 'chapters',
             attributes: ['id']
         }, {
-            model: novels_ratings,
+            model: novels_ratings_model,
             as: 'novel_ratings',
             include: [{
-                model: users,
+                model: users_model,
                 as: 'user',
                 attributes: ['user_login']
             }]
         }, {
-            model: users,
+            model: users_model,
             as: 'collaborators',
             attributes: ['id', 'user_login'],
             through: { attributes: [] },
         }, {
-            model: users,
+            model: users_model,
             as: 'author',
             attributes: ['user_login']
         }, {
-            model: user_reading_lists,
+            model: user_reading_lists_model,
             as: 'user_reading_lists',
             include: [{
-                model: users,
+                model: users_model,
                 as: 'user',
                 attributes: ['user_login']
             }]
@@ -228,7 +211,7 @@ function adminGetNovels(req, res) {
 
 function adminUpdateNovel(req, res) {
     const body = req.body;
-    novels.findByPk(body.id).then(novel => {
+    novels_model.findByPk(body.id).then(novel => {
         novel.update(body).then((novel) => {
             if (body.genres && body.genres.length > 0) {
                 novel.setGenres(body.genres);
@@ -246,8 +229,8 @@ function adminUpdateNovel(req, res) {
 }
 
 function adminDeleteNovel(req, res) {
-    var id = req.params.id;
-    novels.findByPk(id).then((novel) => {
+    const id = req.params.id;
+    novels_model.findByPk(id).then((novel) => {
         // Deleting Novel image
         if (novel.dataValues.nvl_img !== '') {
             var old_img = novel.dataValues.nvl_img;
@@ -285,7 +268,7 @@ function adminDeleteNovel(req, res) {
 
 function adminUpdateChapter(req, res) {
     const body = req.body;
-    chapters.findByPk(body.id).then(chapter => {
+    chapters_model.findByPk(body.id).then(chapter => {
         chapter.update(body).then(() => {
             return res.status(200).send({ chapter });
         }).catch(err => {
@@ -298,7 +281,7 @@ function adminUpdateChapter(req, res) {
 
 function adminDeleteChapter(req, res) {
     const id = req.params.id;
-    chapters.findByPk(id).then(chapter => {
+    chapters_model.findByPk(id).then(chapter => {
         chapter.destroy({
             where: {
                 id: id
@@ -316,9 +299,9 @@ function adminDeleteChapter(req, res) {
 // Genres
 
 function adminCreateGenre(req, res) {
-    var body = req.body;
+    const body = req.body;
     console.log(body);
-    genres.create(body).then(genre => {
+    genres_model.create(body).then(genre => {
         return res.status(200).send({ genre });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al crear el genero para las novelas ' + err });
@@ -326,9 +309,9 @@ function adminCreateGenre(req, res) {
 }
 
 function adminUpdateGenre(req, res) {
-    var body = req.body;
+    const body = req.body;
     console.log(body);
-    genres.findByPk(body.id).then(genre => {
+    genres_model.findByPk(body.id).then(genre => {
         genre.update(body).then(() => {
             return res.status(200).send({ genre });
         }).catch(err => {
@@ -340,9 +323,9 @@ function adminUpdateGenre(req, res) {
 }
 
 function adminDeleteGenre(req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
     console.log(id);
-    genres.findByPk(id).then(genre => {
+    genres_model.findByPk(id).then(genre => {
         genre.destroy({
             where: {
                 id: id

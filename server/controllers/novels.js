@@ -1,11 +1,11 @@
 /*jshint esversion: 6 */
 //Models
-const novels_ratings = require('../models').novels_ratings;
-const novels = require('../models').novels;
-const chapters = require('../models').chapters;
-const users = require('../models').users;
-const genres = require('../models').genres;
-const user_reading_lists = require('../models').user_reading_lists;
+const novels_ratings_model = require('../models').novels_ratings;
+const novels_model = require('../models').novels;
+const chapters_model = require('../models').chapters;
+const users_model = require('../models').users;
+const genres_model = require('../models').genres;
+const user_reading_lists_model = require('../models').user_reading_lists;
 // More requires
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
@@ -33,38 +33,34 @@ function getNovel(req, res) {
     } else {
         return res.status(500).send({ message: 'petición invalida' });
     }
-    novels.findOne({
+    novels_model.findOne({
         include: [{
-            model: genres,
+            model: genres_model,
             as: 'genres',
             through: { attributes: [] }
         }, {
-            model: chapters,
-            as: 'chapters',
-            attributes: attributes
-        }, {
-            model: novels_ratings,
+            model: novels_ratings_model,
             as: 'novel_ratings',
             include: [{
-                model: users,
+                model: users_model,
                 as: 'user',
                 attributes: ['user_login']
             }]
         }, {
-            model: users,
+            model: users_model,
             as: 'collaborators',
             attributes: ['id', 'user_login'],
             through: { attributes: [] },
         }, {
-            model: users,
+            model: users_model,
             as: 'author',
             attributes: ['user_login']
         }, {
-            model: user_reading_lists,
+            model: user_reading_lists_model,
             as: 'user_reading_lists',
             attributes: ['id', 'user_id', 'nvl_chapter'],
             include: [{
-                model: users,
+                model: users_model,
                 as: 'user',
                 attributes: ['user_login']
             }]
@@ -75,22 +71,29 @@ function getNovel(req, res) {
         }
     }).then(novel => {
         if (novel) {
-            const collaborators = novel.collaborators.map(collaborator => collaborator.id);
-            if (req.params.action === 'edition') {
-                if (req.user && (req.user.id === novel.nvl_author || collaborators.includes(req.user.id))) {
-                    const authorized_user = req.user.id;
-                    return res.status(200).send({ novel, authorized_user });
+            chapters_model.findAll({
+                where: {
+                    nvl_id: novel.id
+                },
+                attributes: attributes
+            }).then(chapters => {
+                const collaborators = novel.collaborators.map(collaborator => collaborator.id);
+                if (req.params.action === 'edition') {
+                    if (req.user && (req.user.id === novel.nvl_author || collaborators.includes(req.user.id))) {
+                        const authorized_user = req.user.id;
+                        return res.status(200).send({ novel, chapters, authorized_user });
+                    } else {
+                        return res.status(401).send({ message: 'No autorizado ' });
+                    }
                 } else {
-                    return res.status(401).send({ message: 'No autorizado ' });
+                    const chapters_map = chapters.map(chapter => chapter.chp_status);
+                    if (chapters_map.includes('Publicado')) {
+                        return res.status(200).send({ novel, chapters });
+                    } else {
+                        return res.status(500).send({ message: 'No se encontro ninguna novela' });
+                    }
                 }
-            } else {
-                const chapters = novel.chapters.map(chapter => chapter.chp_status);
-                if (chapters.includes('Publicado')) {
-                    return res.status(200).send({ novel });
-                } else {
-                    return res.status(500).send({ message: 'No se encontro ninguna novela' });
-                }
-            }
+            })
         } else {
             return res.status(500).send({ message: 'No se encontro ninguna novela' });
         }
@@ -100,37 +103,37 @@ function getNovel(req, res) {
 }
 
 function getNovels(req, res) {
-    novels.findAll({
+    novels_model.findAll({
         include: [{
-            model: genres,
+            model: genres_model,
             as: 'genres',
             through: { attributes: [] }
         }, {
-            model: chapters,
+            model: chapters_model,
             as: 'chapters',
             attributes: ['chp_number', 'createdAt', 'chp_title'],
         }, {
-            model: novels_ratings,
+            model: novels_ratings_model,
             as: 'novel_ratings',
             include: [{
-                model: users,
+                model: users_model,
                 as: 'user',
                 attributes: ['user_login']
             }]
         }, {
-            model: users,
+            model: users_model,
             as: 'collaborators',
             attributes: ['id', 'user_login'],
             through: { attributes: [] },
         }, {
-            model: users,
+            model: users_model,
             as: 'author',
             attributes: ['user_login']
         }, {
-            model: user_reading_lists,
+            model: user_reading_lists_model,
             as: 'user_reading_lists',
             include: [{
-                model: users,
+                model: users_model,
                 as: 'user',
                 attributes: ['user_login']
             }]
@@ -150,7 +153,7 @@ function getNovels(req, res) {
 function createNovel(req, res) {
     const body = req.body;
     body.nvl_author = req.user.id;
-    novels.create(body).then(novel => {
+    novels_model.create(body).then(novel => {
         if (body.genres && body.genres.length > 0) {
             novel.setGenres(body.genres);
         }
@@ -162,7 +165,7 @@ function createNovel(req, res) {
 
 function updateNovel(req, res) {
     const body = req.body;
-    novels.findByPk(body.id).then(novel => {
+    novels_model.findByPk(body.id).then(novel => {
         if (novel.nvl_author === req.user.id) {
             novel.update(body).then((novel) => {
                 if (body.genres && body.genres.length > 0) {
@@ -232,7 +235,7 @@ function uploadNovelImage(req, res) {
             var novel_image = {};
             novel_image.nvl_img = file_name;
 
-            novels.findByPk(id).then(novel => {
+            novels_model.findByPk(id).then(novel => {
                 if (novel.nvl_author === req.user.id) {
                     novel.update(novel_image).then(() => {
 
@@ -309,7 +312,7 @@ function getNovelImage(req, res) {
 
 function deleteNovel(req, res) {
     var id = req.params.id;
-    novels.findByPk(id).then((novel) => {
+    novels_model.findByPk(id).then((novel) => {
         if (novel.nvl_author === req.user.id) {
             // Deleting Novel image
             if (novel.dataValues.nvl_img !== '') {
@@ -351,25 +354,25 @@ function deleteNovel(req, res) {
 // Novels chapters
 
 function getChapter(req, res) {
-    var id = req.params.id;
-    chapters.findByPk(id, {
+    const id = req.params.id;
+    chapters_model.findByPk(id, {
         include: [{
-            model: novels,
+            model: novels_model,
             as: 'novel',
             include: {
-                model: users,
+                model: users_model,
                 as: 'author',
                 attributes: ['id', 'user_login']
             }
         }, {
-            model: users,
+            model: users_model,
             as: 'author',
             attributes: ['id', 'user_login']
         }, {
-            model: user_reading_lists,
+            model: user_reading_lists_model,
             as: 'users_reading',
             include: [{
-                model: users,
+                model: users_model,
                 as: 'user',
                 attributes: ['user_login']
             }]
@@ -388,21 +391,21 @@ function getChapters(req, res) {
         searchMethod.chp_author = req.query.user;
     }
     console.log(searchMethod);
-    chapters.findAll({
+    chapters_model.findAll({
         attributes: ['id', 'chp_author', 'nvl_id', 'chp_number', 'chp_title', 'createdAt', 'updatedAt'],
         include: [{
-            model: novels,
+            model: novels_model,
             as: 'novel',
             attributes: ['nvl_title'],
         }, {
-            model: users,
+            model: users_model,
             as: 'author',
             attributes: ['user_login']
         }, {
-            model: user_reading_lists,
+            model: user_reading_lists_model,
             as: 'users_reading',
             include: [{
-                model: users,
+                model: users_model,
                 as: 'user',
                 attributes: ['user_login']
             }]
@@ -418,9 +421,9 @@ function getChapters(req, res) {
 function createChapter(req, res) {
     const body = req.body;
     body.chp_author = req.user.id;
-    novels.findByPk(body.nvl_id, {
+    novels_model.findByPk(body.nvl_id, {
         include: [{
-            model: users,
+            model: users_model,
             as: 'collaborators',
             attributes: ['id', 'user_login'],
             through: { attributes: [] },
@@ -429,7 +432,7 @@ function createChapter(req, res) {
     }).then(novel => {
         const collaborators = novel.collaborators.map(collaborator => collaborator.id);
         if (req.user.id === novel.nvl_author || collaborators.includes(req.user.id)) {
-            chapters.create(body).then(chapter => {
+            chapters_model.create(body).then(chapter => {
                 return res.status(200).send({ chapter });
             }).catch(err => {
                 return res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
@@ -444,9 +447,9 @@ function createChapter(req, res) {
 
 function updateChapter(req, res) {
     const body = req.body;
-    chapters.findByPk(body.id, {
+    chapters_model.findByPk(body.id, {
         include: [{
-            model: novels,
+            model: novels_model,
             as: 'novel',
             attributes: ['nvl_author']
         }]
@@ -467,9 +470,9 @@ function updateChapter(req, res) {
 
 function deleteChapter(req, res) {
     const id = req.params.id;
-    chapters.findByPk(id, {
+    chapters_model.findByPk(id, {
         include: [{
-            model: novels,
+            model: novels_model,
             as: 'novel',
             attributes: ['nvl_author']
         }]
@@ -495,7 +498,7 @@ function deleteChapter(req, res) {
 // Genres
 
 function getGenres(req, res) {
-    genres.findAll().then(genres => {
+    genres_model.findAll().then(genres => {
         return res.status(200).send({ genres });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar los generos' + err });
@@ -505,7 +508,7 @@ function getGenres(req, res) {
 function createNovelRating(req, res) {
     const body = req.body;
     body.user_id = req.user.id;
-    novels_ratings.create(body).then(novel_rating => {
+    novels_ratings_model.create(body).then(novel_rating => {
         return res.status(200).send({ novel_rating });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al crear clasificacion de la novela ' + err });
@@ -514,7 +517,7 @@ function createNovelRating(req, res) {
 
 function updateNovelRating(req, res) {
     var body = req.body;
-    novels_ratings.findByPk(body.id).then(novel_rating => {
+    novels_ratings_model.findByPk(body.id).then(novel_rating => {
         if (req.user.id === novel_rating.user_id || req.user.user_rol === 'admin') {
             novel_rating.update(body).then(() => {
                 return res.status(200).send({ novel_rating });
@@ -532,7 +535,7 @@ function updateNovelRating(req, res) {
 function deleteNovelRating(req, res) {
     var id = req.params.id;
     console.log(id);
-    novels_ratings.findByPk(id).then(novel_rating => {
+    novels_ratings_model.findByPk(id).then(novel_rating => {
         if (req.user.id === novel_rating.user_id || req.user.user_rol === 'admin') {
             novel_rating.destroy({
                 where: {

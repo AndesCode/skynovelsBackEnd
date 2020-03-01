@@ -1,15 +1,15 @@
 /*jshint esversion: 6 */
 var config = require('../config/config');
 // Models
-const user_reading_lists = require('../models').user_reading_lists;
-const invitations = require('../models').invitations;
-const users = require('../models').users;
-const novels = require('../models').novels;
-const novels_ratings = require('../models').novels_ratings;
-const chapters = require('../models').chapters;
-const forum_posts = require('../models').forum_posts;
-const posts_comments = require('../models').posts_comments;
-const forum_categories = require('../models').forum_categories;
+const user_reading_lists_model = require('../models').user_reading_lists;
+const invitations_model = require('../models').invitations;
+const users_model = require('../models').users;
+const novels_model = require('../models').novels;
+const novels_ratings_model = require('../models').novels_ratings;
+const chapters_model = require('../models').chapters;
+const forum_posts_model = require('../models').forum_posts;
+const posts_comments_model = require('../models').posts_comments;
+const forum_categories_model = require('../models').forum_categories;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
@@ -38,7 +38,7 @@ function createUser(req, res) {
         return;
     }
     console.log(body);
-    users.create(body).then(user => {
+    users_model.create(body).then(user => {
         const activation_user_key = cryptr.encrypt(user.user_verification_key);
         res.status(201).send({ activation_user_key }); // Aqui debe ir NodeMailer enviando la clave a traves de una URL
     }).catch(err => {
@@ -56,60 +56,102 @@ function getUser(req, res) {
             return res.status(401).send({ message: 'No hay usuario logeado' });
         }
     }
-    users.findByPk(id, {
+    users_model.findByPk(id, {
         include: [{
-            model: novels,
+            model: novels_model,
             as: 'collaborations',
             attributes: ['id', 'nvl_author', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_writer', 'nvl_rating'],
             through: { attributes: [] }
         }, {
-            model: novels,
-            as: 'novels',
-            attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_writer', 'nvl_rating'],
-        }, {
-            model: invitations,
+            model: invitations_model,
             as: 'invitations'
-        }, {
-            model: novels_ratings,
-            as: 'novels_ratings',
-            attributes: ['id', 'novel_id', 'rate_value', 'rate_comment', 'createdAt', 'updatedAt'],
-            include: [{
-                model: novels,
-                as: 'novel',
-                attributes: ['nvl_title']
-            }]
-        }, {
-            model: forum_posts,
-            as: 'forum_posts',
-            attributes: ['id', 'post_title', 'createdAt', 'updatedAt'],
-            include: [{
-                model: forum_categories,
-                as: 'forum_category',
-                attributes: ['category_name', 'category_title'],
-            }]
-        }, {
-            model: posts_comments,
-            as: 'post_comments',
-            attributes: ['id', 'createdAt', 'updatedAt'],
-            include: [{
-                model: forum_posts,
-                as: 'post',
-                attributes: ['id', 'post_title']
-            }]
         }],
         attributes: ['id', 'user_login', 'user_email', 'user_forum_auth', 'user_rol', 'user_description', 'createdAt', 'updatedAt']
     }).then(user => {
         if (user) {
-            if (req.user && user.id === req.user.id) {
-                const self_user = true;
-                return res.status(200).send({ user, self_user });
-            } else {
-                return res.status(200).send({ user });
-            }
+            chapters_model.findAll({
+                where: {
+                    chp_author: user.id
+                },
+                include: [{
+                    model: novels_model,
+                    as: 'novel',
+                    attributes: ['nvl_title']
+                }],
+                attributes: ['id', 'nvl_id', 'chp_title', 'createdAt', 'updatedAt']
+            }).then(chapters => {
+                novels_model.findAll({
+                    where: {
+                        nvl_author: user.id
+                    },
+                    include: [{
+                        model: chapters_model,
+                        as: 'chapters',
+                        attributes: ['id']
+                    }, {
+                        model: novels_ratings_model,
+                        as: 'novel_ratings',
+                        attributes: ['rate_value']
+                    }],
+                    attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_rating'],
+                }).then(novels => {
+                    forum_posts_model.findAll({
+                        where: {
+                            post_author_id: user.id
+                        },
+                        include: [{
+                            model: forum_categories_model,
+                            as: 'forum_category',
+                            attributes: ['category_name', 'category_title'],
+                        }],
+                        attributes: ['id', 'post_title', 'createdAt', 'updatedAt'],
+                    }).then(forum_posts => {
+                        posts_comments_model.findAll({
+                            where: {
+                                comment_author_id: user.id
+                            },
+                            attributes: ['id', 'createdAt', 'updatedAt'],
+                            include: [{
+                                model: forum_posts_model,
+                                as: 'post',
+                                attributes: ['id', 'post_title']
+                            }]
+                        }).then(posts_comments => {
+                            novels_ratings_model.findAll({
+                                where: {
+                                    user_id: user.id
+                                },
+                                attributes: ['id', 'novel_id', 'rate_value', 'rate_comment', 'createdAt', 'updatedAt'],
+                                include: [{
+                                    model: novels_model,
+                                    as: 'novel',
+                                    attributes: ['nvl_title']
+                                }]
+                            }).then(novels_ratings => {
+                                if (req.user && user.id === req.user.id) {
+                                    const self_user = true;
+                                    return res.status(200).send({ user, chapters, novels, forum_posts, posts_comments, novels_ratings, self_user });
+                                } else {
+                                    return res.status(200).send({ user, chapters, novels, forum_posts, posts_comments, novels_ratings });
+                                }
+                            }).catch(err => {
+                                return res.status(500).send({ message: 'Ocurrio un error al cargar las calificaciones del usuario ' + err });
+                            });
+                        }).catch(err => {
+                            return res.status(500).send({ message: 'Ocurrio un error al cargar los comentarios del usuario ' + err });
+                        });
+                    }).catch(err => {
+                        return res.status(500).send({ message: 'Ocurrio un error al cargar las publicaciones del usuario ' + err });
+                    });
+                }).catch(err => {
+                    return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas del usuario ' + err });
+                });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al cargar los capitulos del usuario ' + err });
+            });
         } else {
             return res.status(404).send({ message: 'No se encontro ningún usuario' });
         }
-
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario ' + err });
     });
@@ -119,7 +161,7 @@ function activateUser(req, res) {
     const key = req.params.key;
     const decryptedkey = cryptr.decrypt(key);
     console.log(decryptedkey);
-    users.findOne({
+    users_model.findOne({
         where: {
             user_verification_key: decryptedkey
         }
@@ -144,7 +186,7 @@ function updateUser(req, res) {
     if (body.user_rol || body.user_forum_auth || body.user_pass) {
         return res.status(401).send({ message: 'Operación no permitida' });
     }
-    users.findByPk(body.id).then(user => {
+    users_model.findByPk(body.id).then(user => {
         if (user.id === req.user.id) {
             user.update(body).then(() => {
                 res.status(200).send({ user });
@@ -201,7 +243,7 @@ function logout(req, res) {
 }
 
 function passwordResetRequest(req, res) {
-    users.findOne({
+    users_model.findOne({
         where: {
             user_email: req.body.user_email,
         }
@@ -256,7 +298,7 @@ function updateUserPassword(req, res) {
     if (!body.user_pass) {
         return res.status(401).send({ message: 'Operación no permitida' });
     }
-    users.findByPk(id).then(user => {
+    users_model.findByPk(id).then(user => {
         if (/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/.test(body.user_pass)) {
             const salt = bcrypt.genSaltSync(saltRounds);
             body.user_pass = bcrypt.hashSync(body.user_pass, salt);
@@ -325,7 +367,7 @@ function uploadUserProfileImg(req, res) {
             const user_profile_image = {};
             user_profile_image.user_profile_image = file_name;
 
-            users.findByPk(id).then(user => {
+            users_model.findByPk(id).then(user => {
                 user.update(user_profile_image).then(() => {
 
                     const newPath = './server/uploads/users/' + file_name;
@@ -462,7 +504,7 @@ function getUserProfileImage(req, res) {
 function createUserbookmark(req, res) {
     const body = req.body;
     body.user_id = req.user.id;
-    user_reading_lists.create(body).then(bookmark => {
+    user_reading_lists_model.create(body).then(bookmark => {
         return res.status(200).send({ bookmark });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
@@ -471,7 +513,7 @@ function createUserbookmark(req, res) {
 
 function removeUserbookmark(req, res) {
     const id = req.params.id;
-    user_reading_lists.findByPk(id).then(bookmark => {
+    user_reading_lists_model.findByPk(id).then(bookmark => {
         if (req.user.id === bookmark.user_id) {
             bookmark.destroy({
                 where: {
@@ -492,7 +534,7 @@ function removeUserbookmark(req, res) {
 
 function updateUserbookmark(req, res) {
     const body = req.body;
-    user_reading_lists.findByPk(body.id).then(bookmark => {
+    user_reading_lists_model.findByPk(body.id).then(bookmark => {
         if (req.user.id === bookmark.user_id) {
             console.log(body.nvl_chapter);
             bookmark.update({
@@ -512,7 +554,7 @@ function updateUserbookmark(req, res) {
 
 function createUserInvitation(req, res) {
     const body = req.body;
-    novels.findOne({
+    novels_model.findOne({
         where: {
             nvl_author: req.user.id,
             id: req.body.invitation_novel
@@ -528,7 +570,7 @@ function createUserInvitation(req, res) {
             }).then(user => {
                 if (user !== null) {
                     if (user.id !== req.user.id) {
-                        invitations.findOne({
+                        invitations_model.findOne({
                             where: {
                                 invitation_to_id: user.id,
                                 invitation_novel: body.invitation_novel
@@ -567,7 +609,7 @@ function createUserInvitation(req, res) {
 
 function updateUserInvitation(req, res) {
     const body = req.body;
-    invitations.findByPk(body.id).then(invitation => {
+    invitations_model.findByPk(body.id).then(invitation => {
         if (req.user.id === invitation.invitation_to_id) {
             invitation.update({
                 invitation_status: body.invitation_status
