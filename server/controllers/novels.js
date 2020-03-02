@@ -17,7 +17,7 @@ const Op = Sequelize.Op;
 // Novels
 
 function getNovel(req, res) {
-    const name = req.params.name;
+    const id = req.params.id;
     let attributes = [];
     let nvl_status = '';
     if (req.params.action === 'reading' || req.params.action === 'edition') {
@@ -33,7 +33,7 @@ function getNovel(req, res) {
     } else {
         return res.status(500).send({ message: 'petición invalida' });
     }
-    novels_model.findOne({
+    novels_model.findByPk(id, {
         include: [{
             model: genres_model,
             as: 'genres',
@@ -66,7 +66,6 @@ function getNovel(req, res) {
             }]
         }],
         where: {
-            nvl_name: name,
             nvl_status: nvl_status
         }
     }).then(novel => {
@@ -90,12 +89,12 @@ function getNovel(req, res) {
                     if (chapters_map.includes('Publicado')) {
                         return res.status(200).send({ novel, chapters });
                     } else {
-                        return res.status(500).send({ message: 'No se encontro ninguna novela' });
+                        return res.status(404).send({ message: 'No se encontro ninguna novela' });
                     }
                 }
-            })
+            });
         } else {
-            return res.status(500).send({ message: 'No se encontro ninguna novela' });
+            return res.status(404).send({ message: 'No se encontro ninguna novela' });
         }
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
@@ -386,11 +385,10 @@ function getChapter(req, res) {
 
 function getChapters(req, res) {
     console.log(req.query);
-    let searchMethod = {};
+    /*let searchMethod = {};
     if (req.query.user) {
         searchMethod.chp_author = req.query.user;
-    }
-    console.log(searchMethod);
+    }*/
     chapters_model.findAll({
         attributes: ['id', 'chp_author', 'nvl_id', 'chp_number', 'chp_title', 'createdAt', 'updatedAt'],
         include: [{
@@ -409,8 +407,7 @@ function getChapters(req, res) {
                 as: 'user',
                 attributes: ['user_login']
             }]
-        }],
-        where: searchMethod
+        }]
     }).then(chapters => {
         return res.status(200).send({ chapters });
     }).catch(err => {

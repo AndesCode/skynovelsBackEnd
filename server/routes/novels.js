@@ -6,7 +6,7 @@ const md_upload = cm({ uploadDir: './server/uploads/novels' });
 
 module.exports = (app) => {
     // Novels
-    app.get('/api/novel/:name/:action', novelsController.getNovel);
+    app.get('/api/novel/:id/:action', novelsController.getNovel);
     app.get('/api/novels', novelsController.getNovels);
     app.get('/api/novel/image/:novel_img/:thumb', novelsController.getNovelImage);
     app.put('/api/update-novel', md_auth.auth, novelsController.updateNovel);
