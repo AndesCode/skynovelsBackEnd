@@ -71,7 +71,8 @@ function getUser(req, res) {
         if (user) {
             chapters_model.findAll({
                 where: {
-                    chp_author: user.id
+                    chp_author: user.id,
+                    chp_status: 'Publicado'
                 },
                 include: [{
                     model: novels_model,
@@ -82,7 +83,8 @@ function getUser(req, res) {
             }).then(chapters => {
                 novels_model.findAll({
                     where: {
-                        nvl_author: user.id
+                        nvl_author: user.id,
+                        nvl_status: 'Publicada'
                     },
                     include: [{
                         model: chapters_model,
