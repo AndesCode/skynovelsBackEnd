@@ -124,7 +124,7 @@ function createPost(req, res) {
     body.post_author_id = req.user.id;
     forum_categories_model.findByPk(body.forum_category_id).then(forum_category => {
         if (forum_category) {
-            forum_posts.create(body).then(post => {
+            forum_posts_model.create(body).then(post => {
                 return res.status(200).send({ post });
             }).catch(err => {
                 return res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro' });
@@ -156,22 +156,22 @@ function updatePost(req, res) {
 
 function deletePost(req, res) {
     const id = req.params.id;
-    forum_posts_model.findByPk(id).then(post => {
-        if (post.post_author_id === req.user.id) {
+    forum_posts_model.findByPk(id).then(forum_posts => {
+        if (forum_posts.post_author_id === req.user.id) {
             forum_posts.destroy({
                 where: {
                     id: id
                 }
             }).then(() => {
-                return res.status(200).send({ post });
+                return res.status(200).send({ forum_posts });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar la publicación ' + err });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al eliminar la publicación ' + err });
     });
 }
 
