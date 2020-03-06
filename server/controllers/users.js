@@ -95,7 +95,6 @@ function getUser(req, res) {
                         as: 'novel_ratings',
                         attributes: ['rate_value']
                     }],
-                    attributes: ['id', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_rating'],
                 }).then(novels => {
                     forum_posts_model.findAll({
                         where: {
