@@ -111,9 +111,9 @@ function getUser(req, res) {
                         include: [{
                             model: forum_categories_model,
                             as: 'forum_category',
-                            attributes: ['category_name', 'category_title'],
+                            attributes: ['id', 'category_name', 'category_title'],
                         }],
-                        attributes: ['id', 'post_title', 'createdAt', 'updatedAt'],
+                        attributes: ['id', 'post_title', 'post_content', 'createdAt', 'updatedAt'],
                     }).then(forum_posts => {
                         posts_comments_model.findAll({
                             where: {
@@ -123,7 +123,12 @@ function getUser(req, res) {
                             include: [{
                                 model: forum_posts_model,
                                 as: 'post',
-                                attributes: ['id', 'post_title']
+                                attributes: ['id', 'post_title'],
+                                include: [{
+                                    model: forum_categories_model,
+                                    as: 'forum_category',
+                                    attributes: ['id', 'category_name', 'category_title'],
+                                }]
                             }]
                         }).then(posts_comments => {
                             novels_ratings_model.findAll({
