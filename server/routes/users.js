@@ -14,6 +14,8 @@ module.exports = (app) => {
     // Users
     app.get('/api/user/:id', userController.getUser);
     app.put('/api/update-user', md_auth.auth, userController.updateUser);
+    // User novels & collaborations
+    app.get('/api/user-novels', md_auth.auth, userController.getUserNovels);
     // Passwords
     app.post('/api/password-reset-request', userController.passwordResetRequest);
     app.post('/api/password-reset', md_auth.changePasswordTokenAuth, userController.updateUserPassword);

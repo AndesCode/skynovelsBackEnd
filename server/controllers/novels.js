@@ -20,13 +20,18 @@ function getNovel(req, res) {
     const id = req.params.id;
     let attributes = [];
     let nvl_status = '';
+    let chp_status = '';
     if (req.params.action === 'reading' || req.params.action === 'edition') {
         if (req.params.action === 'reading') {
             attributes = ['id', 'chp_title', 'chp_number', 'chp_status'];
             nvl_status = 'Publicada';
+            chp_status = 'Publicado';
         } else {
             attributes = ['id', 'chp_title', 'chp_number', 'chp_content', 'chp_review', 'chp_author', 'chp_status'];
             nvl_status = {
+                [Op.ne]: null
+            };
+            chp_status = {
                 [Op.ne]: null
             };
         }
@@ -72,7 +77,8 @@ function getNovel(req, res) {
         if (novel) {
             chapters_model.findAll({
                 where: {
-                    nvl_id: novel.id
+                    nvl_id: novel.id,
+                    chp_status: chp_status
                 },
                 attributes: attributes
             }).then(chapters => {
@@ -110,7 +116,10 @@ function getNovels(req, res) {
         }, {
             model: chapters_model,
             as: 'chapters',
-            attributes: ['chp_number', 'createdAt', 'chp_title'],
+            attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+            where: {
+                chp_status: 'publicado'
+            },
         }, {
             model: novels_ratings_model,
             as: 'novel_ratings',
@@ -163,8 +172,11 @@ function createNovel(req, res) {
 }
 
 function updateNovel(req, res) {
-    const body = req.body;
+    let body = req.body;
     novels_model.findByPk(body.id).then(novel => {
+        if (novel.nvl_publication_date === null && body.nvl_status === 'Publicada') {
+            body.nvl_publication_date = Sequelize.fn('NOW');
+        }
         if (novel.nvl_author === req.user.id) {
             novel.update(body).then((novel) => {
                 if (body.genres && body.genres.length > 0) {

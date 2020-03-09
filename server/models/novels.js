@@ -10,7 +10,8 @@ module.exports = (sequelize, DataTypes) => {
         nvl_content: DataTypes.TEXT,
         nvl_title: DataTypes.TEXT,
         nvl_status: DataTypes.CHAR,
-        nvl_comment_status: DataTypes.CHAR,
+        nvl_status: DataTypes.CHAR,
+        nvl_publication_date: DataTypes.DATE,
         nvl_name: {
             type: DataTypes.CHAR,
             validate: {

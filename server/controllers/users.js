@@ -10,6 +10,7 @@ const chapters_model = require('../models').chapters;
 const forum_posts_model = require('../models').forum_posts;
 const posts_comments_model = require('../models').posts_comments;
 const forum_categories_model = require('../models').forum_categories;
+const genres_model = require('../models').genres;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
@@ -87,14 +88,21 @@ function getUser(req, res) {
                         nvl_status: 'Publicada'
                     },
                     include: [{
-                        model: chapters_model,
-                        as: 'chapters',
-                        attributes: ['id']
-                    }, {
                         model: novels_ratings_model,
                         as: 'novel_ratings',
                         attributes: ['rate_value']
-                    }],
+                    }, {
+                        model: genres_model,
+                        as: 'genres',
+                        through: { attributes: [] }
+                    }, {
+                        model: chapters_model,
+                        as: 'chapters',
+                        attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+                        where: {
+                            chp_status: 'publicado'
+                        },
+                    }, ],
                 }).then(novels => {
                     forum_posts_model.findAll({
                         where: {
@@ -111,7 +119,7 @@ function getUser(req, res) {
                             where: {
                                 comment_author_id: user.id
                             },
-                            attributes: ['id', 'createdAt', 'updatedAt'],
+                            attributes: ['id', 'comment_content', 'createdAt', 'updatedAt'],
                             include: [{
                                 model: forum_posts_model,
                                 as: 'post',
@@ -155,6 +163,53 @@ function getUser(req, res) {
         }
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario ' + err });
+    });
+}
+
+function getUserNovels(req, res) {
+    novels_model.findAll({
+        include: [{
+            model: genres_model,
+            as: 'genres',
+            through: { attributes: [] }
+        }, {
+            model: chapters_model,
+            as: 'chapters',
+            attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+        }, {
+            model: novels_ratings_model,
+            as: 'novel_ratings',
+        }],
+        where: {
+            nvl_author: req.user.id
+        }
+    }).then(novels => {
+        users_model.findByPk(req.user.id, {
+            include: [{
+                model: novels_model,
+                as: 'collaborations',
+                through: { attributes: [] },
+                include: [{
+                    model: genres_model,
+                    as: 'genres',
+                    through: { attributes: [] }
+                }, {
+                    model: chapters_model,
+                    as: 'chapters',
+                    attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+                }, {
+                    model: novels_ratings_model,
+                    as: 'novel_ratings',
+                }]
+            }],
+            attributes: ['id']
+        }).then(user => {
+            return res.status(200).send({ novels, user });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
@@ -637,6 +692,7 @@ module.exports = {
     // Users
     updateUser,
     getUser,
+    getUserNovels,
     // Passwords
     passwordResetRequest,
     updateUserPassword,
