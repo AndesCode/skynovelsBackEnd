@@ -9,7 +9,7 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
 function adminPanelAccess(req, res) {
-    res.status(200).send({ message: 'Acceso otorgado' });
+    res.status(200).send({ message: 'Acceso otorgado', status: 200 });
 }
 
 // forum

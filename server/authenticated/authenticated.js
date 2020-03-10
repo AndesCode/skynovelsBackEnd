@@ -65,6 +65,14 @@ function adminAuth(req, res, next) {
     }
 }
 
+function adminListsAuth(req, res, next) {
+    if (req.user && req.user.user_rol === 'admin' && req.user.user_status === 'Active' && req.isAuthenticated()) {
+        next();
+    } else {
+        return res.status(401).send({ message: 'No autorizado' });
+    }
+}
+
 function auth(req, res, next) {
     if (req.user && req.isAuthenticated() && req.user.user_status === 'Active') {
         next();
@@ -85,6 +93,7 @@ module.exports = {
     auth,
     forumAuth,
     adminAuth,
+    adminListsAuth,
     changePasswordTokenAuth,
     changePasswordAccessToken
 };
