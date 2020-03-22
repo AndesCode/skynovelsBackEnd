@@ -81,11 +81,9 @@ module.exports = (sequelize, DataTypes) => {
 
     chapters.associate = function(models) {
         console.log('Inicia asociaciones');
-        chapters.belongsTo(models.novels, {
-            foreignKey: 'nvl_id',
-            as: 'novel',
-            onDelete: 'cascade',
-            hooks: true,
+        chapters.belongsTo(models.volumes, {
+            foreignKey: 'vlm_id',
+            as: 'volume',
         });
         chapters.belongsTo(models.users, {
             foreignKey: 'chp_author',

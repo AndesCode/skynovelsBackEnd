@@ -3,6 +3,7 @@
 const novels_ratings_model = require('../models').novels_ratings;
 const novels_model = require('../models').novels;
 const chapters_model = require('../models').chapters;
+const volumes_model = require('../models').volumes;
 const users_model = require('../models').users;
 const genres_model = require('../models').genres;
 const user_reading_lists_model = require('../models').user_reading_lists;
@@ -75,25 +76,33 @@ function getNovel(req, res) {
         }
     }).then(novel => {
         if (novel) {
-            chapters_model.findAll({
+            volumes_model.findAll({
                 where: {
                     nvl_id: novel.id,
-                    chp_status: chp_status
+                    vlm_title: {
+                        [Op.ne]: null
+                    }
                 },
-                attributes: attributes
-            }).then(chapters => {
+                include: [{
+                    model: chapters_model,
+                    as: 'chapters',
+                    attributes: attributes,
+                    where: {
+                        chp_status: chp_status
+                    },
+                }]
+            }).then(volumes => {
                 const collaborators = novel.collaborators.map(collaborator => collaborator.id);
                 if (req.params.action === 'edition') {
                     if (req.user && (req.user.id === novel.nvl_author || collaborators.includes(req.user.id))) {
                         const authorized_user = req.user.id;
-                        return res.status(200).send({ novel, chapters, authorized_user });
+                        return res.status(200).send({ novel, volumes, authorized_user });
                     } else {
                         return res.status(401).send({ message: 'No autorizado ' });
                     }
                 } else {
-                    const chapters_map = chapters.map(chapter => chapter.chp_status);
-                    if (chapters_map.includes('Publicado')) {
-                        return res.status(200).send({ novel, chapters });
+                    if (volumes.length > 0) {
+                        return res.status(200).send({ novel, volumes });
                     } else {
                         return res.status(404).send({ message: 'No se encontro ninguna novela' });
                     }
@@ -114,12 +123,22 @@ function getNovels(req, res) {
             as: 'genres',
             through: { attributes: [] }
         }, {
-            model: chapters_model,
-            as: 'chapters',
-            attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+            model: volumes_model,
+            as: 'volumes',
+            attributes: ['id', 'vlm_title'],
             where: {
-                chp_status: 'publicado'
+                vlm_title: {
+                    [Op.ne]: null
+                }
             },
+            include: [{
+                model: chapters_model,
+                as: 'chapters',
+                attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+                where: {
+                    chp_status: 'Publicado'
+                },
+            }]
         }, {
             model: novels_ratings_model,
             as: 'novel_ratings',
@@ -366,29 +385,31 @@ function deleteNovel(req, res) {
 
 function getChapter(req, res) {
     const id = req.params.id;
-    chapters_model.findByPk(id, {
-        include: [{
-            model: novels_model,
-            as: 'novel',
-            include: {
-                model: users_model,
-                as: 'author',
-                attributes: ['id', 'user_login']
-            }
-        }, {
-            model: users_model,
-            as: 'author',
-            attributes: ['id', 'user_login']
-        }, {
-            model: user_reading_lists_model,
-            as: 'users_reading',
-            include: [{
-                model: users_model,
-                as: 'user',
-                attributes: ['user_login']
-            }]
-        }]
-    }).then(chapter => {
+    chapters_model.findByPk(id
+        /*, {
+                include: [{
+                    model: novels_model,
+                    as: 'novel',
+                    include: {
+                        model: users_model,
+                        as: 'author',
+                        attributes: ['id', 'user_login']
+                    }
+                }, {
+                    model: users_model,
+                    as: 'author',
+                    attributes: ['id', 'user_login']
+                }, {
+                    model: user_reading_lists_model,
+                    as: 'users_reading',
+                    include: [{
+                        model: users_model,
+                        as: 'user',
+                        attributes: ['user_login']
+                    }]
+                }]
+            }*/
+    ).then(chapter => {
         return res.status(200).send({ chapter });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });

@@ -10,6 +10,7 @@ module.exports = (sequelize, DataTypes) => {
         post_title: DataTypes.TEXT('tiny'),
         post_content: DataTypes.TEXT,
         forum_category_id: DataTypes.INTEGER,
+        post_pinned: DataTypes.BOOLEAN,
     }, {
         freezeTableName: true
     });

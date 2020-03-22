@@ -33,7 +33,6 @@ module.exports = (sequelize, DataTypes) => {
         nvl_comment_count: DataTypes.INTEGER,
         nvl_writer: DataTypes.CHAR,
         nvl_img: DataTypes.CHAR,
-        nvl_rating: DataTypes.INTEGER
     });
 
     novels.associate = function(models) {
@@ -43,11 +42,9 @@ module.exports = (sequelize, DataTypes) => {
             as: 'genres',
             foreignKey: 'novel_id'
         });
-        novels.hasMany(models.chapters, {
+        novels.hasMany(models.volumes, {
             foreignKey: 'nvl_id',
-            as: 'chapters',
-            onDelete: 'cascade',
-            hooks: true,
+            as: 'volumes',
         });
         novels.belongsToMany(models.users, {
             through: 'novels_collaborators',

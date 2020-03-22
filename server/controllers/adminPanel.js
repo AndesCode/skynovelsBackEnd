@@ -4,6 +4,12 @@ const forum_categories_model = require('../models').forum_categories;
 const users_model = require('../models').users;
 const novels_model = require('../models').novels;
 const novels_ratings_model = require('../models').novels_ratings;
+const chapters_model = require('../models').chapters;
+const volumes_model = require('../models').volumes;
+const genres_model = require('../models').genres;
+const forum_posts_model = require('../models').forum_posts;
+const posts_comments_model = require('../models').posts_comments;
+const user_reading_lists_model = require('../models').user_reading_lists;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
@@ -13,6 +19,20 @@ function adminPanelAccess(req, res) {
 }
 
 // forum
+
+function adminGetCategories(req, res) {
+    forum_categories_model.findAll({
+        include: [{
+            model: forum_posts_model,
+            as: 'forum_posts',
+            attributes: ['id'],
+        }]
+    }).then(forum_categories => {
+        res.status(200).send({ forum_categories });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
+    });
+}
 
 function adminCreateCategory(req, res) {
     const body = req.body;
@@ -52,6 +72,33 @@ function adminDeleteCategory(req, res) {
         res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro ' });
     });
 }
+
+
+function adminGetPosts(req, res) {
+    forum_posts_model.findAll({
+        include: [{
+                model: forum_categories_model,
+                as: 'forum_category',
+                attributes: ['category_name', 'category_title'],
+            },
+            {
+                model: users_model,
+                as: 'user',
+                attributes: ['user_login']
+            },
+            {
+                model: posts_comments_model,
+                as: 'post_comments',
+                attributes: ['id'],
+            }
+        ]
+    }).then(forum_posts => {
+        res.status(200).send({ forum_posts });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
+    });
+}
+
 
 function adminUpdatePost(req, res) {
     const body = req.body;
@@ -128,9 +175,9 @@ function adminGetUsers(req, res) {
             user_status: status
         }
     }).then(users => {
-        res.status(200).send({ users });
+        return res.status(200).send({ users });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
@@ -142,9 +189,9 @@ function adminDeleteUser(req, res) {
                 id: id
             }
         }).then(user => {
-            res.status(200).send({ user });
+            return res.status(200).send({ user });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar el usuario' });
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar el usuario' });
         });
     }).catch(err => {
         res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario' });
@@ -153,14 +200,16 @@ function adminDeleteUser(req, res) {
 
 function adminUpdateUser(req, res) {
     const body = req.body;
-    users_model.findByPk(body.id).then(user => {
-        user.update(body).then(() => {
-            res.status(200).send({ user });
+    users_model.findByPk(body.id, {
+        attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth', 'user_description', 'createdAt', 'updatedAt']
+    }).then(user => {
+        user.update(body).then((user) => {
+            return res.status(200).send({ user });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario ' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario ' + err });
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar el usuario ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el usuario ' + err });
     });
 }
 
@@ -173,9 +222,14 @@ function adminGetNovels(req, res) {
             as: 'genres',
             through: { attributes: [] }
         }, {
-            model: chapters_model,
-            as: 'chapters',
-            attributes: ['id']
+            model: volumes_model,
+            as: 'volumes',
+            attributes: ['id', 'vlm_title'],
+            include: [{
+                model: chapters_model,
+                as: 'chapters',
+                attributes: ['id']
+            }]
         }, {
             model: novels_ratings_model,
             as: 'novel_ratings',
@@ -346,11 +400,13 @@ module.exports = {
     // Panel
     adminPanelAccess,
     // Forum
+    adminGetCategories,
     adminCreateCategory,
     adminUpdateCategory,
     adminDeleteCategory,
     adminUpdateComment,
     adminDeleteComment,
+    adminGetPosts,
     adminUpdatePost,
     adminDeletePost,
     // Users

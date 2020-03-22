@@ -11,6 +11,7 @@ const forum_posts_model = require('../models').forum_posts;
 const posts_comments_model = require('../models').posts_comments;
 const forum_categories_model = require('../models').forum_categories;
 const genres_model = require('../models').genres;
+const volumes_model = require('../models').volumes;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
@@ -76,9 +77,14 @@ function getUser(req, res) {
                     chp_status: 'Publicado'
                 },
                 include: [{
-                    model: novels_model,
-                    as: 'novel',
-                    attributes: ['nvl_title']
+                    model: volumes_model,
+                    as: 'volume',
+                    attributes: ['id'],
+                    include: [{
+                        model: novels_model,
+                        as: 'novel',
+                        attributes: ['nvl_title']
+                    }],
                 }],
                 attributes: ['id', 'nvl_id', 'chp_title', 'createdAt', 'updatedAt']
             }).then(chapters => {
@@ -96,12 +102,19 @@ function getUser(req, res) {
                         as: 'genres',
                         through: { attributes: [] }
                     }, {
-                        model: chapters_model,
-                        as: 'chapters',
-                        attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+                        model: volumes_model,
+                        as: 'volumes',
+                        attributes: ['id', 'vlm_title'],
                         where: {
-                            chp_status: 'publicado'
+                            vlm_title: {
+                                [Op.ne]: null
+                            }
                         },
+                        include: [{
+                            model: chapters_model,
+                            as: 'chapters',
+                            attributes: ['id', 'chp_number', 'createdAt', 'chp_title']
+                        }]
                     }, ],
                 }).then(novels => {
                     forum_posts_model.findAll({
@@ -178,9 +191,14 @@ function getUserNovels(req, res) {
             as: 'genres',
             through: { attributes: [] }
         }, {
-            model: chapters_model,
-            as: 'chapters',
-            attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+            model: volumes_model,
+            as: 'volumes',
+            attributes: ['id', 'vlm_title'],
+            include: [{
+                model: chapters_model,
+                as: 'chapters',
+                attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+            }]
         }, {
             model: novels_ratings_model,
             as: 'novel_ratings',
@@ -199,9 +217,14 @@ function getUserNovels(req, res) {
                     as: 'genres',
                     through: { attributes: [] }
                 }, {
-                    model: chapters_model,
-                    as: 'chapters',
-                    attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+                    model: volumes_model,
+                    as: 'volumes',
+                    attributes: ['id', 'vlm_title'],
+                    include: [{
+                        model: chapters_model,
+                        as: 'chapters',
+                        attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+                    }]
                 }, {
                     model: novels_ratings_model,
                     as: 'novel_ratings',

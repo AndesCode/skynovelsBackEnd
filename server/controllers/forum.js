@@ -14,7 +14,7 @@ function getCategories(req, res) {
     forum_categories_model.findAll({
         include: [{
             model: forum_posts_model,
-            as: 'posts',
+            as: 'forum_posts',
             attributes: ['id', 'post_author_id', 'post_title', 'createdAt'],
             include: [{
                 model: users_model,
@@ -47,8 +47,8 @@ function getCategory(req, res) {
     forum_categories_model.findByPk(id, {
         include: [{
             model: forum_posts_model,
-            as: 'posts',
-            attributes: ['id', 'post_author_id', 'post_title', 'createdAt'],
+            as: 'forum_posts',
+            attributes: ['id', 'post_author_id', 'post_title', 'post_pinned', 'createdAt'],
             include: [{
                 model: users_model,
                 as: 'user',
@@ -139,6 +139,9 @@ function createPost(req, res) {
 
 function updatePost(req, res) {
     const body = req.body;
+    if (body.post_pinned) {
+        return res.status(401).send({ message: 'Petición no autorizada' });
+    }
     forum_posts_model.findByPk(body.id).then(post => {
         if (post.post_author_id === req.user.id) {
             post.update(body).then((post) => {

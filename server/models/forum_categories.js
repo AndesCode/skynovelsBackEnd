@@ -34,7 +34,7 @@ module.exports = (sequelized, DataTypes) => {
     forum_categories.associate = function(models) {
         forum_categories.hasMany(models.forum_posts, {
             foreignKey: 'forum_category_id',
-            as: 'posts'
+            as: 'forum_posts'
         });
     };
 
