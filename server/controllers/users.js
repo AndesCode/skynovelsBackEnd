@@ -62,7 +62,7 @@ function getUser(req, res) {
         include: [{
             model: novels_model,
             as: 'collaborations',
-            attributes: ['id', 'nvl_author', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_writer', 'nvl_rating'],
+            attributes: ['id', 'nvl_author', 'nvl_title', 'nvl_status', 'nvl_name', 'nvl_writer'],
             through: { attributes: [] }
         }, {
             model: invitations_model,

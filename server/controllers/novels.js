@@ -58,10 +58,6 @@ function getNovel(req, res) {
             attributes: ['id', 'user_login'],
             through: { attributes: [] },
         }, {
-            model: users_model,
-            as: 'author',
-            attributes: ['user_login']
-        }, {
             model: user_reading_lists_model,
             as: 'user_reading_lists',
             attributes: ['id', 'user_id', 'nvl_chapter'],
@@ -92,8 +88,8 @@ function getNovel(req, res) {
                     },
                 }]
             }).then(volumes => {
-                const collaborators = novel.collaborators.map(collaborator => collaborator.id);
                 if (req.params.action === 'edition') {
+                    const collaborators = novel.collaborators.map(collaborator => collaborator.id);
                     if (req.user && (req.user.id === novel.nvl_author || collaborators.includes(req.user.id))) {
                         const authorized_user = req.user.id;
                         return res.status(200).send({ novel, volumes, authorized_user });
@@ -116,6 +112,26 @@ function getNovel(req, res) {
     });
 }
 
+function getNovelVolumes(req, res) {
+    volumes_model.findAll({
+        include: [{
+            model: chapters_model,
+            as: 'chapters',
+            attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+            where: {
+                chp_status: 'Publicado'
+            },
+        }],
+        where: {
+            nvl_id: req.params.id
+        }
+    }).then(volumes => {
+        return res.status(200).send({ volumes });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+    });
+}
+
 function getNovels(req, res) {
     novels_model.findAll({
         include: [{
@@ -130,15 +146,7 @@ function getNovels(req, res) {
                 vlm_title: {
                     [Op.ne]: null
                 }
-            },
-            include: [{
-                model: chapters_model,
-                as: 'chapters',
-                attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
-                where: {
-                    chp_status: 'Publicado'
-                },
-            }]
+            }
         }, {
             model: novels_ratings_model,
             as: 'novel_ratings',
@@ -147,15 +155,6 @@ function getNovels(req, res) {
                 as: 'user',
                 attributes: ['user_login']
             }]
-        }, {
-            model: users_model,
-            as: 'collaborators',
-            attributes: ['id', 'user_login'],
-            through: { attributes: [] },
-        }, {
-            model: users_model,
-            as: 'author',
-            attributes: ['user_login']
         }, {
             model: user_reading_lists_model,
             as: 'user_reading_lists',
@@ -595,7 +594,8 @@ module.exports = {
     deleteNovel,
     // Chapters
     getChapter,
-    getChapters,
+    // getChapters,
+    getNovelVolumes,
     createChapter,
     updateChapter,
     deleteChapter,
