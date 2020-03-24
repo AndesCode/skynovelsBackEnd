@@ -132,6 +132,14 @@ function getNovelVolumes(req, res) {
     });
 }
 
+function getnovelsTest(req, res) {
+    novels_model.sequelize.query('SELECT n.*, CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", g.id, "genre_name", g.genre_name)), "]"), JSON) as genres, (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "chapters", (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_title", c.chp_title, "chp_number", c.chp_number, "chp_status", c.chp_status)), "]"), JSON) as chapter FROM chapters c where c.vlm_id = v.id))), "]"), JSON) FROM volumes v where v.nvl_id = n.id) as volumes, (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id) as novel_ratings FROM novels n INNER JOIN genres_novels gn ON n.id = gn.novel_id INNER JOIN genres g ON g.id = gn.genre_id WHERE n.id = 23', { type: novels_model.sequelize.QueryTypes.SELECT }).then(novels => {
+        res.status(200).send({ novels });
+    }).catch(err => {
+        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' });
+    });
+}
+
 function getNovels(req, res) {
     novels_model.findAll({
         include: [{
@@ -604,5 +612,7 @@ module.exports = {
     // Novel ratings
     createNovelRating,
     updateNovelRating,
-    deleteNovelRating
+    deleteNovelRating,
+    // test
+    getnovelsTest
 };
