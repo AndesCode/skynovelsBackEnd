@@ -19,97 +19,46 @@ const Op = Sequelize.Op;
 
 function getNovel(req, res) {
     const id = req.params.id;
-    let attributes = [];
-    let nvl_status = '';
-    let chp_status = '';
+    let attributes = '';
+    let novel_activity = '';
+    let private_query = '';
     if (req.params.action === 'reading' || req.params.action === 'edition') {
         if (req.params.action === 'reading') {
-            attributes = ['id', 'chp_title', 'chp_number', 'chp_status'];
-            nvl_status = 'Publicada';
-            chp_status = 'Publicado';
+            attributes = '"id", c.id, "chp_title", c.chp_title, "chp_number", c.chp_number, "chp_status", c.chp_status';
+            novel_activity = '= "Active"';
+            private_query = 'AND n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL) IS NOT NULL';
+
         } else {
-            attributes = ['id', 'chp_title', 'chp_number', 'chp_content', 'chp_review', 'chp_author', 'chp_status'];
-            nvl_status = {
-                [Op.ne]: null
-            };
-            chp_status = {
-                [Op.ne]: null
-            };
+            attributes = '"id", c.id, "chp_title", c.chp_title, "chp_number", c.chp_number, "chp_status", c.chp_status, "chp_review", c.chp_review, "chp_author", c.chp_author, "chp_content", c.chp_content';
+            novel_activity = 'IS NOT NULL ';
         }
     } else {
         return res.status(500).send({ message: 'petición invalida' });
     }
-    novels_model.findByPk(id, {
-        include: [{
-            model: genres_model,
-            as: 'genres',
-            through: { attributes: [] }
-        }, {
-            model: novels_ratings_model,
-            as: 'novel_ratings',
-            include: [{
-                model: users_model,
-                as: 'user',
-                attributes: ['user_login']
-            }]
-        }, {
-            model: users_model,
-            as: 'collaborators',
-            attributes: ['id', 'user_login'],
-            through: { attributes: [] },
-        }, {
-            model: user_reading_lists_model,
-            as: 'user_reading_lists',
-            attributes: ['id', 'user_id', 'nvl_chapter'],
-            include: [{
-                model: users_model,
-                as: 'user',
-                attributes: ['user_login']
-            }]
-        }],
-        where: {
-            nvl_status: nvl_status
-        }
-    }).then(novel => {
-        if (novel) {
-            volumes_model.findAll({
-                where: {
-                    nvl_id: novel.id,
-                    vlm_title: {
-                        [Op.ne]: null
-                    }
-                },
-                include: [{
-                    model: chapters_model,
-                    as: 'chapters',
-                    attributes: attributes,
-                    where: {
-                        chp_status: chp_status
-                    },
-                }]
-            }).then(volumes => {
+    novels_model.sequelize.query('SELECT n.*, (SELECT (SELECT COUNT(c.id) FROM chapters c WHERE c.vlm_id = v.id LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id) AS nvl_chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id ORDER BY c.createdAt DESC LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "nvl_chapter", rl.nvl_chapter)), "]"), JSON) FROM user_reading_lists rl where rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as user_reading_lists, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "chapters", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT(' + attributes + ')), "]"), JSON) as chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status' + novel_activity + '), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM volumes v where v.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as volumes,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", nrl.id, "user_id", nrl.user_id, "user_login", (SELECT user_login FROM users u where u.id = nrl.user_id))), "]"), JSON) as likes FROM novels_ratings_likes nrl where nrl.novel_rating_id = nr.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as novel_ratings,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n  WHERE  n.id = ?' + private_query, { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
+        .then(novel => {
+            if (novel.length > 0) {
                 if (req.params.action === 'edition') {
-                    const collaborators = novel.collaborators.map(collaborator => collaborator.id);
+                    const collaborators = novels[0].collaborators.map(collaborator => collaborator.user_id);
                     if (req.user && (req.user.id === novel.nvl_author || collaborators.includes(req.user.id))) {
                         const authorized_user = req.user.id;
-                        return res.status(200).send({ novel, volumes, authorized_user });
+                        return res.status(200).send({ novel, authorized_user });
                     } else {
                         return res.status(401).send({ message: 'No autorizado ' });
                     }
                 } else {
-                    if (volumes.length > 0) {
-                        return res.status(200).send({ novel, volumes });
+                    if (novel[0].volumes && novel[0].volumes.length > 0) {
+                        return res.status(200).send({ novel });
                     } else {
                         return res.status(404).send({ message: 'No se encontro ninguna novela' });
                     }
                 }
-            });
-        } else {
-            return res.status(404).send({ message: 'No se encontro ninguna novela' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
-    });
+            } else {
+                return res.status(404).send({ message: 'No se encontro ninguna novela' });
+            }
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' + err });
+        });
 }
 
 function getNovelVolumes(req, res) {
@@ -132,56 +81,26 @@ function getNovelVolumes(req, res) {
     });
 }
 
+// Función de prueba, borrar posteriormente
 function getnovelsTest(req, res) {
-    novels_model.sequelize.query('SELECT n.*, CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", g.id, "genre_name", g.genre_name)), "]"), JSON) as genres, (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "chapters", (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_title", c.chp_title, "chp_number", c.chp_number, "chp_status", c.chp_status)), "]"), JSON) as chapter FROM chapters c where c.vlm_id = v.id))), "]"), JSON) FROM volumes v where v.nvl_id = n.id) as volumes, (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id) as novel_ratings FROM novels n INNER JOIN genres_novels gn ON n.id = gn.novel_id INNER JOIN genres g ON g.id = gn.genre_id WHERE n.id = 23', { type: novels_model.sequelize.QueryTypes.SELECT }).then(novels => {
-        res.status(200).send({ novels });
-    }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' });
-    });
+    const id = 23;
+    novels_model.sequelize.query('SELECT n.*, (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "chapters", (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_title", c.chp_title, "chp_number", c.chp_number, "chp_status", c.chp_status)), "]"), JSON) as chapter FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active"))), "]"), JSON) FROM volumes v where v.nvl_id = n.id) as volumes,  (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id) as novel_ratings, (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n  WHERE  n.id = 23 AND n.nvl_status= "Active"', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
+        .then(novels => {
+            const collaborators = novels[0].collaborators.map(collaborator => collaborator.user_id);
+            console.log(collaborators);
+            res.status(200).send({ novels });
+        }).catch(err => {
+            res.status(500).send({ message: 'Ocurrio un error al buscar la novela' });
+        });
 }
 
 function getNovels(req, res) {
-    novels_model.findAll({
-        include: [{
-            model: genres_model,
-            as: 'genres',
-            through: { attributes: [] }
-        }, {
-            model: volumes_model,
-            as: 'volumes',
-            attributes: ['id', 'vlm_title'],
-            where: {
-                vlm_title: {
-                    [Op.ne]: null
-                }
-            }
-        }, {
-            model: novels_ratings_model,
-            as: 'novel_ratings',
-            include: [{
-                model: users_model,
-                as: 'user',
-                attributes: ['user_login']
-            }]
-        }, {
-            model: user_reading_lists_model,
-            as: 'user_reading_lists',
-            include: [{
-                model: users_model,
-                as: 'user',
-                attributes: ['user_login']
-            }]
-        }],
-        where: {
-            nvl_status: {
-                [Op.or]: ['Publicada', 'Finalizada']
-            }
-        }
-    }).then(novels => {
-        return res.status(200).send({ novels });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
-    });
+    novels_model.sequelize.query('SELECT n.*, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id ORDER BY c.createdAt DESC LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n  WHERE  n.nvl_status = "Active" AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL) IS NOT NULL', { type: novels_model.sequelize.QueryTypes.SELECT })
+        .then(novels => {
+            return res.status(200).send({ novels });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        });
 }
 
 function createNovel(req, res) {
