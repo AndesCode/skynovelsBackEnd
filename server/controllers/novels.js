@@ -297,7 +297,7 @@ function getChapter(req, res) {
     chapters_model.findOne({
         include: [{
             model: chapters_comments_model,
-            as: comments,
+            as: 'comments',
             limit: 1
         }],
         where: {
