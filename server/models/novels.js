@@ -7,9 +7,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER
         },
         nvl_author: DataTypes.INTEGER,
+        nvl_translator: DataTypes.TEXT,
+        nvl_translator_eng: DataTypes.TEXT,
         nvl_content: DataTypes.TEXT,
         nvl_title: DataTypes.TEXT,
-        nvl_status: DataTypes.CHAR,
         nvl_status: DataTypes.CHAR,
         nvl_publication_date: DataTypes.DATE,
         nvl_name: {
@@ -30,7 +31,6 @@ module.exports = (sequelize, DataTypes) => {
                 }
             }
         },
-        nvl_comment_count: DataTypes.INTEGER,
         nvl_writer: DataTypes.CHAR,
         nvl_img: DataTypes.CHAR,
     });
@@ -46,6 +46,10 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'nvl_id',
             as: 'volumes',
         });
+        novels.hasMany(models.chapters, {
+            foreignKey: 'nvl_id',
+            as: 'chapters',
+        });
         novels.belongsToMany(models.users, {
             through: 'novels_collaborators',
             as: 'collaborators',
@@ -59,9 +63,9 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'nvl_author',
             as: 'author'
         });
-        novels.hasMany(models.user_reading_lists, {
+        novels.hasMany(models.bookmarks, {
             foreignKey: 'nvl_id',
-            as: 'user_reading_lists',
+            as: 'bookmarks',
         });
     };
 

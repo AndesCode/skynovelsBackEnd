@@ -1,7 +1,7 @@
 /*jshint esversion: 6 */
 var config = require('../config/config');
 // Models
-const user_reading_lists_model = require('../models').user_reading_lists;
+const bookmarks_model = require('../models').bookmarks;
 const invitations_model = require('../models').invitations;
 const users_model = require('../models').users;
 const novels_model = require('../models').novels;
@@ -86,7 +86,7 @@ function getUser(req, res) {
                         attributes: ['nvl_title']
                     }],
                 }],
-                attributes: ['id', 'nvl_id', 'chp_title', 'createdAt', 'updatedAt']
+                attributes: ['id', 'nvl_id', 'chp_index_title', 'createdAt', 'updatedAt']
             }).then(chapters => {
                 novels_model.findAll({
                     where: {
@@ -113,7 +113,7 @@ function getUser(req, res) {
                         include: [{
                             model: chapters_model,
                             as: 'chapters',
-                            attributes: ['id', 'chp_number', 'createdAt', 'chp_title']
+                            attributes: ['id', 'chp_number', 'createdAt', 'chp_index_title']
                         }]
                     }, ],
                 }).then(novels => {
@@ -197,7 +197,7 @@ function getUserNovels(req, res) {
             include: [{
                 model: chapters_model,
                 as: 'chapters',
-                attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+                attributes: ['id', 'chp_number', 'createdAt', 'chp_index_title'],
             }]
         }, {
             model: novels_ratings_model,
@@ -223,7 +223,7 @@ function getUserNovels(req, res) {
                     include: [{
                         model: chapters_model,
                         as: 'chapters',
-                        attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
+                        attributes: ['id', 'chp_number', 'createdAt', 'chp_index_title'],
                     }]
                 }, {
                     model: novels_ratings_model,
@@ -588,7 +588,7 @@ function getUserProfileImage(req, res) {
 function createUserbookmark(req, res) {
     const body = req.body;
     body.user_id = req.user.id;
-    user_reading_lists_model.create(body).then(bookmark => {
+    bookmarks_model.create(body).then(bookmark => {
         return res.status(200).send({ bookmark });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
@@ -597,7 +597,7 @@ function createUserbookmark(req, res) {
 
 function removeUserbookmark(req, res) {
     const id = req.params.id;
-    user_reading_lists_model.findByPk(id).then(bookmark => {
+    bookmarks_model.findByPk(id).then(bookmark => {
         if (req.user.id === bookmark.user_id) {
             bookmark.destroy({
                 where: {
@@ -618,11 +618,11 @@ function removeUserbookmark(req, res) {
 
 function updateUserbookmark(req, res) {
     const body = req.body;
-    user_reading_lists_model.findByPk(body.id).then(bookmark => {
+    bookmarks_model.findByPk(body.id).then(bookmark => {
         if (req.user.id === bookmark.user_id) {
-            console.log(body.nvl_chapter);
+            console.log(body.bkm_chapter);
             bookmark.update({
-                nvl_chapter: body.nvl_chapter
+                bkm_chapter: body.bkm_chapter
             }).then(() => {
                 return res.status(200).send({ bookmark });
             }).catch(err => {

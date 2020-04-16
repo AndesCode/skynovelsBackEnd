@@ -53,7 +53,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.CHAR,
             allowNull: false,
             validate: {
-                len: [5, 256]
+                len: [5, 1500]
             }
 
         },
@@ -68,6 +68,14 @@ module.exports = (sequelize, DataTypes) => {
         novels_ratings.belongsTo(models.users, {
             foreignKey: 'user_id',
             as: 'user'
+        });
+        novels_ratings.hasMany(models.novels_ratings_likes, {
+            foreignKey: 'novel_rating_id',
+            as: 'likes',
+        });
+        novels_ratings.hasMany(models.novels_ratings_comments, {
+            foreignKey: 'novel_rating_id',
+            as: 'comments',
         });
     };
 

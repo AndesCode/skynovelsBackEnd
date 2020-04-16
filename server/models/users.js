@@ -93,9 +93,9 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'nvl_author',
             as: 'novels',
         });
-        users.hasMany(models.user_reading_lists, {
+        users.hasMany(models.bookmarks, {
             foreignKey: 'user_id',
-            as: 'user_reading_lists',
+            as: 'bookmarks',
         });
         users.hasMany(models.forum_posts, {
             foreignKey: 'post_author_id',

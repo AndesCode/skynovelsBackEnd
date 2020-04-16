@@ -9,7 +9,7 @@ const volumes_model = require('../models').volumes;
 const genres_model = require('../models').genres;
 const forum_posts_model = require('../models').forum_posts;
 const posts_comments_model = require('../models').posts_comments;
-const user_reading_lists_model = require('../models').user_reading_lists;
+const bookmarks_model = require('../models').bookmarks;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
@@ -248,8 +248,8 @@ function adminGetNovels(req, res) {
             as: 'author',
             attributes: ['user_login']
         }, {
-            model: user_reading_lists_model,
-            as: 'user_reading_lists',
+            model: bookmarks_model,
+            as: 'bookmarks',
             include: [{
                 model: users_model,
                 as: 'user',

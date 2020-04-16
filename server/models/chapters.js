@@ -16,6 +16,8 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
+        chp_translator: DataTypes.STRING(45),
+        chp_translator_eng: DataTypes.STRING(45),
         nvl_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -66,13 +68,18 @@ module.exports = (sequelize, DataTypes) => {
         },
         chp_review: DataTypes.STRING(500),
         chp_title: {
-            type: DataTypes.STRING(45),
+            type: DataTypes.STRING(90),
             allowNull: false,
-            validate: { len: [2, 45] }
+            validate: { len: [2, 90] }
+        },
+        chp_index_title: {
+            type: DataTypes.STRING(90),
+            allowNull: false,
+            validate: { len: [2, 90] }
         },
         chp_status: DataTypes.STRING(25),
         chp_comment_status: DataTypes.STRING(25),
-        chp_post_name: DataTypes.TEXT,
+        chp_name: DataTypes.TEXT,
         chp_comment_count: DataTypes.INTEGER
 
 
@@ -85,13 +92,21 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'vlm_id',
             as: 'volume',
         });
+        chapters.belongsTo(models.novels, {
+            foreignKey: 'nvl_id',
+            as: 'novel',
+        });
         chapters.belongsTo(models.users, {
             foreignKey: 'chp_author',
             as: 'author'
         });
-        chapters.hasMany(models.user_reading_lists, {
-            foreignKey: 'nvl_chapter',
-            as: 'users_reading',
+        chapters.hasMany(models.bookmarks, {
+            foreignKey: 'bkm_chapter',
+            as: 'bookmarks',
+        });
+        chapters.hasMany(models.chapters_comments, {
+            foreignKey: 'chapter_id',
+            as: 'comments',
         });
     };
 

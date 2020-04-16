@@ -6,7 +6,12 @@ const chapters_model = require('../models').chapters;
 const volumes_model = require('../models').volumes;
 const users_model = require('../models').users;
 const genres_model = require('../models').genres;
-const user_reading_lists_model = require('../models').user_reading_lists;
+const bookmarks_model = require('../models').bookmarks;
+const novels_ratings_likes_model = require('../models').novels_ratings_likes;
+const novels_ratings_comments_likes_model = require('../models').novels_ratings_comments_likes;
+const novels_ratings_comments_model = require('../models').novels_ratings_comments;
+const chapters_comments_likes_model = require('../models').chapters_comments_likes;
+const chapters_comments_model = require('../models').chapters_comments;
 // More requires
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
@@ -24,18 +29,18 @@ function getNovel(req, res) {
     let private_query = '';
     if (req.params.action === 'reading' || req.params.action === 'edition') {
         if (req.params.action === 'reading') {
-            attributes = '"id", c.id, "chp_title", c.chp_title, "chp_number", c.chp_number, "chp_status", c.chp_status';
+            attributes = '"id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt';
             novel_activity = '= "Active"';
             private_query = 'AND n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL) IS NOT NULL';
 
         } else {
-            attributes = '"id", c.id, "chp_title", c.chp_title, "chp_number", c.chp_number, "chp_status", c.chp_status, "chp_review", c.chp_review, "chp_author", c.chp_author, "chp_content", c.chp_content';
+            attributes = '"id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "chp_review", c.chp_review, "chp_author", c.chp_author, "chp_content", c.chp_content, "createdAt", c.createdAt';
             novel_activity = 'IS NOT NULL ';
         }
     } else {
         return res.status(500).send({ message: 'petición invalida' });
     }
-    novels_model.sequelize.query('SELECT n.*, (SELECT (SELECT COUNT(c.id) FROM chapters c WHERE c.vlm_id = v.id LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id) AS nvl_chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id ORDER BY c.createdAt DESC LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "nvl_chapter", rl.nvl_chapter)), "]"), JSON) FROM user_reading_lists rl where rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as user_reading_lists, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "chapters", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT(' + attributes + ')), "]"), JSON) as chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status' + novel_activity + '), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM volumes v where v.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as volumes,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", nrl.id, "user_id", nrl.user_id, "user_login", (SELECT user_login FROM users u where u.id = nrl.user_id))), "]"), JSON) as likes FROM novels_ratings_likes nrl where nrl.novel_rating_id = nr.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as novel_ratings,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n  WHERE  n.id = ?' + private_query, { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
+    novels_model.sequelize.query('SELECT n.*, (SELECT (SELECT COUNT(c.id) FROM chapters c WHERE c.vlm_id = v.id LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id) AS nvl_chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id ORDER BY c.createdAt DESC LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "bkm_chapter", rl.bkm_chapter)), "]"), JSON) FROM bookmarks rl where rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "chapters", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT(' + attributes + ') ORDER BY c.chp_number ASC), "]"), JSON) as chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status' + novel_activity + '), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM volumes v where v.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as volumes,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", nrl.id, "user_id", nrl.user_id, "user_login", (SELECT user_login FROM users u where u.id = nrl.user_id))), "]"), JSON) as likes FROM novels_ratings_likes nrl where nrl.novel_rating_id = nr.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as novel_ratings,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n  WHERE  n.id = ?' + private_query, { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
         .then(novel => {
             if (novel.length > 0) {
                 if (req.params.action === 'edition') {
@@ -61,33 +66,11 @@ function getNovel(req, res) {
         });
 }
 
-function getNovelVolumes(req, res) {
-    volumes_model.findAll({
-        include: [{
-            model: chapters_model,
-            as: 'chapters',
-            attributes: ['id', 'chp_number', 'createdAt', 'chp_title'],
-            where: {
-                chp_status: 'Publicado'
-            },
-        }],
-        where: {
-            nvl_id: req.params.id
-        }
-    }).then(volumes => {
-        return res.status(200).send({ volumes });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
-    });
-}
-
 // Función de prueba, borrar posteriormente
 function getnovelsTest(req, res) {
     const id = 23;
-    novels_model.sequelize.query('SELECT n.*, (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "chapters", (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_title", c.chp_title, "chp_number", c.chp_number, "chp_status", c.chp_status)), "]"), JSON) as chapter FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active"))), "]"), JSON) FROM volumes v where v.nvl_id = n.id) as volumes,  (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id) as novel_ratings, (SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n  WHERE  n.id = 23 AND n.nvl_status= "Active"', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
+    novels_model.sequelize.query('SELECT id, nvl_author, nvl_title, nvl_writer, nvl_translator, nvl_img, createdAt, updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_number", c.chp_number, "chp_index_title", c.chp_index_title) ORDER BY c.chp_number ASC), "]"), JSON) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), CONVERT(CONCAT("[]"), JSON)) AS chapters FROM novels n where n.id = 23', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
         .then(novels => {
-            const collaborators = novels[0].collaborators.map(collaborator => collaborator.user_id);
-            console.log(collaborators);
             res.status(200).send({ novels });
         }).catch(err => {
             res.status(500).send({ message: 'Ocurrio un error al buscar la novela' });
@@ -311,67 +294,36 @@ function deleteNovel(req, res) {
 
 function getChapter(req, res) {
     const id = req.params.id;
-    chapters_model.findByPk(id
-        /*, {
-                include: [{
-                    model: novels_model,
-                    as: 'novel',
-                    include: {
-                        model: users_model,
-                        as: 'author',
-                        attributes: ['id', 'user_login']
-                    }
-                }, {
-                    model: users_model,
-                    as: 'author',
-                    attributes: ['id', 'user_login']
-                }, {
-                    model: user_reading_lists_model,
-                    as: 'users_reading',
-                    include: [{
-                        model: users_model,
-                        as: 'user',
-                        attributes: ['user_login']
-                    }]
-                }]
-            }*/
-    ).then(chapter => {
+    chapters_model.findOne({
+        include: [{
+            model: chapters_comments_model,
+            as: comments,
+            limit: 1
+        }],
+        where: {
+            id: id,
+            chp_status: 'Active'
+        }
+    }).then(chapter => {
         return res.status(200).send({ chapter });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
-function getChapters(req, res) {
-    console.log(req.query);
-    /*let searchMethod = {};
-    if (req.query.user) {
-        searchMethod.chp_author = req.query.user;
-    }*/
-    chapters_model.findAll({
-        attributes: ['id', 'chp_author', 'nvl_id', 'chp_number', 'chp_title', 'createdAt', 'updatedAt'],
-        include: [{
-            model: novels_model,
-            as: 'novel',
-            attributes: ['nvl_title'],
-        }, {
-            model: users_model,
-            as: 'author',
-            attributes: ['user_login']
-        }, {
-            model: user_reading_lists_model,
-            as: 'users_reading',
-            include: [{
-                model: users_model,
-                as: 'user',
-                attributes: ['user_login']
-            }]
-        }]
-    }).then(chapters => {
-        return res.status(200).send({ chapters });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
-    });
+function getNovelChapters(req, res) {
+    const id = req.params.id;
+    novels_model.sequelize.query('SELECT id, nvl_author, nvl_title, nvl_name, nvl_writer, nvl_acronym, nvl_translator, nvl_img, createdAt, updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), CONVERT(CONCAT("[]"), JSON)) AS chapters, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "bkm_chapter", rl.bkm_chapter)), "]"), JSON) FROM bookmarks rl where rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "id", nr.id)), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as novel_ratings FROM novels n where n.id = ? AND n.nvl_status IN ("Active", "Finished")', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
+        .then(novel => {
+            if (novel.length > 0) {
+                return res.status(200).send({ novel });
+            } else {
+                return res.status(404).send({ message: 'No se encuentra la novela que buscas' });
+            }
+
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        });
 }
 
 function createChapter(req, res) {
@@ -451,6 +403,65 @@ function deleteChapter(req, res) {
     });
 }
 
+function createChapterComment(req, res) {
+    const body = req.body;
+    body.user_id = req.user.id;
+    chapters_comments_model.create(body).then(chapter_comment => {
+        return res.status(200).send({ chapter_comment });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al crear el comentario para el capitulo ' + err });
+    });
+}
+
+function getChapterComments(req, res) {
+    const id = req.params.id;
+    chapters_comments_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = nrc.user_id) as user_login, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", nrcl.id, "novel_rating_comment_id", nrcl.novel_rating_comment_id, "user_id", nrcl.user_id, "user_login", (SELECT user_login FROM users u where u.id = nrcl.user_id))), "]"), JSON) FROM novels_ratings_comments_likes nrcl where nrcl.novel_rating_comment_id = nrc.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM novels_ratings_comments nrc WHERE nrc.novel_rating_id = ?', { replacements: [id], type: chapters_comments_model.sequelize.QueryTypes.SELECT })
+        .then(chapters_comments => {
+            return res.status(200).send({ chapters_comments });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        });
+}
+
+function updateChapterComment(req, res) {
+    var body = req.body;
+    chapters_comments_model.findByPk(body.id).then(chapter_comment => {
+        if (req.user.id === chapter_comment.user_id) {
+            chapter_comment.update(body).then(() => {
+                return res.status(200).send({ chapter_comment });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario de la clasificacion de la novela ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario de la clasificacion de la novela ' + err });
+    });
+}
+
+function deleteChapterComment(req, res) {
+    var id = req.params.id;
+    console.log(id);
+    chapters_comments_model.findByPk(id).then(chapter_comment => {
+        if (req.user.id === chapter_comment.user_id) {
+            chapter_comment.destroy({
+                where: {
+                    id: id
+                }
+            }).then(chapter_comment => {
+                return res.status(200).send({ chapter_comment });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el comentario de la clasificacion de la novela ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el comentario de la clasificacion de la novela ' + err });
+    });
+}
+
 // Genres
 
 function getGenres(req, res) {
@@ -474,7 +485,7 @@ function createNovelRating(req, res) {
 function updateNovelRating(req, res) {
     var body = req.body;
     novels_ratings_model.findByPk(body.id).then(novel_rating => {
-        if (req.user.id === novel_rating.user_id || req.user.user_rol === 'admin') {
+        if (req.user.id === novel_rating.user_id) {
             novel_rating.update(body).then(() => {
                 return res.status(200).send({ novel_rating });
             }).catch(err => {
@@ -492,7 +503,7 @@ function deleteNovelRating(req, res) {
     var id = req.params.id;
     console.log(id);
     novels_ratings_model.findByPk(id).then(novel_rating => {
-        if (req.user.id === novel_rating.user_id || req.user.user_rol === 'admin') {
+        if (req.user.id === novel_rating.user_id) {
             novel_rating.destroy({
                 where: {
                     id: id
@@ -501,6 +512,161 @@ function deleteNovelRating(req, res) {
                 return res.status(200).send({ novel_rating });
             }).catch(err => {
                 return res.status(500).send({ message: 'Ocurrio un error al eliminar la clasificacion de la novela ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la clasificacion de la novela ' + err });
+    });
+}
+
+function createNovelRatingComment(req, res) {
+    const body = req.body;
+    body.user_id = req.user.id;
+    novels_ratings_comments_model.create(body).then(novel_rating_comment => {
+        return res.status(200).send({ novel_rating_comment });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al crear el comentario para la calificación ' + err });
+    });
+}
+
+function getNovelRatingComments(req, res) {
+    const id = req.params.id;
+    novels_ratings_comments_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = nrc.user_id) as user_login, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", nrcl.id, "novel_rating_comment_id", nrcl.novel_rating_comment_id, "user_id", nrcl.user_id, "user_login", (SELECT user_login FROM users u where u.id = nrcl.user_id))), "]"), JSON) FROM novels_ratings_comments_likes nrcl where nrcl.novel_rating_comment_id = nrc.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM novels_ratings_comments nrc WHERE nrc.novel_rating_id = ?', { replacements: [id], type: novels_ratings_comments_model.sequelize.QueryTypes.SELECT })
+        .then(novel_rating_comments => {
+            return res.status(200).send({ novel_rating_comments });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        });
+}
+
+function updateNovelRatingComment(req, res) {
+    var body = req.body;
+    novels_ratings_comments_model.findByPk(body.id).then(novel_rating_comment => {
+        if (req.user.id === novel_rating_comment.user_id) {
+            novel_rating_comment.update(body).then(() => {
+                return res.status(200).send({ novel_rating_comment });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario de la clasificacion de la novela ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario de la clasificacion de la novela ' + err });
+    });
+}
+
+function deleteNovelRatingComment(req, res) {
+    var id = req.params.id;
+    console.log(id);
+    novels_ratings_comments_model.findByPk(id).then(novel_rating_comment => {
+        if (req.user.id === novel_rating_comment.user_id) {
+            novel_rating_comment.destroy({
+                where: {
+                    id: id
+                }
+            }).then(novel_rating_comment => {
+                return res.status(200).send({ novel_rating_comment });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el comentario de la clasificacion de la novela ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el comentario de la clasificacion de la novela ' + err });
+    });
+}
+
+function createNovelRatingCommentLike(req, res) {
+    const body = req.body;
+    body.user_id = req.user.id;
+    novels_ratings_comments_likes_model.create(body).then(novel_rating_comment_like => {
+        return res.status(200).send({ novel_rating_comment_like });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al asignar el "Me gusta" ' + err });
+    });
+}
+
+function deleteNovelCommentRatingLike(req, res) {
+    var id = req.params.id;
+    console.log(id);
+    novels_ratings_comments_likes_model.findByPk(id).then(novel_rating_comment_like => {
+        if (req.user.id === novel_rating_comment_like.user_id) {
+            novel_rating_comment_like.destroy({
+                where: {
+                    id: id
+                }
+            }).then(novel_rating_comment_like => {
+                return res.status(200).send({ novel_rating_comment_like });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el "Me gusta" ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la clasificacion de la novela ' + err });
+    });
+}
+
+function createNovelRatingLike(req, res) {
+    const body = req.body;
+    body.user_id = req.user.id;
+    novels_ratings_likes_model.create(body).then(novel_rating_like => {
+        return res.status(200).send({ novel_rating_like });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al asignar el "Me gusta" ' + err });
+    });
+}
+
+function deleteNovelRatingLike(req, res) {
+    var id = req.params.id;
+    console.log(id);
+    novels_ratings_likes_model.findByPk(id).then(novel_rating_like => {
+        if (req.user.id === novel_rating_like.user_id) {
+            novel_rating_like.destroy({
+                where: {
+                    id: id
+                }
+            }).then(novel_rating_like => {
+                return res.status(200).send({ novel_rating_like });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el "Me gusta" ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la clasificacion de la novela ' + err });
+    });
+}
+
+function createChapterCommentLike(req, res) {
+    const body = req.body;
+    body.user_id = req.user.id;
+    chapters_comments_likes_model.create(body).then(chapter_comment_like => {
+        return res.status(200).send({ chapter_comment_like });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al asignar el "Me gusta" ' + err });
+    });
+}
+
+function deleteChapterCommentLike(req, res) {
+    var id = req.params.id;
+    console.log(id);
+    chapters_comments_likes_model.findByPk(id).then(chapter_comment_like => {
+        if (req.user.id === chapter_comment_like.user_id) {
+            chapter_comment_like.destroy({
+                where: {
+                    id: id
+                }
+            }).then(chapter_comment_like => {
+                return res.status(200).send({ chapter_comment_like });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el "Me gusta" ' + err });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
@@ -521,17 +687,33 @@ module.exports = {
     deleteNovel,
     // Chapters
     getChapter,
-    // getChapters,
-    getNovelVolumes,
+    getNovelChapters,
     createChapter,
     updateChapter,
     deleteChapter,
+    // Chapters comments
+    createChapterComment,
+    getChapterComments,
+    updateChapterComment,
+    deleteChapterComment,
     // Genres
     getGenres,
     // Novel ratings
     createNovelRating,
     updateNovelRating,
     deleteNovelRating,
+    // Novel ratings comments
+    createNovelRatingComment,
+    getNovelRatingComments,
+    updateNovelRatingComment,
+    deleteNovelRatingComment,
+    // Likes
+    createNovelRatingLike,
+    deleteNovelRatingLike,
+    createNovelRatingCommentLike,
+    deleteNovelCommentRatingLike,
+    createChapterCommentLike,
+    deleteChapterCommentLike,
     // test
     getnovelsTest
 };
