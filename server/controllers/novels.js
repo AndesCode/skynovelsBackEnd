@@ -294,21 +294,12 @@ function deleteNovel(req, res) {
 
 function getChapter(req, res) {
     const id = req.params.id;
-    chapters_model.findOne({
-        include: [{
-            model: chapters_comments_model,
-            as: 'comments',
-            limit: 1
-        }],
-        where: {
-            id: id,
-            chp_status: 'Active'
-        }
-    }).then(chapter => {
-        return res.status(200).send({ chapter });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
-    });
+    chapters_model.sequelize.query('SELECT *,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", cc.id, "chapter_comment", cc.chapter_comment, "user_id", cc.user_id, "user_login", (SELECT user_login FROM users u where u.id = cc.user_id), "createdAt", cc.createdAt, "updatedAt", cc.updatedAt, "likes_count", (SELECT COUNT(id) FROM chapters_comments_likes ccl where ccl.chapter_comment_id = cc.id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", ccl.id, "chapter_comment_id", ccl.chapter_comment_id, "user_id", ccl.user_id, "user_login", (SELECT user_login FROM users u where u.id = ccl.user_id))), "]"), JSON) FROM chapters_comments_likes ccl where ccl.chapter_comment_id = cc.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM chapters_comments cc where cc.chapter_id = c.id), CONVERT(CONCAT("[]"), JSON)) as comments FROM chapters c where c.id = ?', { replacements: [id], type: chapters_model.sequelize.QueryTypes.SELECT })
+        .then(chapter => {
+            return res.status(200).send({ chapter });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        });
 }
 
 function getNovelChapters(req, res) {
@@ -415,7 +406,7 @@ function createChapterComment(req, res) {
 
 function getChapterComments(req, res) {
     const id = req.params.id;
-    chapters_comments_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = nrc.user_id) as user_login, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", nrcl.id, "novel_rating_comment_id", nrcl.novel_rating_comment_id, "user_id", nrcl.user_id, "user_login", (SELECT user_login FROM users u where u.id = nrcl.user_id))), "]"), JSON) FROM novels_ratings_comments_likes nrcl where nrcl.novel_rating_comment_id = nrc.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM novels_ratings_comments nrc WHERE nrc.novel_rating_id = ?', { replacements: [id], type: chapters_comments_model.sequelize.QueryTypes.SELECT })
+    chapters_comments_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = cc.user_id) as user_login, (SELECT COUNT(id) FROM chapters_comments_likes ccl where ccl.chapter_comment_id = cc.id) as likes_count, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", ccl.id, "chapter_comment_id", ccl.chapter_comment_id, "user_id", ccl.user_id, "user_login", (SELECT user_login FROM users u where u.id = ccl.user_id))), "]"), JSON) FROM chapters_comments_likes ccl where ccl.chapter_comment_id = cc.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM chapters_comments cc WHERE cc.chapter_id = ? ORDER BY likes_count DESC', { replacements: [id], type: chapters_comments_model.sequelize.QueryTypes.SELECT })
         .then(chapters_comments => {
             return res.status(200).send({ chapters_comments });
         }).catch(err => {

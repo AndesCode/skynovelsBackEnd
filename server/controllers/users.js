@@ -5,6 +5,7 @@ const bookmarks_model = require('../models').bookmarks;
 const invitations_model = require('../models').invitations;
 const users_model = require('../models').users;
 const novels_model = require('../models').novels;
+const novels_collaborators = require('../models').novels_collaborators;
 const novels_ratings_model = require('../models').novels_ratings;
 const chapters_model = require('../models').chapters;
 const forum_posts_model = require('../models').forum_posts;
@@ -185,6 +186,21 @@ function getUser(req, res) {
 }
 
 function getUserNovels(req, res) {
+    const id = req.user.id;
+    novels_model.sequelize.query('SELECT n.*, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id ORDER BY c.createdAt DESC LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n WHERE n.nvl_author = ?', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
+        .then(novels => {
+            novels_collaborators.sequelize.query('SELECT n.*, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id ORDER BY c.createdAt DESC LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n, novels_collaborators nc WHERE nc.user_id = ? AND nc.novel_id = n.id', { replacements: [id], type: novels_collaborators.sequelize.QueryTypes.SELECT })
+                .then(collaborations => {
+                    return res.status(200).send({ novels, collaborations });
+                }).catch(err => {
+                    return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+                });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        });
+}
+
+/*function getUserNovels(req, res) {
     novels_model.findAll({
         include: [{
             model: genres_model,
@@ -239,7 +255,7 @@ function getUserNovels(req, res) {
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
-}
+}*/
 
 function activateUser(req, res) {
     const key = req.params.key;
