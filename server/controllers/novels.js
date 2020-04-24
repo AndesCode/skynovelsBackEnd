@@ -100,7 +100,7 @@ function createNovel(req, res) {
 function updateNovel(req, res) {
     let body = req.body;
     novels_model.findByPk(body.id).then(novel => {
-        if (novel.nvl_publication_date === null && body.nvl_status === 'Publicada') {
+        if (novel.nvl_publication_date === null && body.nvl_status === 'Active') {
             body.nvl_publication_date = Sequelize.fn('NOW');
         }
         if (novel.nvl_author === req.user.id) {

@@ -7,14 +7,15 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER
         },
         nvl_author: DataTypes.INTEGER,
-        nvl_translator: DataTypes.TEXT,
-        nvl_translator_eng: DataTypes.TEXT,
-        nvl_content: DataTypes.TEXT,
-        nvl_title: DataTypes.TEXT,
-        nvl_status: DataTypes.CHAR,
+        nvl_translator: DataTypes.STRING(25),
+        nvl_translator_eng: DataTypes.STRING(25),
+        nvl_content: DataTypes.STRING(1500),
+        nvl_title: DataTypes.STRING(65),
+        nvl_acronym: DataTypes.STRING(8),
+        nvl_status: DataTypes.STRING(8),
         nvl_publication_date: DataTypes.DATE,
         nvl_name: {
-            type: DataTypes.CHAR,
+            type: DataTypes.STRING(75),
             validate: {
                 isUnique: function(value, next) {
                     var self = this;
@@ -31,8 +32,8 @@ module.exports = (sequelize, DataTypes) => {
                 }
             }
         },
-        nvl_writer: DataTypes.CHAR,
-        nvl_img: DataTypes.CHAR,
+        nvl_writer: DataTypes.STRING(25),
+        nvl_img: DataTypes.STRING(65),
     });
 
     novels.associate = function(models) {
