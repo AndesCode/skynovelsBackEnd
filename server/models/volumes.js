@@ -1,4 +1,6 @@
 /*jshint esversion: 6 */
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 module.exports = (sequelize, DataTypes) => {
     const volumes = sequelize.define('volumes', {
         id: {
@@ -17,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         vlm_title: {
-            type: DataTypes.CHAR,
+            type: DataTypes.STRING(65),
             validate: {
                 isUnique: function(value, next) {
                     var self = this;
@@ -34,9 +36,17 @@ module.exports = (sequelize, DataTypes) => {
                         .catch(function(err) {
                             return next(err);
                         });
-                }
+                },
+                len: [4, 65]
             }
-        }
+        },
+        user_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            validate: {
+                isNumeric: true
+            }
+        },
     }, {
         timestamps: false,
     });
@@ -46,8 +56,10 @@ module.exports = (sequelize, DataTypes) => {
         volumes.belongsTo(models.novels, {
             foreignKey: 'nvl_id',
             as: 'novel',
-            onDelete: 'cascade',
-            hooks: true,
+        });
+        volumes.belongsTo(models.users, {
+            foreignKey: 'user_id',
+            as: 'user',
         });
         volumes.hasMany(models.chapters, {
             foreignKey: 'vlm_id',

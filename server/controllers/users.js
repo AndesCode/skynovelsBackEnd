@@ -5,7 +5,7 @@ const bookmarks_model = require('../models').bookmarks;
 const invitations_model = require('../models').invitations;
 const users_model = require('../models').users;
 const novels_model = require('../models').novels;
-const novels_collaborators = require('../models').novels_collaborators;
+const novels_collaborators_model = require('../models').novels_collaborators;
 const novels_ratings_model = require('../models').novels_ratings;
 const chapters_model = require('../models').chapters;
 const forum_posts_model = require('../models').forum_posts;
@@ -187,9 +187,9 @@ function getUser(req, res) {
 
 function getUserNovels(req, res) {
     const id = req.user.id;
-    novels_model.sequelize.query('SELECT n.*, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id ORDER BY c.createdAt DESC LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n WHERE n.nvl_author = ?', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
+    novels_model.sequelize.query('SELECT n.*, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id ORDER BY c.createdAt DESC LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n WHERE n.nvl_author = ?', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
         .then(novels => {
-            novels_collaborators.sequelize.query('SELECT n.*, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id ORDER BY c.createdAt DESC LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n, novels_collaborators nc WHERE nc.user_id = ? AND nc.novel_id = n.id', { replacements: [id], type: novels_collaborators.sequelize.QueryTypes.SELECT })
+            novels_collaborators_model.sequelize.query('SELECT n.*, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id ORDER BY c.createdAt DESC LIMIT 1) FROM volumes v WHERE v.nvl_id = n.id LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n, novels_collaborators nc WHERE nc.user_id = ? AND nc.novel_id = n.id', { replacements: [id], type: novels_collaborators_model.sequelize.QueryTypes.SELECT })
                 .then(collaborations => {
                     return res.status(200).send({ novels, collaborations });
                 }).catch(err => {
@@ -655,6 +655,12 @@ function updateUserbookmark(req, res) {
 function createUserInvitation(req, res) {
     const body = req.body;
     novels_model.findOne({
+        include: [{
+            model: users_model,
+            as: 'collaborators',
+            attributes: ['id', 'user_login'],
+            through: { attributes: [] },
+        }],
         where: {
             nvl_author: req.user.id,
             id: req.body.invitation_novel
@@ -662,38 +668,46 @@ function createUserInvitation(req, res) {
         attributes: ['id']
     }).then(novel => {
         if (novel) {
-            users.findOne({
+            users_model.findOne({
                 where: {
-                    user_login: body.user_login,
+                    [Op.or]: [
+                        { user_login: body.user_login },
+                        { user_email: body.user_login }
+                    ]
                 },
                 attributes: ['id', 'user_login', ]
             }).then(user => {
                 if (user !== null) {
-                    if (user.id !== req.user.id) {
-                        invitations_model.findOne({
-                            where: {
-                                invitation_to_id: user.id,
-                                invitation_novel: body.invitation_novel
-                            }
-                        }).then(invitation => {
-                            if (invitation === null) {
-                                invitations.create({
-                                    invitation_from_id: req.user.id,
+                    const collaborators = novel.collaborators.map(collaborator => collaborator.id);
+                    if (collaborators.includes(user.id)) {
+                        return res.status(500).send({ message: 'El usuario ya es colaborador de la novela' });
+                    } else {
+                        if (user.id !== req.user.id) {
+                            invitations_model.findOne({
+                                where: {
                                     invitation_to_id: user.id,
                                     invitation_novel: body.invitation_novel
-                                }).then(invitation => {
-                                    return res.status(200).send({ invitation });
-                                }).catch(err => {
-                                    return res.status(500).send({ message: 'Ocurrio un error al crear la invitación del usuario' });
-                                });
-                            } else {
-                                return res.status(500).send({ message: 'Ya has invitado al usuario' });
-                            }
-                        }).catch(err => {
-                            return res.status(500).send({ message: 'Ocurrio un error al buscar la invitación ' + err });
-                        });
-                    } else {
-                        return res.status(500).send({ message: '¡No te puedes invitar a ti mismo!' });
+                                }
+                            }).then(invitation => {
+                                if (invitation === null) {
+                                    invitations.create({
+                                        invitation_from_id: req.user.id,
+                                        invitation_to_id: user.id,
+                                        invitation_novel: body.invitation_novel
+                                    }).then(invitation => {
+                                        return res.status(200).send({ invitation });
+                                    }).catch(err => {
+                                        return res.status(500).send({ message: 'Ocurrio un error al crear la invitación del usuario' });
+                                    });
+                                } else {
+                                    return res.status(500).send({ message: 'Ya has invitado al usuario' });
+                                }
+                            }).catch(err => {
+                                return res.status(500).send({ message: 'Ocurrio un error al buscar la invitación ' + err });
+                            });
+                        } else {
+                            return res.status(500).send({ message: '¡No te puedes invitar a ti mismo!' });
+                        }
                     }
                 } else {
                     return res.status(500).send({ message: 'No se encuentra ningún usuario por ese nombre' });

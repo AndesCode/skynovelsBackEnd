@@ -13,6 +13,10 @@ module.exports = (app) => {
     app.post('/api/create-novel', md_auth.auth, novelsController.createNovel);
     app.post('/api/upload-novel-img/:id', [md_auth.auth, md_upload], novelsController.uploadNovelImage);
     app.delete('/api/delete-novel/:id', md_auth.auth, novelsController.deleteNovel);
+    // Volumes
+    app.post('/api/create-novel-volume', md_auth.auth, novelsController.createNovelVolume);
+    app.put('/api/update-novel-volume', md_auth.auth, novelsController.updateNovelVolume);
+    app.delete('/api/delete-novel-volume/:id', md_auth.auth, novelsController.deleteNovelVolume);
     // chapters
     app.get('/api/novel-chapter/:id', novelsController.getChapter);
     app.get('/api/novel-chapters/:id', novelsController.getNovelChapters);
