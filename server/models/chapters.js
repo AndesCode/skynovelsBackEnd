@@ -112,8 +112,9 @@ module.exports = (sequelize, DataTypes) => {
 
     chapters.beforeCreate((chapter, options) => {
         chapter.chp_title = chapter.chp_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
-        chapter.chp_post_name = chapter.chp_title.split(' ').join('-');
-        chapter.chp_post_name = chapter.chp_post_name.toLowerCase();
+        chapter.chp_index_title = chapter.chp_index_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
+        chapter.chp_name = chapter.chp_index_title.split(' ').join('-');
+        chapter.chp_name = chapter.chp_name.toLowerCase();
     });
 
     return chapters;

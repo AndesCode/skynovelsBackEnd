@@ -19,6 +19,7 @@ module.exports = (app) => {
     app.delete('/api/delete-novel-volume/:id', md_auth.auth, novelsController.deleteNovelVolume);
     // chapters
     app.get('/api/novel-chapter/:id', novelsController.getChapter);
+    app.get('/api/novel-chapter-edition/:id', novelsController.getChapterEdition);
     app.get('/api/novel-chapters/:id', novelsController.getNovelChapters);
     app.put('/api/update-chapter', md_auth.auth, novelsController.updateChapter);
     app.post('/api/create-chapter', md_auth.auth, novelsController.createChapter);
