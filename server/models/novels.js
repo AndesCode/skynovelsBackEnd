@@ -72,12 +72,14 @@ module.exports = (sequelize, DataTypes) => {
 
     novels.beforeCreate((novel, options) => {
         novel.nvl_title = novel.nvl_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
-        novel.nvl_name = novel.nvl_title.split(' ').join('-');
+        novel.nvl_name = novel.nvl_title.replace(/[\s-]+/g, ' ');
+        novel.nvl_name = novel.nvl_name.split(' ').join('-');
         novel.nvl_name = novel.nvl_name.toLowerCase();
     });
     novels.beforeUpdate((novel, options) => {
         novel.nvl_title = novel.nvl_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
-        novel.nvl_name = novel.nvl_title.split(' ').join('-');
+        novel.nvl_name = novel.nvl_title.replace(/[\s-]+/g, ' ');
+        novel.nvl_name = novel.nvl_name.split(' ').join('-');
         novel.nvl_name = novel.nvl_name.toLowerCase();
     });
 
