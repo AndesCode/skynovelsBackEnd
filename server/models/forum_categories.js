@@ -4,7 +4,10 @@ module.exports = (sequelized, DataTypes) => {
         id: {
             autoIncrement: true,
             primaryKey: true,
-            type: DataTypes.INTEGER
+            type: DataTypes.INTEGER,
+            validate: {
+                isNumeric: true
+            }
         },
         category_name: {
             type: DataTypes.STRING(15),

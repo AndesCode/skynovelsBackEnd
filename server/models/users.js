@@ -11,13 +11,17 @@ module.exports = (sequelize, DataTypes) => {
         id: {
             autoIncrement: true,
             primaryKey: true,
-            type: DataTypes.INTEGER
+            type: DataTypes.INTEGER,
+            validate: {
+                isNumeric: true
+            }
         },
         user_login: {
             type: DataTypes.STRING,
             allowNull: false,
             unique: true,
             validate: {
+                len: [2, 12],
                 isUnique: function(value, next) {
                     const self = this;
                     users.findOne({ where: { user_login: value } })
@@ -62,12 +66,33 @@ module.exports = (sequelize, DataTypes) => {
                 isEmail: true
             }
         },
-        user_rol: DataTypes.INTEGER,
-        user_status: DataTypes.STRING,
-        user_forum_auth: DataTypes.STRING,
+        user_rol: {
+            type: DataTypes.STRING(6),
+            validate: {
+                isIn: [
+                    ['User', 'Admin', 'Editor']
+                ],
+            }
+        },
+        user_status: {
+            type: DataTypes.STRING(8),
+            validate: {
+                isIn: [
+                    ['Active', 'Disabled']
+                ],
+            }
+        },
+        user_forum_auth: {
+            type: DataTypes.STRING(8),
+            validate: {
+                isIn: [
+                    ['Active', 'Disabled']
+                ],
+            }
+        },
         user_verification_key: DataTypes.STRING,
         user_profile_image: DataTypes.STRING,
-        user_description: DataTypes.STRING
+        user_description: DataTypes.STRING(500),
     });
 
     users.associate = function(models) {

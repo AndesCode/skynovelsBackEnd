@@ -1,35 +1,35 @@
 {
-  "name": "skynovels-server",
-  "version": "1.0.0",
-  "description": "skynovels-rest-api",
-  "main": "app.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon ./app.js"
-  },
-  "author": "andescode dev team",
-  "license": "ISC",
-  "dependencies": {
-    "atob": "^2.1.2",
-    "bcrypt": "^3.0.7",
-    "connect-multiparty": "^2.2.0",
-    "cors": "^2.8.5",
-    "cryptr": "^6.0.1",
-    "dotenv": "^8.2.0",
-    "express": "^4.17.1",
-    "express-session": "^1.17.0",
-    "fs": "0.0.1-security",
-    "morgan": "^1.9.1",
-    "mysql2": "^2.1.0",
-    "njwt": "^1.0.0",
-    "node-thumbnail": "^0.15.0",
-    "nodemailer": "^6.4.2",
-    "passport": "^0.4.1",
-    "passport-local": "^1.0.0",
-    "path": "^0.12.7",
-    "sequelize": "^5.21.3"
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.2"
-  }
+    "name": "skynovels-server",
+    "version": "1.0.0",
+    "description": "skynovels-rest-api",
+    "main": "app.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "nodemon ./app.js"
+    },
+    "author": "andescode dev team",
+    "license": "ISC",
+    "dependencies": {
+        "atob": "^2.1.2",
+        "bcrypt": "^3.0.7",
+        "connect-multiparty": "^2.2.0",
+        "cors": "^2.8.5",
+        "cryptr": "^6.0.1",
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "express-session": "^1.17.0",
+        "fs": "0.0.1-security",
+        "morgan": "^1.9.1",
+        "mysql2": "^2.1.0",
+        "njwt": "^1.0.0",
+        "node-thumbnail": "^0.15.0",
+        "nodemailer": "^6.4.2",
+        "passport": "^0.4.1",
+        "passport-local": "^1.0.0",
+        "path": "https://github.com/AndesCode/SkynovelsWebApp.git^0.12.7",
+        "sequelize": "^5.21.3"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.2"
+    }
 }

@@ -1,9 +1,6 @@
 /*jshint esversion: 6 */
-const Sequelize = require('sequelize');
-const Op = Sequelize.Op;
-
 module.exports = (sequelize, DataTypes) => {
-    const novels_ratings_comments = sequelize.define('novels_ratings_comments', {
+    const chapters_comments_replys = sequelize.define('chapters_comments_replys', {
         id: {
             autoIncrement: true,
             primaryKey: true,
@@ -19,14 +16,14 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
-        novel_rating_id: {
+        chapter_comment_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
             validate: {
                 isNumeric: true
             }
         },
-        novel_rating_comment: {
+        chapter_comment_reply: {
             type: DataTypes.STRING(1500),
             allowNull: false,
             validate: {
@@ -36,23 +33,20 @@ module.exports = (sequelize, DataTypes) => {
         },
     });
 
-    novels_ratings_comments.associate = function(models) {
-        console.log('Inicia asociaciones');
-        novels_ratings_comments.belongsTo(models.novels_ratings, {
-            foreignKey: 'novel_rating_id',
-            as: 'novel_rating'
+    chapters_comments_replys.associate = function(models) {
+        chapters_comments_replys.belongsTo(models.chapters_comments, {
+            foreignKey: 'chapter_comment_id',
+            as: 'chapter_comment'
         });
-        novels_ratings_comments.belongsTo(models.users, {
+        chapters_comments_replys.belongsTo(models.users, {
             foreignKey: 'user_id',
             as: 'user'
         });
-        novels_ratings_comments.hasMany(models.novels_ratings_comments_likes, {
-            foreignKey: 'novel_rating_comment_id',
+        chapters_comments_replys.hasMany(models.chapters_comments_replys_likes, {
+            foreignKey: 'chapter_comment_reply_id',
             as: 'likes',
         });
     };
 
-
-
-    return novels_ratings_comments;
+    return chapters_comments_replys;
 };

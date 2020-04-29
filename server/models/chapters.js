@@ -7,7 +7,10 @@ module.exports = (sequelize, DataTypes) => {
         id: {
             autoIncrement: true,
             primaryKey: true,
-            type: DataTypes.INTEGER
+            type: DataTypes.INTEGER,
+            validate: {
+                isNumeric: true
+            }
         },
         chp_author: {
             type: DataTypes.INTEGER,
@@ -22,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
             validate: {
-                /*isValidNovel: function(value, next) {
+                isValidNovel: function(value, next) {
                     novels.findOne({ where: { id: value } })
                         .then(function(novel) {
                             if (novel) {
@@ -34,7 +37,7 @@ module.exports = (sequelize, DataTypes) => {
                         .catch(function(err) {
                             return next(err);
                         });
-                },*/
+                },
                 isNumeric: true
             }
         },

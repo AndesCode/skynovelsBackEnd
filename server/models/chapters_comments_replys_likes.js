@@ -3,7 +3,7 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
 module.exports = (sequelize, DataTypes) => {
-    const novels_ratings_likes = sequelize.define('novels_ratings_likes', {
+    const chapters_comments_replys_likes = sequelize.define('chapters_comments_replys_likes', {
         id: {
             autoIncrement: true,
             primaryKey: true,
@@ -12,18 +12,18 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
-        novel_rating_id: {
+        chapter_comment_reply_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
             validate: {
                 isUniqueNovelChapter: function(value, next) {
                     const self = this;
-                    novels_ratings_likes.findOne({
+                    chapters_comments_replys_likes.findOne({
                             where: {
-                                [Op.and]: [{ user_id: this.user_id }, { novel_rating_id: value }]
+                                [Op.and]: [{ user_id: this.user_id }, { chapter_comment_reply_id: value }]
                             }
-                        }).then(function(novel_rating_like) {
-                            if (novel_rating_like && self.id !== novel_rating_like.id) {
+                        }).then(function(chapter_comment_reply_like) {
+                            if (chapter_comment_reply_like && self.id !== chapter_comment_reply_like.id) {
                                 return next({ message: 'error, No puedes dar like dos veces a un mismo elemento' });
                             } else {
                                 return next();
@@ -36,22 +36,28 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true,
             }
         },
-        user_id: DataTypes.INTEGER,
+        user_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            validate: {
+                isNumeric: true
+            }
+        },
     }, {
         timestamps: false,
     });
 
-    novels_ratings_likes.associate = function(models) {
+    chapters_comments_replys_likes.associate = function(models) {
         console.log('Inicia asociaciones');
-        novels_ratings_likes.belongsTo(models.novels_ratings, {
-            foreignKey: 'novel_rating_id',
-            as: 'novel_rating'
+        chapters_comments_replys_likes.belongsTo(models.chapters_comments_replys, {
+            foreignKey: 'chapter_comment_reply_id',
+            as: 'chapter_comment_reply'
         });
-        novels_ratings_likes.belongsTo(models.users, {
+        chapters_comments_replys_likes.belongsTo(models.users, {
             foreignKey: 'user_id',
             as: 'user'
         });
     };
 
-    return novels_ratings_likes;
+    return chapters_comments_replys_likes;
 };

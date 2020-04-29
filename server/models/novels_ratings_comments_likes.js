@@ -7,7 +7,10 @@ module.exports = (sequelize, DataTypes) => {
         id: {
             autoIncrement: true,
             primaryKey: true,
-            type: DataTypes.INTEGER
+            type: DataTypes.INTEGER,
+            validate: {
+                isNumeric: true
+            }
         },
         novel_rating_comment_id: {
             type: DataTypes.INTEGER,

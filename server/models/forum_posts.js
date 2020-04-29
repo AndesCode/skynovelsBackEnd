@@ -4,7 +4,10 @@ module.exports = (sequelize, DataTypes) => {
         id: {
             autoIncrement: true,
             primaryKey: true,
-            type: DataTypes.INTEGER
+            type: DataTypes.INTEGER,
+            validate: {
+                isNumeric: true
+            }
         },
         post_author_id: DataTypes.INTEGER,
         post_title: DataTypes.TEXT('tiny'),

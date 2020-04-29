@@ -7,9 +7,18 @@ module.exports = (sequelize, DataTypes) => {
         id: {
             autoIncrement: true,
             primaryKey: true,
-            type: DataTypes.INTEGER
+            type: DataTypes.INTEGER,
+            validate: {
+                isNumeric: true
+            }
         },
-        user_id: DataTypes.INTEGER,
+        user_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            validate: {
+                isNumeric: true
+            }
+        },
         nvl_id: {
             type: DataTypes.INTEGER,
             allowNull: false,

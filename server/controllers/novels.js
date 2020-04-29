@@ -12,6 +12,8 @@ const novels_ratings_comments_likes_model = require('../models').novels_ratings_
 const novels_ratings_comments_model = require('../models').novels_ratings_comments;
 const chapters_comments_likes_model = require('../models').chapters_comments_likes;
 const chapters_comments_model = require('../models').chapters_comments;
+const chapters_comments_replys_likes_model = require('../models').chapters_comments_replys_likes;
+const chapters_comments_replys_model = require('../models').chapters_comments_replys;
 // More requires
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
@@ -43,7 +45,7 @@ function getNovel(req, res) {
             if (novel.length > 0) {
                 if (req.params.action === 'edition') {
                     const collaborators = novel[0].collaborators.map(collaborator => collaborator.user_id);
-                    if (req.user && (req.user.id === novel[0].nvl_author || collaborators.includes(req.user.id))) {
+                    if (req.user && (req.user.id === novel[0].nvl_author || collaborators.includes(req.user.id)) && (req.user.user_rol === 'Editor' || req.user.user_rol === 'Admin')) {
                         const authorized_user = req.user.id;
                         return res.status(200).send({ novel, authorized_user });
                     } else {
@@ -125,17 +127,17 @@ function updateNovel(req, res) {
 }
 
 function uploadNovelImage(req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
     if (req.files) {
-        var file_path = req.files.novel_image.path;
-        var file_split = file_path.split('\\');
-        var file_name = file_split[3];
-        var ext_split = file_name.split('\.');
-        var file_ext = ext_split[1];
+        const file_path = req.files.novel_image.path;
+        const file_split = file_path.split('\\');
+        const file_name = file_split[3];
+        const ext_split = file_name.split('\.');
+        const file_ext = ext_split[1];
         if (file_ext == 'jpg') {
             if (req.body.old_novel_image) {
                 console.log('deleting old image from the novel');
-                var old_img = req.body.old_novel_image;
+                const old_img = req.body.old_novel_image;
                 old_file_path = './server/uploads/novels/' + old_img;
                 old_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
                 console.log(old_file_path);
@@ -169,15 +171,15 @@ function uploadNovelImage(req, res) {
             } else {
                 console.log('creating a new image in db');
             }
-            var novel_image = {};
+            const novel_image = {};
             novel_image.nvl_img = file_name;
 
             novels_model.findByPk(id).then(novel => {
                 if (novel.nvl_author === req.user.id) {
                     novel.update(novel_image).then(() => {
 
-                        var newPath = './server/uploads/novels/' + file_name;
-                        var thumbPath = './server/uploads/novels/thumbs';
+                        const newPath = './server/uploads/novels/' + file_name;
+                        const thumbPath = './server/uploads/novels/thumbs';
 
                         thumb({
                             source: path.resolve(newPath),
@@ -228,9 +230,9 @@ function uploadNovelImage(req, res) {
 }
 
 function getNovelImage(req, res) {
-    var image = req.params.novel_img;
-    var thumb = req.params.thumb;
-    var img_path = null;
+    const image = req.params.novel_img;
+    const thumb = req.params.thumb;
+    let img_path = null;
 
     if (thumb == "false") {
         img_path = './server/uploads/novels/' + image;
@@ -248,12 +250,12 @@ function getNovelImage(req, res) {
 }
 
 function deleteNovel(req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
     novels_model.findByPk(id).then((novel) => {
         if (novel.nvl_author === req.user.id) {
             // Deleting Novel image
             if (novel.dataValues.nvl_img !== '') {
-                var old_img = novel.dataValues.nvl_img;
+                const old_img = novel.dataValues.nvl_img;
                 delete_file_path = './server/uploads/novels/' + old_img;
                 delete_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
                 fs.unlink(delete_file_path, (err) => {
@@ -442,7 +444,7 @@ function getChapterComments(req, res) {
 }
 
 function updateChapterComment(req, res) {
-    var body = req.body;
+    const body = req.body;
     chapters_comments_model.findByPk(body.id).then(chapter_comment => {
         if (req.user.id === chapter_comment.user_id) {
             chapter_comment.update(body).then(() => {
@@ -459,7 +461,7 @@ function updateChapterComment(req, res) {
 }
 
 function deleteChapterComment(req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
     console.log(id);
     chapters_comments_model.findByPk(id).then(chapter_comment => {
         if (req.user.id === chapter_comment.user_id) {
@@ -477,6 +479,64 @@ function deleteChapterComment(req, res) {
         }
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar el comentario de la clasificacion de la novela ' + err });
+    });
+}
+
+function createChapterCommentReply(req, res) {
+    const body = req.body;
+    body.user_id = req.user.id;
+    chapters_comments_replys_model.create(body).then(chapter_comment_reply => {
+        return res.status(200).send({ chapter_comment_reply });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al crear la respuesta para el comentario ' + err });
+    });
+}
+
+function getChapterCommentReplys(req, res) {
+    const id = req.params.id;
+    chapters_comments_replys_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = ccr.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = ccr.user_id) as user_profile_image, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", ccrl.id, "chapter_comment_reply_id", ccrl.chapter_comment_reply_id, "user_id", ccrl.user_id, "user_login", (SELECT user_login FROM users u where u.id = ccrl.user_id))), "]"), JSON) FROM chapters_comments_replys_likes ccrl where ccrl.chapter_comment_reply_id = ccr.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM chapters_comments_replys ccr WHERE ccr.chapter_comment_id = ?', { replacements: [id], type: chapters_comments_replys_model.sequelize.QueryTypes.SELECT })
+        .then(chapter_comment_replys => {
+            return res.status(200).send({ chapter_comment_replys });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al buscar las respuestas del comentario' + err });
+        });
+}
+
+function updateChapterCommentReply(req, res) {
+    const body = req.body;
+    chapters_comments_replys_model.findByPk(body.id).then(chapter_comment_replys => {
+        if (req.user.id === chapter_comment_replys.user_id) {
+            chapter_comment_replys.update(body).then(() => {
+                return res.status(200).send({ chapter_comment_replys });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la respuesta del comentario ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al actualizar la respuesta del comentario ' + err });
+    });
+}
+
+function deleteChapterCommentReply(req, res) {
+    const id = req.params.id;
+    chapters_comments_replys_model.findByPk(id).then(novel_rating_comment => {
+        if (req.user.id === novel_rating_comment.user_id) {
+            novel_rating_comment.destroy({
+                where: {
+                    id: id
+                }
+            }).then(novel_rating_comment => {
+                return res.status(200).send({ novel_rating_comment });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar la respuesta del comentario ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la respuesta del comentario ' + err });
     });
 }
 
@@ -501,7 +561,7 @@ function createNovelRating(req, res) {
 }
 
 function updateNovelRating(req, res) {
-    var body = req.body;
+    const body = req.body;
     novels_ratings_model.findByPk(body.id).then(novel_rating => {
         if (req.user.id === novel_rating.user_id) {
             novel_rating.update(body).then(() => {
@@ -518,7 +578,7 @@ function updateNovelRating(req, res) {
 }
 
 function deleteNovelRating(req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
     console.log(id);
     novels_ratings_model.findByPk(id).then(novel_rating => {
         if (req.user.id === novel_rating.user_id) {
@@ -560,7 +620,7 @@ function getNovelRatingComments(req, res) {
 }
 
 function updateNovelRatingComment(req, res) {
-    var body = req.body;
+    const body = req.body;
     novels_ratings_comments_model.findByPk(body.id).then(novel_rating_comment => {
         if (req.user.id === novel_rating_comment.user_id) {
             novel_rating_comment.update(body).then(() => {
@@ -577,7 +637,7 @@ function updateNovelRatingComment(req, res) {
 }
 
 function deleteNovelRatingComment(req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
     console.log(id);
     novels_ratings_comments_model.findByPk(id).then(novel_rating_comment => {
         if (req.user.id === novel_rating_comment.user_id) {
@@ -609,7 +669,7 @@ function createNovelRatingCommentLike(req, res) {
 }
 
 function deleteNovelCommentRatingLike(req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
     console.log(id);
     novels_ratings_comments_likes_model.findByPk(id).then(novel_rating_comment_like => {
         if (req.user.id === novel_rating_comment_like.user_id) {
@@ -641,7 +701,7 @@ function createNovelRatingLike(req, res) {
 }
 
 function deleteNovelRatingLike(req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
     console.log(id);
     novels_ratings_likes_model.findByPk(id).then(novel_rating_like => {
         if (req.user.id === novel_rating_like.user_id) {
@@ -673,7 +733,7 @@ function createChapterCommentLike(req, res) {
 }
 
 function deleteChapterCommentLike(req, res) {
-    var id = req.params.id;
+    const id = req.params.id;
     console.log(id);
     chapters_comments_likes_model.findByPk(id).then(chapter_comment_like => {
         if (req.user.id === chapter_comment_like.user_id) {
@@ -683,6 +743,37 @@ function deleteChapterCommentLike(req, res) {
                 }
             }).then(chapter_comment_like => {
                 return res.status(200).send({ chapter_comment_like });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el "Me gusta" ' + err });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la clasificacion de la novela ' + err });
+    });
+}
+
+function createChapterCommentReplyLike(req, res) {
+    const body = req.body;
+    body.user_id = req.user.id;
+    chapters_comments_replys_likes_model.create(body).then(chapter_comment_reply_like => {
+        return res.status(200).send({ chapter_comment_reply_like });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al asignar el "Me gusta" ' + err });
+    });
+}
+
+function deleteChapterCommentReplyLike(req, res) {
+    const id = req.params.id;
+    chapters_comments_replys_likes_model.findByPk(id).then(chapter_comment_reply_like => {
+        if (req.user.id === chapter_comment_reply_like.user_id) {
+            chapter_comment_reply_like.destroy({
+                where: {
+                    id: id
+                }
+            }).then(chapter_comment_reply_like => {
+                return res.status(200).send({ chapter_comment_reply_like });
             }).catch(err => {
                 return res.status(500).send({ message: 'Ocurrio un error al eliminar el "Me gusta" ' + err });
             });
@@ -804,6 +895,11 @@ module.exports = {
     getChapterComments,
     updateChapterComment,
     deleteChapterComment,
+    // Chapters comments replys
+    createChapterCommentReply,
+    getChapterCommentReplys,
+    updateChapterCommentReply,
+    deleteChapterCommentReply,
     // Genres
     getGenres,
     // Novel ratings
@@ -822,6 +918,8 @@ module.exports = {
     deleteNovelCommentRatingLike,
     createChapterCommentLike,
     deleteChapterCommentLike,
+    createChapterCommentReplyLike,
+    deleteChapterCommentReplyLike,
     // test
     getnovelsTest
 };
