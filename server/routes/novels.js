@@ -5,6 +5,8 @@ const cm = require('connect-multiparty');
 const md_upload = cm({ uploadDir: './server/uploads/novels' });
 
 module.exports = (app) => {
+    // Home
+    app.get('/api/home', novelsController.getHomeNovels);
     // Novels
     app.get('/api/novel/:id/:action', novelsController.getNovel);
     app.get('/api/novels', novelsController.getNovels);

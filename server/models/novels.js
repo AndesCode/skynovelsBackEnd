@@ -37,6 +37,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         nvl_writer: DataTypes.STRING(25),
         nvl_img: DataTypes.STRING(65),
+        nvl_recommended: DataTypes.BOOLEAN,
     });
 
     novels.associate = function(models) {

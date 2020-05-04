@@ -1,6 +1,7 @@
 /*jshint esversion: 6 */
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+const novels_model = require('../models').novels;
 
 module.exports = (sequelize, DataTypes) => {
     const chapters = sequelize.define('chapters', {
@@ -26,12 +27,32 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             validate: {
                 isValidNovel: function(value, next) {
-                    novels.findOne({ where: { id: value } })
+                    chapters.sequelize.query('SELECT n.id FROM novels n WHERE n.id = ' + value, { type: chapters.sequelize.QueryTypes.SELECT })
                         .then(function(novel) {
-                            if (novel) {
+                            if (novel.length > 0) {
                                 return next();
                             } else {
                                 return next({ message: 'error, No existe una novela para asociar el capitulo' });
+                            }
+                        })
+                        .catch(function(err) {
+                            return next(err);
+                        });
+                },
+                isNumeric: true
+            }
+        },
+        vlm_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            validate: {
+                isValidNovel: function(value, next) {
+                    chapters.sequelize.query('SELECT v.id FROM volumes v WHERE v.id = ' + value + ' AND v.nvl_id = ' + this.nvl_id, { type: chapters.sequelize.QueryTypes.SELECT })
+                        .then(function(volume) {
+                            if (volume.length > 0) {
+                                return next();
+                            } else {
+                                return next({ message: 'error, No existe un volumen para asociar el capitulo' });
                             }
                         })
                         .catch(function(err) {

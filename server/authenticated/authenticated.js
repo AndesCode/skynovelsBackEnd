@@ -74,7 +74,6 @@ function adminListsAuth(req, res, next) {
 }
 
 function EditorAuth(req, res, next) {
-    console.log(req.user.user_rol);
     if (req.user && req.user.user_status === 'Active' && req.isAuthenticated() && (req.user.user_rol === 'Editor' || req.user.user_rol === 'Admin')) {
         next();
     } else {

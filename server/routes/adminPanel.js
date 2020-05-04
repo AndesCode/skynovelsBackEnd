@@ -25,6 +25,7 @@ module.exports = (app) => {
     app.get('/api/admin-novels', md_auth.adminAuth, adminPanelController.adminGetNovels);
     app.put('/api/admin-update-novel', md_auth.adminAuth, adminPanelController.adminUpdateNovel);
     app.delete('/api/admin-delete-novel/:id', md_auth.adminAuth, adminPanelController.adminDeleteNovel);
+    app.post('/api/admin-create-recommended-novel', md_auth.adminAuth, adminPanelController.adminCreateRecommendedNovel);
     // Chapters
     app.put('/api/admin-update-chapters', md_auth.adminAuth, adminPanelController.adminUpdateChapter);
     app.delete('/api/admin-delete-chapter/:id', md_auth.adminAuth, adminPanelController.adminDeleteChapter);

@@ -215,6 +215,33 @@ function adminUpdateUser(req, res) {
 
 // Novels
 
+function adminCreateRecommendedNovel(req, res) {
+    const body = req.body;
+    novels_model.update({ nvl_recommended: 0 }, {
+        where: {
+            nvl_recommended: {
+                [Op.not]: 0 }
+        }
+    }).then(() => {
+        novels_model.findOne({
+            where: {
+                id: body.id,
+                nvl_status: 'Active'
+            }
+        }).then(novel => {
+            novel.update({ nvl_recommended: 1 }).then((novel) => {
+                return res.status(200).send({ novel });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela a recomendada' + err });
+            });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al encontrar la novela indicada' + err });
+        });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al limpiar la lista de novelas recomendadas' + err });
+    });
+}
+
 function adminGetNovels(req, res) {
     novels_model.findAll({
         include: [{
@@ -417,6 +444,7 @@ module.exports = {
     adminGetNovels,
     adminUpdateNovel,
     adminDeleteNovel,
+    adminCreateRecommendedNovel,
     // Chapters
     adminUpdateChapter,
     adminDeleteChapter,
