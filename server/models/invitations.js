@@ -11,8 +11,21 @@ module.exports = (sequelize, DataTypes) => {
         },
         invitation_from_id: DataTypes.INTEGER,
         invitation_to_id: DataTypes.INTEGER,
-        invitation_novel: DataTypes.INTEGER,
-        invitation_status: DataTypes.STRING(25)
+        invitation_novel: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            validate: {
+                isNumeric: true
+            }
+        },
+        invitation_status: {
+            type: DataTypes.STRING(9),
+            validate: {
+                isIn: [
+                    ['Active', 'Confirmed', 'Rejected']
+                ],
+            }
+        }
     });
 
     invitations.associate = function(models) {

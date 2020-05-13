@@ -15,7 +15,14 @@ module.exports = (sequelize, DataTypes) => {
         nvl_content: DataTypes.STRING(1500),
         nvl_title: DataTypes.STRING(65),
         nvl_acronym: DataTypes.STRING(8),
-        nvl_status: DataTypes.STRING(8),
+        nvl_status: {
+            type: DataTypes.STRING(8),
+            validate: {
+                isIn: [
+                    ['Active', 'Disabled', 'Finished']
+                ],
+            }
+        },
         nvl_publication_date: DataTypes.DATE,
         nvl_name: {
             type: DataTypes.STRING(75),

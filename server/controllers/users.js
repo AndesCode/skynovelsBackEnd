@@ -645,7 +645,7 @@ function createUserInvitation(req, res) {
                         { user_email: body.user_login }
                     ]
                 },
-                attributes: ['id', 'user_login', ]
+                attributes: ['id', 'user_login', 'user_rol']
             }).then(user => {
                 if (user !== null) {
                     if (user.user_rol === 'Admin' || user.user_rol === 'Editor') {
@@ -661,7 +661,7 @@ function createUserInvitation(req, res) {
                                     }
                                 }).then(invitation => {
                                     if (invitation === null) {
-                                        invitations.create({
+                                        invitations_model.create({
                                             invitation_from_id: req.user.id,
                                             invitation_to_id: user.id,
                                             invitation_novel: body.invitation_novel
@@ -695,17 +695,46 @@ function createUserInvitation(req, res) {
     });
 }
 
+function getUserInvitations(req, res) {
+    if (req.user) {
+        invitations_model.sequelize.query('SELECT *, (SELECT user_login FROM users u WHERE u.id = i.invitation_from_id) AS invitation_from_login, (SELECT user_profile_image FROM users u WHERE u.id = i.invitation_from_id) AS invitation_from_user_image, (SELECT nvl_title FROM novels n WHERE n.id = i.invitation_novel) AS invitation_nvl_title FROM invitations i WHERE i.invitation_status = "Active" AND i.invitation_to_id = ?;', { replacements: [req.user.id], type: novels_collaborators_model.sequelize.QueryTypes.SELECT })
+            .then(invitations => {
+                return res.status(200).send({ invitations });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+            });
+    } else {
+        return res.status(401).send({ message: 'No autorizado' });
+    }
+
+}
+
 function updateUserInvitation(req, res) {
     const body = req.body;
     invitations_model.findByPk(body.id).then(invitation => {
         if (req.user.id === invitation.invitation_to_id) {
-            invitation.update({
-                invitation_status: body.invitation_status
-            }).then(() => {
-                return res.status(200).send({ invitation });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar la invitación ' });
-            });
+            if (body.invitation_status === 'Confirmed') {
+                novels_collaborators_model.create({
+                    novel_id: invitation.invitation_novel,
+                    user_id: req.user.id
+                }).then(() => {
+                    invitations_model.destroy({
+                        where: {
+                            id: invitation.id
+                        }
+                    }).then(() => {
+                        return res.status(200).send({ invitation });
+                    });
+                });
+            } else {
+                invitations_model.destroy({
+                    where: {
+                        id: invitation.id
+                    }
+                }).then(() => {
+                    return res.status(200).send({ invitation });
+                });
+            }
         } else {
             return res.status(401).send({ message: 'No autorizado' });
         }
@@ -737,6 +766,7 @@ module.exports = {
     removeUserbookmark,
     updateUserbookmark,
     // Invitations
+    getUserInvitations,
     createUserInvitation,
     updateUserInvitation
 };

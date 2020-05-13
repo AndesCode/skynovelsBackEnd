@@ -108,7 +108,7 @@ function getnovelsTest(req, res) {
                     .then(chapters => {
                         novel.chaptes_added = chapters;
                     }).catch(err => {
-                        res.status(500).send({ message: 'Ocurrio un error al buscar la novela' });
+                        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' });
                     });
             }
             res.status(200).send({ novels });
@@ -150,7 +150,7 @@ function updateNovel(req, res) {
                 if (body.genres && body.genres.length > 0) {
                     novel.setGenres(body.genres);
                 }
-                if (body.collaborators && body.collaborators.length > 0) {
+                if (body.collaborators) {
                     novel.setCollaborators(body.collaborators);
                 }
                 return res.status(200).send({ novel });

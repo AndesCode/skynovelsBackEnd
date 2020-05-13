@@ -30,4 +30,5 @@ module.exports = (app) => {
     // Invitations
     app.post('/api/create-user-invitation', md_auth.auth, userController.createUserInvitation);
     app.put('/api/update-user-invitation', md_auth.auth, userController.updateUserInvitation);
+    app.get('/api/get-user-invitations', userController.getUserInvitations);
 };
