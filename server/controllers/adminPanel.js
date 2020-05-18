@@ -163,21 +163,27 @@ function adminUpdateComment(req, res) {
 // Users
 
 function adminGetUsers(req, res) {
-    let status = req.params.status;
-    if (status === 'All') {
-        status = {
-            [Op.ne]: null
-        };
-    }
     users_model.findAll({
         attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth', 'user_description', 'createdAt', 'updatedAt'],
-        where: {
-            user_status: status
-        }
     }).then(users => {
         return res.status(200).send({ users });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar los usuarios' + err });
+    });
+}
+
+function adminGetUser(req, res) {
+    const id = req.params.id;
+    users_model.findByPk(id, {
+        attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth', 'user_description', 'createdAt', 'updatedAt'],
+    }).then(user => {
+        if (user) {
+            return res.status(200).send({ user });
+        } else {
+            return res.status(404).send({ message: 'No se encuentra ningún usuario' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el usuario' + err });
     });
 }
 
@@ -220,7 +226,8 @@ function adminCreateRecommendedNovel(req, res) {
     novels_model.update({ nvl_recommended: 0 }, {
         where: {
             nvl_recommended: {
-                [Op.not]: 0 }
+                [Op.not]: 0
+            }
         }
     }).then(() => {
         novels_model.findOne({
@@ -438,6 +445,7 @@ module.exports = {
     adminDeletePost,
     // Users
     adminGetUsers,
+    adminGetUser,
     adminDeleteUser,
     adminUpdateUser,
     // Novels

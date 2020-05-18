@@ -18,7 +18,8 @@ module.exports = (app) => {
     app.put('/api/admin-update-post-comment', md_auth.adminAuth, adminPanelController.adminUpdateComment);
     app.delete('/api/admin-delete-post-comment/:id', md_auth.adminAuth, adminPanelController.adminDeleteComment);
     // Users 
-    app.get('/api/admin-users/:status', adminPanelController.adminGetUsers); // Poner admin auth
+    app.get('/api/admin-users', md_auth.adminAuth, adminPanelController.adminGetUsers);
+    app.get('/api/admin-user/:id', md_auth.adminAuth, adminPanelController.adminGetUser);
     app.put('/api/admin-update-user', md_auth.adminAuth, adminPanelController.adminUpdateUser);
     app.delete('/api/admin-delete-user/:id', md_auth.adminAuth, adminPanelController.adminDeleteUser);
     // novels
