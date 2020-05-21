@@ -23,11 +23,16 @@ module.exports = (app) => {
     app.put('/api/admin-update-user', md_auth.adminAuth, adminPanelController.adminUpdateUser);
     app.delete('/api/admin-delete-user/:id', md_auth.adminAuth, adminPanelController.adminDeleteUser);
     // novels
+    app.get('/api/admin-novel/:id', md_auth.adminAuth, adminPanelController.adminGetNovel);
     app.get('/api/admin-novels', md_auth.adminAuth, adminPanelController.adminGetNovels);
     app.put('/api/admin-update-novel', md_auth.adminAuth, adminPanelController.adminUpdateNovel);
     app.delete('/api/admin-delete-novel/:id', md_auth.adminAuth, adminPanelController.adminDeleteNovel);
     app.post('/api/admin-create-recommended-novel', md_auth.adminAuth, adminPanelController.adminCreateRecommendedNovel);
+    // Volumes
+    app.put('/api/admin-update-volume', md_auth.adminAuth, adminPanelController.adminUpdateNovelVolume);
+    app.delete('/api/admin-delete-volume/:id', md_auth.adminAuth, adminPanelController.adminDeleteNovelVolume);
     // Chapters
+    app.get('/api/admin-get-chapter/:id', md_auth.adminAuth, adminPanelController.adminGetChapter);
     app.put('/api/admin-update-chapters', md_auth.adminAuth, adminPanelController.adminUpdateChapter);
     app.delete('/api/admin-delete-chapter/:id', md_auth.adminAuth, adminPanelController.adminDeleteChapter);
     // Genres

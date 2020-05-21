@@ -249,52 +249,27 @@ function adminCreateRecommendedNovel(req, res) {
     });
 }
 
+function adminGetNovel(req, res) {
+    const id = req.params.id;
+    novels_model.sequelize.query('SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id) AS nvl_chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "bkm_chapter", rl.bkm_chapter)), "]"), JSON) FROM bookmarks rl where rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "id", v.id, "nvl_id", v.nvl_id, "user_id", v.user_id,"chapters", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) AS chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status IS NOT NULL ), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM volumes v where v.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as volumes,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", nrl.id, "user_id", nrl.user_id, "user_login", (SELECT user_login FROM users u where u.id = nrl.user_id))), "]"), JSON) as likes FROM novels_ratings_likes nrl where nrl.novel_rating_id = nr.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as novel_ratings,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n  WHERE  n.id = ?', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
+        .then(novel => {
+            if (novel.length > 0) {
+                return res.status(200).send({ novel });
+            } else {
+                return res.status(404).send({ message: 'No se encontro ninguna novela' });
+            }
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' });
+        });
+}
+
 function adminGetNovels(req, res) {
-    novels_model.findAll({
-        include: [{
-            model: genres_model,
-            as: 'genres',
-            through: { attributes: [] }
-        }, {
-            model: volumes_model,
-            as: 'volumes',
-            attributes: ['id', 'vlm_title'],
-            include: [{
-                model: chapters_model,
-                as: 'chapters',
-                attributes: ['id']
-            }]
-        }, {
-            model: novels_ratings_model,
-            as: 'novel_ratings',
-            include: [{
-                model: users_model,
-                as: 'user',
-                attributes: ['user_login']
-            }]
-        }, {
-            model: users_model,
-            as: 'collaborators',
-            attributes: ['id', 'user_login'],
-            through: { attributes: [] },
-        }, {
-            model: users_model,
-            as: 'author',
-            attributes: ['user_login']
-        }, {
-            model: bookmarks_model,
-            as: 'bookmarks',
-            include: [{
-                model: users_model,
-                as: 'user',
-                attributes: ['user_login']
-            }]
-        }]
-    }).then(novels => {
-        return res.status(200).send({ novels });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
-    });
+    novels_model.sequelize.query('SELECT id, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) as user_login, nvl_title, nvl_status FROM novels n', { type: novels_model.sequelize.QueryTypes.SELECT })
+        .then(novels => {
+            return res.status(200).send({ novels });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        });
 }
 
 function adminUpdateNovel(req, res) {
@@ -352,33 +327,100 @@ function adminDeleteNovel(req, res) {
     });
 }
 
+function adminUpdateNovelVolume(req, res) {
+    const body = req.body;
+    volumes_model.findByPk(body.id).then(volume => {
+        volume.update(body).then(() => {
+            return res.status(200).send({ volume });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al actualizar el volumen ' + err });
+        });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el volumen' + err });
+    });
+}
+
+function adminDeleteNovelVolume(req, res) {
+    const id = req.params.id;
+    volumes_model.findByPk(id).then(volume => {
+        volume.destroy({
+            where: {
+                id: id
+            }
+        }).then(volume => {
+            return res.status(200).send({ volume });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar el volumen indicado ' + err });
+        });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el volumen indicado ' + err });
+    });
+}
+
 // Chapters
+
+function adminGetChapter(req, res) {
+    const id = req.params.id;
+    chapters_model.findByPk(id).then(chapter => {
+        if (chapter) {
+            return res.status(200).send({ chapter });
+        } else {
+            return res.status(404).send({ message: 'Capitulo no encontrado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
+    });
+}
 
 function adminUpdateChapter(req, res) {
     const body = req.body;
-    chapters_model.findByPk(body.id).then(chapter => {
-        chapter.update(body).then(() => {
-            return res.status(200).send({ chapter });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulos ' + err });
-        });
+    novels_model.findByPk(body.nvl_id, {
+        include: [{
+            model: volumes_model,
+            as: 'volumes',
+            attributes: ['id']
+        }],
+        attributes: ['nvl_author']
+    }).then(novel => {
+        const volumes = novel.volumes.map(volume => volume.id);
+        if (novel && volumes.includes(Number(body.vlm_id))) {
+            chapters_model.findByPk(body.id).then(chapter => {
+                if (chapter) {
+                    chapter.update(body).then(() => {
+                        return res.status(200).send({ chapter });
+                    }).catch(err => {
+                        return res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulos ' + err });
+                    });
+                } else {
+                    return res.status(404).send({ message: 'Capitulo no encontrado' });
+                }
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al buscar el capitulo' + err });
+            });
+        } else {
+            return res.status(404).send({ message: 'Novela o volumen inexistentes para la actualización del capitulo' });
+        }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
 function adminDeleteChapter(req, res) {
     const id = req.params.id;
     chapters_model.findByPk(id).then(chapter => {
-        chapter.destroy({
-            where: {
-                id: id
-            }
-        }).then(chapter => {
-            return res.status(200).send({ chapter });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al eliminar el genero indicado ' + err });
-        });
+        if (chapter) {
+            chapter.destroy({
+                where: {
+                    id: id
+                }
+            }).then(chapter => {
+                return res.status(200).send({ chapter });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el capitulo indicado ' + err });
+            });
+        } else {
+            return res.status(404).send({ message: 'Capitulo no encontrado' });
+        }
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
     });
@@ -449,11 +491,16 @@ module.exports = {
     adminDeleteUser,
     adminUpdateUser,
     // Novels
+    adminGetNovel,
     adminGetNovels,
     adminUpdateNovel,
     adminDeleteNovel,
     adminCreateRecommendedNovel,
+    // Volumes
+    adminUpdateNovelVolume,
+    adminDeleteNovelVolume,
     // Chapters
+    adminGetChapter,
     adminUpdateChapter,
     adminDeleteChapter,
     // Genres

@@ -360,11 +360,15 @@ function getChapterEdition(req, res) {
             }],
         }]
     }).then(chapter => {
-        const collaborators = chapter.novel.collaborators.map(collaborator => collaborator.id);
-        if (req.user && (req.user.id === chapter.novel.nvl_author || collaborators.includes(req.user.id))) {
-            return res.status(200).send({ chapter });
+        if (chapter) {
+            const collaborators = chapter.novel.collaborators.map(collaborator => collaborator.id);
+            if (req.user && (req.user.id === chapter.novel.nvl_author || collaborators.includes(req.user.id))) {
+                return res.status(200).send({ chapter });
+            } else {
+                return res.status(401).send({ message: 'No autorizado' });
+            }
         } else {
-            return res.status(401).send({ message: 'No se encuentra ningún capitulo' });
+            return res.status(404).send({ message: 'Capitulo no encontrado' });
         }
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
@@ -391,23 +395,35 @@ function createChapter(req, res) {
     body.chp_author = req.user.id;
     novels_model.findByPk(body.nvl_id, {
         include: [{
-            model: users_model,
-            as: 'collaborators',
-            attributes: ['id', 'user_login'],
-            through: { attributes: [] },
-        }],
+                model: users_model,
+                as: 'collaborators',
+                attributes: ['id', 'user_login'],
+                through: { attributes: [] },
+            },
+            {
+                model: volumes_model,
+                as: 'volumes',
+                attributes: ['id']
+            }
+        ],
         attributes: ['nvl_author']
     }).then(novel => {
         const collaborators = novel.collaborators.map(collaborator => collaborator.id);
-        if (req.user.id === novel.nvl_author || collaborators.includes(req.user.id)) {
-            chapters_model.create(body).then(chapter => {
-                return res.status(200).send({ chapter });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
-            });
+        const volumes = novel.volumes.map(volume => volume.id);
+        if (novel && volumes.includes(Number(body.vlm_id))) {
+            if (req.user.id === novel.nvl_author || collaborators.includes(req.user.id)) {
+                chapters_model.create(body).then(chapter => {
+                    return res.status(200).send({ chapter });
+                }).catch(err => {
+                    return res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
+                });
+            } else {
+                return res.status(401).send({ message: 'No autorizado a crear capitulos para esta novela' });
+            }
         } else {
-            return res.status(401).send({ message: 'No autorizado a crear capitulos para esta novela' });
+            return res.status(404).send({ message: 'Novela o volumen inexistentes para la creación del capitulo' });
         }
+
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
@@ -415,24 +431,42 @@ function createChapter(req, res) {
 
 function updateChapter(req, res) {
     const body = req.body;
-    chapters_model.findByPk(body.id, {
+    novels_model.findByPk(body.nvl_id, {
         include: [{
-            model: novels_model,
-            as: 'novel',
-            attributes: ['nvl_author']
-        }]
-    }).then(chapter => {
-        if (req.user.id === chapter.novel.nvl_author || req.user.id === chapter.chp_author) {
-            chapter.update(body).then(() => {
-                return res.status(200).send({ chapter });
+                model: users_model,
+                as: 'collaborators',
+                attributes: ['id', 'user_login'],
+                through: { attributes: [] },
+            },
+            {
+                model: volumes_model,
+                as: 'volumes',
+                attributes: ['id']
+            }
+        ],
+        attributes: ['nvl_author']
+    }).then(novel => {
+        const collaborators = novel.collaborators.map(collaborator => collaborator.id);
+        const volumes = novel.volumes.map(volume => volume.id);
+        if (novel && volumes.includes(Number(body.vlm_id))) {
+            chapters_model.findByPk(body.id).then(chapter => {
+                if (req.user.id === novel.nvl_author || collaborators.includes(req.user.id)) {
+                    chapter.update(body).then(() => {
+                        return res.status(200).send({ chapter });
+                    }).catch(err => {
+                        return res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulos ' + err });
+                    });
+                } else {
+                    return res.status(401).send({ message: 'No autorizado a actualizar el capitulo para esta novela' });
+                }
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulos ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al buscar el capitulo' + err });
             });
         } else {
-            return res.status(401).send({ message: 'No autorizado a actualizar el capitulo para esta novela' });
+            return res.status(404).send({ message: 'Novela o volumen inexistentes para la actualización del capitulo' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
 }
 
