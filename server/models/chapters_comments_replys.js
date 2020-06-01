@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'user_id',
             as: 'user'
         });
-        chapters_comments_replys.hasMany(models.chapters_comments_replys_likes, {
+        chapters_comments_replys.hasMany(models.likes, {
             foreignKey: 'chapter_comment_reply_id',
             as: 'likes',
         });

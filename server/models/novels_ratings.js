@@ -72,7 +72,7 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'user_id',
             as: 'user'
         });
-        novels_ratings.hasMany(models.novels_ratings_likes, {
+        novels_ratings.hasMany(models.likes, {
             foreignKey: 'novel_rating_id',
             as: 'likes',
         });

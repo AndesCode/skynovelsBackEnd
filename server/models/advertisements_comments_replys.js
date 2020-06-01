@@ -2,7 +2,7 @@
 const Sequelize = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-    const chapters_comments = sequelize.define('chapters_comments', {
+    const advertisements_comments_replys = sequelize.define('advertisements_comments_replys', {
         id: {
             autoIncrement: true,
             primaryKey: true,
@@ -18,31 +18,31 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
-        chapter_id: {
+        adv_comment_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
             validate: {
                 isNumeric: true
             }
         },
-        chapter_comment: DataTypes.STRING(2000),
+        adv_comment_reply: DataTypes.STRING(1500),
     });
 
-    chapters_comments.associate = function(models) {
+    advertisements_comments_replys.associate = function(models) {
         console.log('Inicia asociaciones');
-        chapters_comments.belongsTo(models.chapters, {
-            foreignKey: 'chapter_id',
-            as: 'chapter'
+        advertisements_comments_replys.belongsTo(models.advertisements_comments, {
+            foreignKey: 'adv_comment_id',
+            as: 'advertisement_comment'
         });
-        chapters_comments.belongsTo(models.users, {
+        advertisements_comments_replys.belongsTo(models.users, {
             foreignKey: 'user_id',
             as: 'user'
         });
-        chapters_comments.hasMany(models.likes, {
-            foreignKey: 'chapter_comment_id',
+        advertisements_comments_replys.hasMany(models.likes, {
+            foreignKey: 'adv_comment_reply_id',
             as: 'likes',
         });
     };
 
-    return chapters_comments;
+    return advertisements_comments_replys;
 };

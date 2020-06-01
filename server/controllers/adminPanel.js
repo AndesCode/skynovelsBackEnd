@@ -10,9 +10,12 @@ const genres_model = require('../models').genres;
 const forum_posts_model = require('../models').forum_posts;
 const posts_comments_model = require('../models').posts_comments;
 const bookmarks_model = require('../models').bookmarks;
+const advertisements_model = require('../models').advertisements;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+// files mannager
+const fs = require('fs');
 
 function adminPanelAccess(req, res) {
     res.status(200).send({ message: 'Acceso otorgado', status: 200 });
@@ -190,6 +193,24 @@ function adminGetUser(req, res) {
 function adminDeleteUser(req, res) {
     const id = req.params.id;
     users_model.findByPk(id).then(user => {
+        if (user.dataValues.user_profile_image !== '' && user.dataValues.user_profile_image !== null) {
+            const old_img = user.dataValues.user_profile_image;
+            delete_file_path = './server/uploads/users/' + old_img;
+            delete_file_thumb_path = './server/uploads/users/thumbs/' + old_img;
+            fs.unlink(delete_file_path, (err) => {
+                if (err) {
+                    return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua. ' });
+                } else {
+                    fs.unlink(delete_file_thumb_path, (err) => {
+                        if (err) {
+                            console.log('error eliminando la imagen de perfil de ' + user.dataValues.user_login + err);
+                        } else {
+                            console.log('imagen de perfil de ' + user.dataValues.user_login + ' eliminada');
+                        }
+                    });
+                }
+            });
+        }
         user.destroy({
             where: {
                 id: id
@@ -222,7 +243,7 @@ function adminUpdateUser(req, res) {
 // Novels
 
 function adminCreateRecommendedNovel(req, res) {
-    const body = req.body;
+    const id = req.params.id;
     novels_model.update({ nvl_recommended: 0 }, {
         where: {
             nvl_recommended: {
@@ -232,15 +253,19 @@ function adminCreateRecommendedNovel(req, res) {
     }).then(() => {
         novels_model.findOne({
             where: {
-                id: body.id,
+                id: id,
                 nvl_status: 'Active'
             }
         }).then(novel => {
-            novel.update({ nvl_recommended: 1 }).then((novel) => {
-                return res.status(200).send({ novel });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela a recomendada' + err });
-            });
+            if (novel) {
+                novel.update({ nvl_recommended: 1 }).then(() => {
+                    return res.status(200).send({ novel });
+                }).catch(err => {
+                    return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela a recomendada' + err });
+                });
+            } else {
+                return res.status(404).send({ message: 'No se encuentra la novela indicada' });
+            }
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio un error al encontrar la novela indicada' + err });
         });
@@ -275,17 +300,42 @@ function adminGetNovels(req, res) {
 function adminUpdateNovel(req, res) {
     const body = req.body;
     novels_model.findByPk(body.id).then(novel => {
-        novel.update(body).then((novel) => {
-            if (body.genres && body.genres.length > 0) {
-                novel.setGenres(body.genres);
+        if (novel) {
+            if (body.nvl_status === 'Disabled') {
+                body.nvl_recommended = 0;
             }
-            if (body.collaborators && body.collaborators.length > 0) {
-                novel.setCollaborators(body.collaborators);
+            if (novel.nvl_publication_date === null && body.nvl_status === 'Active') {
+                body.nvl_publication_date = Sequelize.fn('NOW');
+            } else {
+                if (body.nvl_publication_date) {
+                    body.nvl_publication_date = novel.nvl_publication_date;
+                }
             }
-            return res.status(200).send({ novel });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela ' + err });
-        });
+            novel.update({
+                nvl_content: body.nvl_content,
+                nvl_title: body.nvl_title,
+                nvl_acronym: body.nvl_acronym,
+                nvl_status: body.nvl_status,
+                nvl_name: body.nvl_name,
+                nvl_publication_date: body.nvl_publication_date,
+                nvl_recommended: body.nvl_recommended,
+                nvl_writer: body.nvl_writer,
+                nvl_translator: body.nvl_translator,
+                nvl_translator_eng: body.nvl_translator_eng
+            }).then((novel) => {
+                if (body.genres && body.genres.length > 0) {
+                    novel.setGenres(body.genres);
+                }
+                if (body.collaborators && body.collaborators.length > 0) {
+                    novel.setCollaborators(body.collaborators);
+                }
+                return res.status(200).send({ novel });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela ' + err });
+            });
+        } else {
+            return res.status(404).send({ message: 'No se encuentra la novela indicada' });
+        }
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
     });
@@ -470,6 +520,147 @@ function adminDeleteGenre(req, res) {
     });
 }
 
+function adminGetAdvertisements(req, res) {
+    advertisements_model.sequelize.query('SELECT a.*, (SELECT user_login FROM users u WHERE u.id = a.user_id) AS user_login FROM advertisements a', { type: advertisements_model.sequelize.QueryTypes.SELECT })
+        .then(advertisements => {
+            return res.status(200).send({ advertisements });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error cargar los anuncios' + err });
+        });
+}
+
+function adminGetAdvertisement(req, res) {
+    const id = req.params.id;
+    advertisements_model.sequelize.query('SELECT a.*, (SELECT user_login FROM users u WHERE u.id = a.user_id) AS user_login FROM advertisements a WHERE a.id = ?', { replacements: [id], type: advertisements_model.sequelize.QueryTypes.SELECT })
+        .then(advertisements => {
+            if (advertisements.length > 0) {
+                return res.status(200).send({ advertisement: advertisements[0] });
+            } else {
+                return res.status(500).send({ message: 'No se encuentra ningún anuncio por el id indicado' });
+            }
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error cargar el anuncio' + err });
+        });
+}
+
+function adminCreateAdvertisement(req, res) {
+    const body = req.body;
+    body.user_id = req.user.id;
+    advertisements_model.create(body).then(advertisement => {
+        return res.status(200).send({ advertisement });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al crear el anuncio ' + err });
+    });
+}
+
+function adminUpdateAdvertisement(req, res) {
+    const body = req.body;
+    advertisements_model.findByPk(body.id).then(advertisement => {
+        if (advertisement) {
+            advertisement.update(body).then((advertisement) => {
+                return res.status(200).send({ advertisement });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el anuncio ' + err });
+            });
+        } else {
+            return res.status(404).send({ message: 'No se encuentra el anuncio indicado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error cargar el anuncio ' + err });
+    });
+}
+
+function adminDeleteAdvertisement(req, res) {
+    const id = req.params.id;
+    advertisements_model.findByPk(id).then((advertisement) => {
+        // Deleting Novel image
+        if (advertisement.dataValues.adv_img !== '' && advertisement.dataValues.adv_img !== null) {
+            const old_img = advertisement.dataValues.adv_img;
+            delete_file_path = './server/uploads/advertisements/' + old_img;
+            fs.unlink(delete_file_path, (err) => {
+                if (err) {
+                    console.log('error eliminando la imagen de anuncio ' + err);
+                } else {
+                    console.log('Imagen de anuncio eliminada');
+                }
+            });
+        }
+        advertisement.destroy({
+            where: {
+                id: id
+            }
+        }).then(advertisement => {
+            return res.status(200).send({ advertisement });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar el anuncio' });
+        });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el anuncio a eliminar ' + err });
+    });
+}
+
+function adminUploadAdvertisementImage(req, res) {
+    const id = req.params.id;
+    if (req.files) {
+        const file_path = req.files.advertisement_image.path;
+        const file_split = file_path.split('\\');
+        const file_name = file_split[3];
+        const ext_split = file_name.split('\.');
+        const file_ext = ext_split[1];
+        if (file_ext == 'jpg') {
+            if (req.body.old_advertisement_image) {
+                const old_img = req.body.old_advertisement_image;
+                old_file_path = './server/uploads/advertisements/' + old_img;
+                fs.exists(old_file_path, (exists) => {
+                    if (exists) {
+                        fs.unlink(old_file_path, (err) => {
+                            if (err) {
+                                res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' + err });
+                            } else {
+                                console.log('imagen de anuncio eliminada');
+                            }
+                        });
+                    } else {
+                        console.log('archivo con el nombre de imagen de anuncio inexistente.');
+                    }
+                });
+            } else {
+                console.log('creating a new image in db');
+            }
+            const advertisement_image = {};
+            advertisement_image.adv_img = file_name;
+            advertisements_model.findByPk(id).then(advertisement => {
+                advertisement.update(advertisement_image).then(() => {
+                    return res.status(200).send({ advertisement });
+                }).catch(err => {
+                    fs.unlink(file_path, (err) => {
+                        if (err) {
+                            return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
+                        }
+                    });
+                    return res.status(500).send({ message: 'Ocurrio un error al actualziar el anuncio.' });
+                });
+            }).catch(err => {
+                fs.unlink(file_path, (err) => {
+                    if (err) {
+                        return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
+                    }
+                });
+                return res.status(500).send({ message: 'No existe el anuncio.' });
+            });
+        } else {
+            fs.unlink(file_path, (err) => {
+                if (err) {
+                    return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
+                }
+            });
+            return res.status(500).send({ message: 'La extensión del archivo no es valida.' });
+        }
+    } else {
+        return res.status(400).send({ message: 'Debe Seleccionar anuncio.' });
+    }
+}
+
 
 
 module.exports = {
@@ -506,6 +697,13 @@ module.exports = {
     // Genres
     adminCreateGenre,
     adminUpdateGenre,
-    adminDeleteGenre
+    adminDeleteGenre,
+    // Advertisement
+    adminGetAdvertisement,
+    adminGetAdvertisements,
+    adminCreateAdvertisement,
+    adminUpdateAdvertisement,
+    adminDeleteAdvertisement,
+    adminUploadAdvertisementImage,
 
 };

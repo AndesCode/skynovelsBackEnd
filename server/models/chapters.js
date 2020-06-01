@@ -102,12 +102,7 @@ module.exports = (sequelize, DataTypes) => {
             validate: { len: [2, 90] }
         },
         chp_status: DataTypes.STRING(25),
-        chp_comment_status: DataTypes.STRING(25),
         chp_name: DataTypes.TEXT,
-        chp_comment_count: DataTypes.INTEGER
-
-
-
     });
 
     chapters.associate = function(models) {
