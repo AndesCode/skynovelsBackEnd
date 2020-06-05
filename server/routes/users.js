@@ -24,6 +24,7 @@ module.exports = (app) => {
     app.post('/api/upload-user-profile-img/:id', [md_auth.auth, md_upload], userController.uploadUserProfileImg);
     app.get('/api/user-profile-img/:profile_img/:thumb', userController.getUserProfileImage);
     // Bookmarks
+    app.get('/api/get-user-bookmarks', md_auth.auth, userController.getUserBookmarks);
     app.post('/api/create-user-bookmark', md_auth.auth, userController.createUserbookmark);
     app.put('/api/update-user-bookmark', md_auth.auth, userController.updateUserbookmark);
     app.delete('/api/delete-user-bookmark/:id', md_auth.auth, userController.removeUserbookmark);

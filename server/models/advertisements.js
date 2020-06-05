@@ -11,7 +11,10 @@ module.exports = (sequelize, DataTypes) => {
         },
         adv_title: {
             type: DataTypes.STRING(125),
-            allowNull: false
+            allowNull: false,
+            validate: {
+                len: [5, 125],
+            }
         },
         adv_name: {
             type: DataTypes.STRING(250)
@@ -25,10 +28,16 @@ module.exports = (sequelize, DataTypes) => {
         },
         adv_content: {
             type: DataTypes.STRING(10000),
-            allowNull: false
+            allowNull: false,
+            validate: {
+                len: [2, 10000]
+            }
         },
         adv_img: {
-            type: DataTypes.STRING(60)
+            type: DataTypes.STRING(65),
+            validate: {
+                len: [0, 65],
+            }
         },
         adv_order: {
             type: DataTypes.INTEGER,

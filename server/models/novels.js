@@ -10,10 +10,33 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         nvl_author: DataTypes.INTEGER,
-        nvl_translator: DataTypes.STRING(25),
-        nvl_translator_eng: DataTypes.STRING(25),
-        nvl_content: DataTypes.STRING(1500),
-        nvl_title: DataTypes.STRING(65),
+        nvl_translator: {
+            type: DataTypes.STRING(25),
+            defaultValue: null,
+            validate: {
+                len: [0, 25],
+            }
+        },
+        nvl_translator_eng: {
+            type: DataTypes.STRING(25),
+            validate: {
+                len: [0, 25],
+            }
+        },
+        nvl_content: {
+            type: DataTypes.STRING(2500),
+            allowNull: false,
+            validate: {
+                len: [15, 2500],
+            }
+        },
+        nvl_title: {
+            type: DataTypes.STRING(60),
+            allowNull: false,
+            validate: {
+                len: [4, 60],
+            }
+        },
         nvl_acronym: DataTypes.STRING(8),
         nvl_status: {
             type: DataTypes.STRING(8),
@@ -39,16 +62,26 @@ module.exports = (sequelize, DataTypes) => {
                         .catch(function(err) {
                             return next(err);
                         });
-                }
+                },
+                len: [0, 75],
             }
         },
-        nvl_writer: DataTypes.STRING(25),
-        nvl_img: DataTypes.STRING(65),
+        nvl_writer: {
+            type: DataTypes.STRING(25),
+            validate: {
+                len: [0, 25],
+            }
+        },
+        nvl_img: {
+            type: DataTypes.STRING(65),
+            validate: {
+                len: [0, 65],
+            }
+        },
         nvl_recommended: DataTypes.BOOLEAN,
     });
 
     novels.associate = function(models) {
-        console.log('Inicia asociaciones novelas-generos');
         novels.belongsToMany(models.genres, {
             through: 'genres_novels',
             as: 'genres',

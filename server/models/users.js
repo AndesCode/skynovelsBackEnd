@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         user_login: {
-            type: DataTypes.STRING,
+            type: DataTypes.STRING(50),
             allowNull: false,
             unique: true,
             validate: {
@@ -39,11 +39,8 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         user_pass: {
-            type: DataTypes.STRING,
+            type: DataTypes.STRING(255),
             allowNull: false
-                /*validate: {
-                    is: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/i
-                }*/
         },
         user_email: {
             type: DataTypes.STRING,
@@ -63,7 +60,8 @@ module.exports = (sequelize, DataTypes) => {
                             return next(err);
                         });
                 },
-                isEmail: true
+                isEmail: true,
+                len: [1, 75],
             }
         },
         user_rol: {
@@ -91,12 +89,21 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         user_verification_key: DataTypes.STRING,
-        user_profile_image: DataTypes.STRING,
-        user_description: DataTypes.STRING(500),
+        user_profile_image: {
+            type: DataTypes.STRING(65),
+            validate: {
+                len: [0, 65],
+            }
+        },
+        user_description: {
+            type: DataTypes.STRING(500),
+            validate: {
+                len: [0, 500],
+            }
+        },
     });
 
     users.associate = function(models) {
-        console.log('Inicia asociaciones colaboradores-novelas');
         users.belongsToMany(models.novels, {
             through: 'novels_collaborators',
             as: 'collaborations',

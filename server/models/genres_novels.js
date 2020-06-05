@@ -9,8 +9,18 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
-        novel_id: DataTypes.INTEGER,
-        genre_id: DataTypes.INTEGER,
+        novel_id: {
+            type: DataTypes.INTEGER,
+            validate: {
+                isNumeric: true
+            }
+        },
+        genre_id: {
+            type: DataTypes.INTEGER,
+            validate: {
+                isNumeric: true
+            }
+        },
     }, {
         timestamps: false,
     });

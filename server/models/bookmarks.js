@@ -43,7 +43,12 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true,
             }
         },
-        bkm_chapter: DataTypes.INTEGER
+        bkm_chapter: {
+            type: DataTypes.INTEGER,
+            validate: {
+                isNumeric: true
+            }
+        }
     });
 
     bookmarks.associate = function(models) {

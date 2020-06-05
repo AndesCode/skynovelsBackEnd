@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
                             }
                         }).then(function(novel_rating) {
                             if (novel_rating && self.id !== novel_rating.id) {
-                                return next({ message: 'error, el usuario ya ha dejado una clasificacion para la novela' });
+                                return next({ message: 'error, ya has dejado una calificación para la novela' });
                             } else {
                                 return next();
                             }
@@ -53,17 +53,16 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         rate_comment: {
-            type: DataTypes.CHAR,
+            type: DataTypes.STRING(2000),
             allowNull: false,
             validate: {
-                len: [5, 1500]
+                len: [2, 2000]
             }
 
         },
     });
 
     novels_ratings.associate = function(models) {
-        console.log('Inicia asociaciones');
         novels_ratings.belongsTo(models.novels, {
             foreignKey: 'novel_id',
             as: 'novel'

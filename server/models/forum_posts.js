@@ -19,7 +19,6 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     forum_posts.associate = function(models) {
-        console.log('Inicia asociaciones');
         forum_posts.belongsTo(models.forum_categories, {
             foreignKey: 'forum_category_id',
             as: 'forum_category'

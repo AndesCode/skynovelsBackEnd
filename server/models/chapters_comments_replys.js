@@ -24,10 +24,10 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         chapter_comment_reply: {
-            type: DataTypes.STRING(1500),
+            type: DataTypes.STRING(2000),
             allowNull: false,
             validate: {
-                len: [1, 1500]
+                len: [1, 2000]
             }
 
         },

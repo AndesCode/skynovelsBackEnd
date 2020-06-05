@@ -162,30 +162,29 @@ function getNovel(req, res) {
     } else {
         return res.status(500).send({ message: 'petición invalida' });
     }
-    novels_model.sequelize.query(query, { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
-        .then(novel => {
-            if (novel.length > 0) {
-                if (req.params.action === 'edition') {
-                    const collaborators = novel[0].collaborators.map(collaborator => collaborator.user_id);
-                    if (req.user && (req.user.id === novel[0].nvl_author || collaborators.includes(req.user.id)) && (req.user.user_rol === 'Editor' || req.user.user_rol === 'Admin')) {
-                        const authorized_user = req.user.id;
-                        return res.status(200).send({ novel, authorized_user });
-                    } else {
-                        return res.status(401).send({ message: 'No autorizado ' });
-                    }
+    novels_model.sequelize.query(query, { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT }).then(novel => {
+        if (novel.length > 0) {
+            if (req.params.action === 'edition') {
+                const collaborators = novel[0].collaborators.map(collaborator => collaborator.user_id);
+                if (req.user && (req.user.id === novel[0].nvl_author || collaborators.includes(req.user.id)) && (req.user.user_rol === 'Editor' || req.user.user_rol === 'Admin')) {
+                    const authorized_user = req.user.id;
+                    return res.status(200).send({ novel, authorized_user });
                 } else {
-                    if (novel[0].volumes && novel[0].volumes.length > 0) {
-                        return res.status(200).send({ novel });
-                    } else {
-                        return res.status(404).send({ message: 'No se encontro ninguna novela' });
-                    }
+                    return res.status(401).send({ message: 'No autorizado ' });
                 }
             } else {
-                return res.status(404).send({ message: 'No se encontro ninguna novela' });
+                if (novel[0].volumes && novel[0].volumes.length > 0) {
+                    return res.status(200).send({ novel });
+                } else {
+                    return res.status(404).send({ message: 'No se encontro ninguna novela' });
+                }
             }
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' });
-        });
+        } else {
+            return res.status(404).send({ message: 'No se encontro ninguna novela' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela ' });
+    });
 }
 
 // Función de prueba, borrar posteriormente     novels_model.sequelize.query('SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id) AS chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", ch.id, "chp_index_title", ch.chp_index_title, "createdAt", ch.createdAt)), "]"), JSON) FROM chapters ch where ch.nvl_id = n.id ORDER BY ch.createdAt DESC LIMIT 4), CONVERT(CONCAT("[]"), JSON)) as chapters, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n  WHERE  n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL ORDER BY nvl_last_update DESC LIMIT 10', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
@@ -203,7 +202,7 @@ function getnovelsTest(req, res) {
             }
             res.status(200).send({ novels });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al buscar la novela' });
+            res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
         });
 }
 
@@ -212,7 +211,7 @@ function getNovels(req, res) {
         .then(novels => {
             return res.status(200).send({ novels });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas' });
         });
 }
 
@@ -972,7 +971,7 @@ function getAdvertisements(req, res) {
 
 function getAdvertisement(req, res) {
     const id = req.params.id;
-    advertisements_model.sequelize.query('SELECT a.*, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "adv_id", l.adv_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.adv_id = a.id), CONVERT(CONCAT("[]"), JSON)) AS likes, (SELECT user_login FROM users u WHERE u.id = a.user_id) AS user_login, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", ac.id, "adv_comment", ac.adv_comment, "user_id", ac.user_id, "user_login", (SELECT user_login FROM users u where u.id = ac.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = ac.user_id), "likes_count", (SELECT COUNT(id) FROM likes l where l.adv_comment_id = ac.id), "replys_count", (SELECT COUNT(id) FROM advertisements_comments_replys acr where acr.adv_comment_id = ac.id), "likes", (IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "adv_comment_id", l.adv_comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.adv_comment_id = ac.id), CONVERT(CONCAT("[]"), JSON))))), "]"), JSON) FROM advertisements_comments ac where ac.adv_id = a.id), CONVERT(CONCAT("[]"), JSON)) as comments FROM advertisements a WHERE a.id = 7 AND a.adv_img IS NOT NULL', { replacements: [id], type: advertisements_model.sequelize.QueryTypes.SELECT })
+    advertisements_model.sequelize.query('SELECT a.*, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "adv_id", l.adv_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.adv_id = a.id), CONVERT(CONCAT("[]"), JSON)) AS likes, (SELECT user_login FROM users u WHERE u.id = a.user_id) AS user_login, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", ac.id, "adv_comment", ac.adv_comment, "user_id", ac.user_id, "user_login", (SELECT user_login FROM users u where u.id = ac.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = ac.user_id), "likes_count", (SELECT COUNT(id) FROM likes l where l.adv_comment_id = ac.id), "replys_count", (SELECT COUNT(id) FROM advertisements_comments_replys acr where acr.adv_comment_id = ac.id), "likes", (IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "adv_comment_id", l.adv_comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.adv_comment_id = ac.id), CONVERT(CONCAT("[]"), JSON))))), "]"), JSON) FROM advertisements_comments ac where ac.adv_id = a.id), CONVERT(CONCAT("[]"), JSON)) as comments FROM advertisements a WHERE a.id = ? AND a.adv_img IS NOT NULL', { replacements: [id], type: advertisements_model.sequelize.QueryTypes.SELECT })
         .then(advertisements => {
             if (advertisements.length > 0) {
                 return res.status(200).send({ advertisement: advertisements[0] });

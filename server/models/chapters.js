@@ -90,23 +90,40 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.TEXT,
             allowNull: false,
         },
-        chp_review: DataTypes.STRING(500),
+        chp_review: {
+            type: DataTypes.STRING(1500),
+            validate: {
+                len: [0, 1500]
+            }
+        },
         chp_title: {
             type: DataTypes.STRING(90),
             allowNull: false,
-            validate: { len: [2, 90] }
+            validate: {
+                len: [2, 90]
+            }
         },
         chp_index_title: {
-            type: DataTypes.STRING(90),
+            type: DataTypes.STRING(30),
             allowNull: false,
-            validate: { len: [2, 90] }
+            validate: { len: [2, 30] }
         },
-        chp_status: DataTypes.STRING(25),
-        chp_name: DataTypes.TEXT,
+        chp_status: {
+            type: DataTypes.STRING(8),
+            validate: {
+                isIn: [
+                    ['Active', 'Disabled']
+                ],
+            }
+        },
+        chp_name: {
+            type: DataTypes.STRING(30),
+            allowNull: false,
+            validate: { len: [2, 30] }
+        },
     });
 
     chapters.associate = function(models) {
-        console.log('Inicia asociaciones');
         chapters.belongsTo(models.volumes, {
             foreignKey: 'vlm_id',
             as: 'volume',

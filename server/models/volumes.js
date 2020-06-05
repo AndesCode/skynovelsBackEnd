@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
                             }
                         }).then(function(volumes) {
                             if (volumes && self.id !== volumes.id) {
-                                return next({ message: 'error, nombre de novela coincidente' });
+                                return next({ message: 'error, nombre coincidente' });
                             }
                             return next();
                         })
@@ -52,7 +52,6 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     volumes.associate = function(models) {
-        console.log('Inicia asociaciones');
         volumes.belongsTo(models.novels, {
             foreignKey: 'nvl_id',
             as: 'novel',

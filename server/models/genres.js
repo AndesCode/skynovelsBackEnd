@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         genre_name: {
-            type: DataTypes.TEXT,
+            type: DataTypes.STRING(25),
             validate: {
                 isUnique: function(value, next) {
                     var self = this;
@@ -25,14 +25,14 @@ module.exports = (sequelize, DataTypes) => {
                             return next(err);
                         });
                 }
-            }
+            },
+            len: [2, 25],
         },
     }, {
         timestamps: false,
     });
 
     genres.associate = function(models) {
-        console.log('Inicia asociaciones generos-novelas');
         genres.belongsToMany(models.novels, {
             through: 'genres_novels',
             as: 'novels',

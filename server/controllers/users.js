@@ -434,6 +434,16 @@ function getUserProfileImage(req, res) {
     }
 }*/
 
+function getUserBookmarks(req, res) {
+    const uid = req.user.id;
+    novels_model.sequelize.query('SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active") AS nvl_chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS genres FROM novels n, bookmarks b WHERE b.nvl_id = n.id AND b.user_id = ? AND n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL', { replacements: [uid], type: novels_model.sequelize.QueryTypes.SELECT })
+        .then(novels => {
+            return res.status(200).send({ novels });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas' });
+        });
+}
+
 function createUserbookmark(req, res) {
     const body = req.body;
     body.user_id = req.user.id;
@@ -461,7 +471,7 @@ function removeUserbookmark(req, res) {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al eliminar la novela de la lista de lectura' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el marca libro' });
     });
 }
 
@@ -626,6 +636,7 @@ module.exports = {
     getUserProfileImage,
     uploadUserProfileImg,
     // Bookmarks
+    getUserBookmarks,
     createUserbookmark,
     removeUserbookmark,
     updateUserbookmark,

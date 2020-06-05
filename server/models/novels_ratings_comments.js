@@ -27,17 +27,16 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         novel_rating_comment: {
-            type: DataTypes.STRING(1500),
+            type: DataTypes.STRING(2000),
             allowNull: false,
             validate: {
-                len: [1, 1500]
+                len: [1, 2000]
             }
 
         },
     });
 
     novels_ratings_comments.associate = function(models) {
-        console.log('Inicia asociaciones');
         novels_ratings_comments.belongsTo(models.novels_ratings, {
             foreignKey: 'novel_rating_id',
             as: 'novel_rating'

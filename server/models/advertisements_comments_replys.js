@@ -25,11 +25,17 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
-        adv_comment_reply: DataTypes.STRING(1500),
+        adv_comment_reply: {
+            type: DataTypes.STRING(2000),
+            allowNull: false,
+            validate: {
+                len: [2, 2000]
+            }
+
+        },
     });
 
     advertisements_comments_replys.associate = function(models) {
-        console.log('Inicia asociaciones');
         advertisements_comments_replys.belongsTo(models.advertisements_comments, {
             foreignKey: 'adv_comment_id',
             as: 'advertisement_comment'

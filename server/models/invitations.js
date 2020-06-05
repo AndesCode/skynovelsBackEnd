@@ -9,8 +9,20 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
-        invitation_from_id: DataTypes.INTEGER,
-        invitation_to_id: DataTypes.INTEGER,
+        invitation_from_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            validate: {
+                isNumeric: true
+            }
+        },
+        invitation_to_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            validate: {
+                isNumeric: true
+            }
+        },
         invitation_novel: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -29,10 +41,17 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     invitations.associate = function(models) {
-        console.log('Inicia asociaciones');
         invitations.belongsTo(models.users, {
             foreignKey: 'invitation_to_id',
-            as: 'users'
+            as: 'user_to_invite'
+        });
+        invitations.belongsTo(models.users, {
+            foreignKey: 'invitation_from_id',
+            as: 'invitation_from_user'
+        });
+        invitations.belongsTo(models.novels, {
+            foreignKey: 'invitation_novel',
+            as: 'novel'
         });
     };
 

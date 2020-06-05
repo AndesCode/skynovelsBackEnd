@@ -25,11 +25,16 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
-        chapter_comment: DataTypes.STRING(2000),
+        chapter_comment: {
+            type: DataTypes.STRING(2000),
+            allowNull: false,
+            validate: {
+                len: [2, 2000]
+            }
+        },
     });
 
     chapters_comments.associate = function(models) {
-        console.log('Inicia asociaciones');
         chapters_comments.belongsTo(models.chapters, {
             foreignKey: 'chapter_id',
             as: 'chapter'
