@@ -48,8 +48,6 @@ module.exports = (app) => {
     app.get('/api/get-novel-rating-comments/:id', novelsController.getNovelRatingComments);
     app.put('/api/update-novel-rating-comment', md_auth.auth, novelsController.updateNovelRatingComment);
     app.delete('/api/delete-novel-rating-comment/:id', md_auth.auth, novelsController.deleteNovelRatingComment);
-    // Test
-    app.get('/api/test', novelsController.getnovelsTest);
     // Likes
     app.post('/api/create-like', md_auth.auth, novelsController.createLike);
     app.delete('/api/delete-like/:id', md_auth.auth, novelsController.deleteLike);
@@ -57,13 +55,21 @@ module.exports = (app) => {
     app.get('/api/get-advertisements', novelsController.getAdvertisements);
     app.get('/api/get-advertisement/:id', novelsController.getAdvertisement);
     app.get('/api/advertisement/image/:advertisement_img', novelsController.getAdvertisementImage);
-
     app.post('/api/create-advertisement-comment', md_auth.auth, novelsController.createAdvertisementComment);
     app.put('/api/update-advertisement-comment', md_auth.auth, novelsController.updateAdvertisementComment);
     app.delete('/api/delete-advertisement-comment/:id', md_auth.auth, novelsController.deleteAdvertisementComment);
-
     app.post('/api/create-advertisement-comment-reply', md_auth.auth, novelsController.createAdvertisementCommentReply);
     app.get('/api/get-advertisement-comment-replys/:id', novelsController.getAdvertisementCommentReplys);
     app.put('/api/update-advertisement-comment-reply', md_auth.auth, novelsController.updateAdvertisementCommentReply);
     app.delete('/api/delete-advertisement-comment-reply/:id', md_auth.auth, novelsController.deleteAdvertisementCommentReply);
+    // Comments
+    app.post('/api/create-comment', md_auth.auth, novelsController.createComment);
+    app.get('/api/get-comments/:id/:objt', novelsController.getComments);
+    app.put('/api/update-comment', md_auth.auth, novelsController.updateComment);
+    app.delete('/api/delete-comment/:id', md_auth.auth, novelsController.deleteComment);
+    // Replys
+    app.post('/api/create-reply', md_auth.auth, novelsController.createReply);
+    app.get('/api/get-replys/:id/:objt', novelsController.getReplys);
+    app.put('/api/update-reply', md_auth.auth, novelsController.updateReplys);
+    app.delete('/api/delete-reply/:id', md_auth.auth, novelsController.deleteReplys);
 };

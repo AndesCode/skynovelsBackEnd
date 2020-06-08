@@ -13,14 +13,14 @@ const advertisements_model = require('../models').advertisements;
 const advertisements_comments_model = require('../models').advertisements_comments;
 const advertisements_comments_replys_model = require('../models').advertisements_comments_replys;
 const likes_model = require('../models').likes;
+const comments_model = require('../models').comments;
+const comments_replys_model = require('../models').comments_replys;
 // files mannager
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
 const path = require('path');
 //Sequelize
 const Sequelize = require('sequelize');
-const Op = Sequelize.Op;
-
 
 // likes 
 
@@ -42,35 +42,17 @@ function createLike(req, res) {
         objectId = body.adv_id;
         objectName = 'adv_id';
     }
-    if (body.novel_rating_comment_id && !modelDefined) {
-        model = novels_ratings_comments_model;
+    if (body.comment_id && !modelDefined) {
+        model = comments_model;
         modelDefined = true;
-        objectId = body.novel_rating_comment_id;
-        objectName = 'novel_rating_comment_id';
+        objectId = body.comment_id;
+        objectName = 'comment_id';
     }
-    if (body.chapter_comment_reply_id && !modelDefined) {
-        model = chapters_comments_replys_model;
+    if (body.comment_reply_id && !modelDefined) {
+        model = comments_replys_model;
         modelDefined = true;
-        objectId = body.chapter_comment_reply_id;
-        objectName = 'chapter_comment_reply_id';
-    }
-    if (body.chapter_comment_id && !modelDefined) {
-        model = chapters_comments_model;
-        modelDefined = true;
-        objectId = body.chapter_comment_id;
-        objectName = 'chapter_comment_id';
-    }
-    if (body.adv_comment_reply_id && !modelDefined) {
-        model = advertisements_comments_replys_model;
-        modelDefined = true;
-        objectId = body.adv_comment_reply_id;
-        objectName = 'adv_comment_reply_id';
-    }
-    if (body.adv_comment_id && !modelDefined) {
-        model = advertisements_comments_model;
-        modelDefined = true;
-        objectId = body.adv_comment_id;
-        objectName = 'adv_comment_id';
+        objectId = body.comment_reply_id;
+        objectName = 'comment_reply_id';
     }
     model.findByPk(objectId, { attributes: ['id'] }).then(object => {
         if (object) {
@@ -88,7 +70,6 @@ function createLike(req, res) {
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al buscar el elemento al que se intenta asignar el "Me gusta"' + err });
     });
-
 }
 
 function deleteLike(req, res) {
@@ -148,8 +129,6 @@ function getUpdatedNovelsChapters(req, res) {
         });
 }
 
-
-
 function getNovel(req, res) {
     const id = req.params.id;
     let query = '';
@@ -185,25 +164,6 @@ function getNovel(req, res) {
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al cargar la novela ' });
     });
-}
-
-// Función de prueba, borrar posteriormente     novels_model.sequelize.query('SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id) AS chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", ch.id, "chp_index_title", ch.chp_index_title, "createdAt", ch.createdAt)), "]"), JSON) FROM chapters ch where ch.nvl_id = n.id ORDER BY ch.createdAt DESC LIMIT 4), CONVERT(CONCAT("[]"), JSON)) as chapters, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n  WHERE  n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL ORDER BY nvl_last_update DESC LIMIT 10', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
-function getnovelsTest(req, res) {
-    const id = 23;
-    novels_model.sequelize.query('SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id) AS chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM novels n  WHERE  n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
-        .then(novels => {
-            for (const novel of novels) {
-                chapters_model.sequelize.query('SELECT ch.id, ch.chp_index_title, ch.createdAt, ch.nvl_id FROM chapters ch WHERE ch.nvl_id = ' + novel.id + ' LIMIT 4', { type: chapters_model.sequelize.QueryTypes.SELECT })
-                    .then(chapters => {
-                        novel.chaptes_added = chapters;
-                    }).catch(err => {
-                        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' });
-                    });
-            }
-            res.status(200).send({ novels });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
-        });
 }
 
 function getNovels(req, res) {
@@ -252,7 +212,6 @@ function updateNovel(req, res) {
                         nvl_title: body.nvl_title,
                         nvl_acronym: body.nvl_acronym,
                         nvl_status: body.nvl_status,
-                        nvl_name: body.nvl_name,
                         nvl_publication_date: body.nvl_publication_date,
                         nvl_recommended: body.nvl_recommended,
                         nvl_writer: body.nvl_writer,
@@ -439,7 +398,7 @@ function deleteNovel(req, res) {
             return res.status(401).send({ message: 'No autorizado a eliminar la novela' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al encontrar la novela a eliminar ' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela a eliminar ' });
     });
 }
 
@@ -455,7 +414,7 @@ function getChapter(req, res) {
                 return res.status(404).send({ message: 'No se encuentra ningún capitulo' });
             }
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al buscar el capitulo' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo' });
         });
 }
 
@@ -485,7 +444,7 @@ function getChapterEdition(req, res) {
             return res.status(404).send({ message: 'Capitulo no encontrado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo' });
     });
 }
 
@@ -496,11 +455,11 @@ function getNovelChapters(req, res) {
             if (novel.length > 0) {
                 return res.status(200).send({ novel });
             } else {
-                return res.status(404).send({ message: 'No se encuentra la novela que buscas' });
+                return res.status(404).send({ message: 'No se encuentra la novela indicada' });
             }
 
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al cargar los capitulos de la novela' });
         });
 }
 
@@ -529,7 +488,7 @@ function createChapter(req, res) {
                 chapters_model.create(body).then(chapter => {
                     return res.status(200).send({ chapter });
                 }).catch(err => {
-                    return res.status(500).send({ message: 'Ocurrio un error al guardar la novela ' + err });
+                    return res.status(500).send({ message: 'Ocurrio un error al crear el capitulo' });
                 });
             } else {
                 return res.status(401).send({ message: 'No autorizado a crear capitulos para esta novela' });
@@ -539,7 +498,7 @@ function createChapter(req, res) {
         }
 
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
     });
 }
 
@@ -581,7 +540,7 @@ function updateChapter(req, res) {
                         }).then(() => {
                             return res.status(200).send({ chapter });
                         }).catch(err => {
-                            return res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulos ' + err });
+                            return res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulo' });
                         });
                     } else {
                         return res.status(401).send({ message: 'No autorizado' });
@@ -590,13 +549,13 @@ function updateChapter(req, res) {
                     return res.status(404).send({ message: 'Novela o volumen inexistentes para la actualización del capitulo' });
                 }
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
             });
         } else {
             return res.status(404).send({ message: 'No se encuentra el capitulo indicado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo' });
     });
 }
 
@@ -617,13 +576,13 @@ function deleteChapter(req, res) {
             }).then(chapter => {
                 return res.status(200).send({ chapter });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar el genero indicado ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el capitulo indicado' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado a eliminar el capitulo' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo a eliminar' });
     });
 }
 
@@ -633,7 +592,7 @@ function createChapterComment(req, res) {
     chapters_comments_model.create(body).then(chapter_comment => {
         return res.status(200).send({ chapter_comment });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear el comentario para el capitulo ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al crear el comentario' });
     });
 }
 
@@ -643,7 +602,7 @@ function getChapterComments(req, res) {
         .then(chapters_comments => {
             return res.status(200).send({ chapters_comments });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al cargar los comentarios' });
         });
 }
 
@@ -656,13 +615,13 @@ function updateChapterComment(req, res) {
             }).then(() => {
                 return res.status(200).send({ chapter_comment });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario de la clasificacion de la novela ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario de la clasificacion de la novela ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario' });
     });
 }
 
@@ -678,13 +637,13 @@ function deleteChapterComment(req, res) {
             }).then(chapter_comment => {
                 return res.status(200).send({ chapter_comment });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar el comentario de la clasificacion de la novela ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el comentario' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el comentario de la clasificacion de la novela ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el comentario a eliminar' });
     });
 }
 
@@ -694,7 +653,7 @@ function createChapterCommentReply(req, res) {
     chapters_comments_replys_model.create(body).then(chapter_comment_reply => {
         return res.status(200).send({ chapter_comment_reply });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear la respuesta para el comentario ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al crear el comentario' });
     });
 }
 
@@ -704,7 +663,7 @@ function getChapterCommentReplys(req, res) {
         .then(chapter_comment_replys => {
             return res.status(200).send({ chapter_comment_replys });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al buscar las respuestas del comentario' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al cargar los comentarios' });
         });
 }
 
@@ -717,13 +676,13 @@ function updateChapterCommentReply(req, res) {
             }).then(() => {
                 return res.status(200).send({ chapter_comment_replys });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar la respuesta del comentario ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al actualizar la respuesta del comentario ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el comentario' });
     });
 }
 
@@ -738,13 +697,13 @@ function deleteChapterCommentReply(req, res) {
             }).then(novel_rating_comment => {
                 return res.status(200).send({ novel_rating_comment });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar la respuesta del comentario ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el comentario ' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la respuesta del comentario ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el comentario a eliminar' });
     });
 }
 
@@ -754,7 +713,7 @@ function getGenres(req, res) {
     genres_model.findAll().then(genres => {
         return res.status(200).send({ genres });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar los generos' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar los generos de novelas' });
     });
 }
 
@@ -764,7 +723,7 @@ function createNovelRating(req, res) {
     novels_ratings_model.create(body).then(novel_rating => {
         return res.status(200).send({ novel_rating });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear clasificacion de la novela ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al crear la puntuación para la novela' });
     });
 }
 
@@ -777,13 +736,13 @@ function updateNovelRating(req, res) {
             }).then(() => {
                 return res.status(200).send({ novel_rating });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar la clasificacion de la novela ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la puntuación de la novela' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la clasificacion de la novela ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la puntuación de la novela' });
     });
 }
 
@@ -799,13 +758,13 @@ function deleteNovelRating(req, res) {
             }).then(novel_rating => {
                 return res.status(200).send({ novel_rating });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar la clasificacion de la novela ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar la puntuación de la novela' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la clasificacion de la novela ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la puntuación de la novela' });
     });
 }
 
@@ -815,7 +774,7 @@ function createNovelRatingComment(req, res) {
     novels_ratings_comments_model.create(body).then(novel_rating_comment => {
         return res.status(200).send({ novel_rating_comment });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear el comentario para la calificación ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al crear el comentario' });
     });
 }
 
@@ -825,7 +784,7 @@ function getNovelRatingComments(req, res) {
         .then(novel_rating_comments => {
             return res.status(200).send({ novel_rating_comments });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al cargar los comentarios' });
         });
 }
 
@@ -838,13 +797,13 @@ function updateNovelRatingComment(req, res) {
             }).then(() => {
                 return res.status(200).send({ novel_rating_comment });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario de la clasificacion de la novela ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario de la clasificacion de la novela ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el comentario' });
     });
 }
 
@@ -961,7 +920,7 @@ function deleteNovelVolume(req, res) {
 // Advertisements
 
 function getAdvertisements(req, res) {
-    advertisements_model.sequelize.query('SELECT a.*, (SELECT user_login FROM users u WHERE u.id = a.user_id) AS user_login FROM advertisements a WHERE a.adv_img IS NOT NULL', { type: advertisements_model.sequelize.QueryTypes.SELECT })
+    advertisements_model.sequelize.query('SELECT a.* FROM advertisements a WHERE a.adv_img IS NOT NULL', { type: advertisements_model.sequelize.QueryTypes.SELECT })
         .then(advertisements => {
             return res.status(200).send({ advertisements });
         }).catch(err => {
@@ -1112,6 +1071,194 @@ function getAdvertisementImage(req, res) {
     });
 }
 
+function createComment(req, res) {
+    const body = req.body;
+    let modelDefined = false;
+    let model;
+    let objectId;
+    let atributes = [];
+    let objectName;
+    if (body.chp_id && !modelDefined) {
+        model = chapters_model;
+        modelDefined = true;
+        objectId = body.chp_id;
+        objectName = 'chp_id';
+        atributes = ['id', 'chp_status'];
+    }
+    if (body.adv_id && !modelDefined) {
+        model = advertisements_model;
+        modelDefined = true;
+        objectId = body.adv_id;
+        objectName = 'adv_id';
+        atributes = ['id', 'adv_img'];
+    }
+    model.findByPk(objectId, { attributes: atributes }).then(object => {
+        if (object) {
+            if (objectName === 'chp_id' && object.chp_status !== 'Active') {
+                return res.status(409).send({ message: 'No se pudo agregar el comentario' });
+            }
+            if (objectName === 'adv_id' && (object.adv_img === null || object.adv_img.length === 0)) {
+                return res.status(409).send({ message: 'No se pudo agregar el comentario' });
+            }
+            comments_model.create({
+                'user_id': req.user.id,
+                [objectName]: objectId,
+                comment_content: body.comment_content
+            }).then(comment => {
+                return res.status(200).send({ comment });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al crear el comentario ' + err });
+            });
+        } else {
+            return res.status(500).send({ message: 'No se encuentra el elemento al que se intenta asignar el comentario' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el elemento al que se intenta asignar el comentario ' + err });
+    });
+}
+
+function getComments(req, res) {
+    const objectType = req.params.objt;
+    const id = req.params.id;
+    comments_model.sequelize.query('SELECT c.*, (SELECT user_login FROM users u where u.id = c.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = c.user_id) as user_profile_image, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "comment_id", l.comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.comment_id = c.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM comments c WHERE ' + objectType + ' = ?', { replacements: [id], type: comments_model.sequelize.QueryTypes.SELECT })
+        .then(comments => {
+            return res.status(200).send({ comments });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al cargar los comentarios' });
+        });
+}
+
+function updateComment(req, res) {
+    const body = req.body;
+    comments_model.findByPk(body.id).then(comment => {
+        if (req.user.id === comment.user_id) {
+            comment.update({
+                comment_content: body.comment_content
+            }).then(() => {
+                return res.status(200).send({ comment });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario' });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el comentario' });
+    });
+}
+
+function deleteComment(req, res) {
+    const id = req.params.id;
+    console.log(id);
+    comments_model.findByPk(id).then(comment => {
+        if (comment && req.user.id === comment.user_id) {
+            comment.destroy({
+                where: {
+                    id: id
+                }
+            }).then(comment => {
+                return res.status(200).send({ comment });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el comentario' });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el comentario' });
+    });
+}
+
+
+function createReply(req, res) {
+    const body = req.body;
+    let modelDefined = false;
+    let model;
+    let objectId;
+    let objectName;
+    if (body.comment_id && !modelDefined) {
+        model = comments_model;
+        modelDefined = true;
+        objectId = body.comment_id;
+        objectName = 'comment_id';
+    }
+    if (body.novel_rating_id && !modelDefined) {
+        model = novels_ratings_model;
+        modelDefined = true;
+        objectId = body.novel_rating_id;
+        objectName = 'novel_rating_id';
+    }
+    model.findByPk(objectId, { attributes: ['id'] }).then(object => {
+        if (object) {
+            comments_replys_model.create({
+                'user_id': req.user.id,
+                [objectName]: objectId,
+                reply_content: body.reply_content
+            }).then(comment_reply => {
+                return res.status(200).send({ comment_reply });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al crear la respuesta ' + err });
+            });
+        } else {
+            return res.status(500).send({ message: 'No se encuentra el elemento al que se intenta asignar la respuesta' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el elemento al que se intenta asignar la respuesta ' + err });
+    });
+}
+
+function getReplys(req, res) {
+    const objectType = req.params.objt;
+    const id = req.params.id;
+    comments_replys_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = cr.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = cr.user_id) as user_profile_image, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "comment_reply_id", l.comment_reply_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.comment_reply_id = cr.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM comments_replys cr WHERE cr.' + objectType + ' = ?', { replacements: [id], type: chapters_comments_replys_model.sequelize.QueryTypes.SELECT })
+        .then(comment_replys => {
+            return res.status(200).send({ comment_replys });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al cargar las respuesta' });
+        });
+}
+
+function updateReplys(req, res) {
+    const body = req.body;
+    comments_replys_model.findByPk(body.id).then(comment_reply => {
+        if (req.user.id === comment_reply.user_id) {
+            comment_reply.update({
+                reply_content: body.reply_content
+            }).then(() => {
+                return res.status(200).send({ comment_reply });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la respuesta' });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la respuesta' });
+    });
+}
+
+function deleteReplys(req, res) {
+    const id = req.params.id;
+    console.log(id);
+    comments_replys_model.findByPk(id).then(comment_reply => {
+        if (comment_reply && req.user.id === comment_reply.user_id) {
+            comment_reply.destroy({
+                where: {
+                    id: id
+                }
+            }).then(comment_reply => {
+                return res.status(200).send({ comment_reply });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar la respuesta' });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la respuesta' });
+    });
+}
+
 module.exports = {
     // Home
     getHomeNovels,
@@ -1167,9 +1314,17 @@ module.exports = {
     getAdvertisementCommentReplys,
     updateAdvertisementCommentReply,
     deleteAdvertisementCommentReply,
-    // test
-    getnovelsTest,
-    // likes
+    // Comments
+    createComment,
+    getComments,
+    updateComment,
+    deleteComment,
+    // Replys
+    createReply,
+    getReplys,
+    updateReplys,
+    deleteReplys,
+    // Likes
     createLike,
     deleteLike
 };

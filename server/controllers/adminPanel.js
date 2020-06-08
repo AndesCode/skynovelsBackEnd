@@ -33,7 +33,7 @@ function adminGetCategories(req, res) {
     }).then(forum_categories => {
         res.status(200).send({ forum_categories });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error cargar las categorias' });
     });
 }
 
@@ -42,20 +42,25 @@ function adminCreateCategory(req, res) {
     forum_categories_model.create(body).then(forum_category => {
         res.status(200).send({ forum_category });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria para el foro ' + err });
+        res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria' });
     });
 }
 
 function adminUpdateCategory(req, res) {
     const body = req.body;
     forum_categories_model.findByPk(body.id).then(forum_category => {
-        forum_category.update(body).then((forum_category) => {
+        forum_category.update({
+            category_title: body.category_title,
+            category_name: body.category_name,
+            category_description: body.category_description,
+            category_order: body.category_order
+        }).then((forum_category) => {
             res.status(200).send({ forum_category });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar el post ' + err });
+            res.status(500).send({ message: 'Ocurrio un error al actualizar la categoria' });
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
+        res.status(500).send({ message: 'Ocurrio un error cargar la categoria' });
     });
 }
 
@@ -69,10 +74,10 @@ function adminDeleteCategory(req, res) {
         }).then(() => {
             res.status(200).send({ forum_category });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro ' });
+            res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro' });
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro ' });
+        res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro' });
     });
 }
 
@@ -98,7 +103,7 @@ function adminGetPosts(req, res) {
     }).then(forum_posts => {
         res.status(200).send({ forum_posts });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la publicación' });
     });
 }
 
@@ -109,10 +114,10 @@ function adminUpdatePost(req, res) {
         post.update(body).then((post) => {
             res.status(200).send({ post });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar el post ' + err });
+            res.status(500).send({ message: 'Ocurrio un error al actualizar la publicación' });
         });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la publicación' });
     });
 }
 
@@ -126,10 +131,10 @@ function adminDeletePost(req, res) {
         }).then(() => {
             return res.status(200).send({ post });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro ' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro' });
         });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la categoria del foro' });
     });
 }
 
@@ -143,10 +148,10 @@ function adminDeleteComment(req, res) {
         }).then(() => {
             return res.status(200).send({ post_comment });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro ' });
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro' });
         });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la categoria del foro' });
     });
 }
 
@@ -156,10 +161,10 @@ function adminUpdateComment(req, res) {
         post_comment.update(body).then((post_comment) => {
             return res.status(200).send({ post_comment });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al actualizar el post ' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al actualizar la publicación ' });
         });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el post ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la publicación ' });
     });
 }
 
@@ -171,7 +176,7 @@ function adminGetUsers(req, res) {
     }).then(users => {
         return res.status(200).send({ users });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar los usuarios' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar los usuarios' });
     });
 }
 
@@ -183,10 +188,10 @@ function adminGetUser(req, res) {
         if (user) {
             return res.status(200).send({ user });
         } else {
-            return res.status(404).send({ message: 'No se encuentra ningún usuario' });
+            return res.status(404).send({ message: 'No se encuentra ningún usuario por el id indicado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el usuario' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el usuario' });
     });
 }
 
@@ -199,11 +204,11 @@ function adminDeleteUser(req, res) {
             delete_file_thumb_path = './server/uploads/users/thumbs/' + old_img;
             fs.unlink(delete_file_path, (err) => {
                 if (err) {
-                    return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua. ' });
+                    return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' });
                 } else {
                     fs.unlink(delete_file_thumb_path, (err) => {
                         if (err) {
-                            console.log('error eliminando la imagen de perfil de ' + user.dataValues.user_login + err);
+                            console.log('error eliminando la imagen de perfil de ' + user.dataValues.user_login);
                         } else {
                             console.log('imagen de perfil de ' + user.dataValues.user_login + ' eliminada');
                         }
@@ -215,13 +220,13 @@ function adminDeleteUser(req, res) {
             where: {
                 id: id
             }
-        }).then(user => {
-            return res.status(200).send({ user });
+        }).then(() => {
+            return res.status(200).send({ message: 'Usuario eliminado' });
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio un error al eliminar el usuario' });
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario' });
+        res.status(500).send({ message: 'Ocurrio un error al cargar el usuario' });
     });
 }
 
@@ -230,13 +235,20 @@ function adminUpdateUser(req, res) {
     users_model.findByPk(body.id, {
         attributes: ['id', 'user_login', 'user_email', 'user_rol', 'user_status', 'user_forum_auth', 'user_description', 'createdAt', 'updatedAt']
     }).then(user => {
-        user.update(body).then((user) => {
+        user.update({
+            user_login: body.user_login,
+            user_email: body.user_email,
+            user_rol: body.user_rol,
+            user_status: body.user_status,
+            user_forum_auth: body.user_forum_auth,
+            user_description: body.user_description
+        }).then((user) => {
             return res.status(200).send({ user });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario ' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario' });
         });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el usuario ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error cargar el usuario' });
     });
 }
 
@@ -261,16 +273,16 @@ function adminCreateRecommendedNovel(req, res) {
                 novel.update({ nvl_recommended: 1 }).then(() => {
                     return res.status(200).send({ novel });
                 }).catch(err => {
-                    return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela a recomendada' + err });
+                    return res.status(500).send({ message: 'Ocurrio un error al actualizar al asignar la novela como recomendada' });
                 });
             } else {
                 return res.status(404).send({ message: 'No se encuentra la novela indicada' });
             }
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al encontrar la novela indicada' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al cargar la novela indicada' });
         });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al limpiar la lista de novelas recomendadas' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al limpiar la lista de novelas recomendadas' });
     });
 }
 
@@ -283,7 +295,7 @@ function adminGetNovel(req, res) {
             return res.status(404).send({ message: 'No se encontro ninguna novela' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela ' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
     });
 }
 
@@ -292,7 +304,7 @@ function adminGetNovels(req, res) {
         .then(novels => {
             return res.status(200).send({ novels });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
         });
 }
 
@@ -315,7 +327,6 @@ function adminUpdateNovel(req, res) {
                 nvl_title: body.nvl_title,
                 nvl_acronym: body.nvl_acronym,
                 nvl_status: body.nvl_status,
-                nvl_name: body.nvl_name,
                 nvl_publication_date: body.nvl_publication_date,
                 nvl_recommended: body.nvl_recommended,
                 nvl_writer: body.nvl_writer,
@@ -330,13 +341,13 @@ function adminUpdateNovel(req, res) {
                 }
                 return res.status(200).send({ novel });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
             });
         } else {
             return res.status(404).send({ message: 'No se encuentra la novela indicada' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
     });
 }
 
@@ -345,7 +356,7 @@ function adminDeleteNovel(req, res) {
     novels_model.findByPk(id).then((novel) => {
         // Deleting Novel image
         if (novel.dataValues.nvl_img !== '') {
-            var old_img = novel.dataValues.nvl_img;
+            const old_img = novel.dataValues.nvl_img;
             delete_file_path = './server/uploads/novels/' + old_img;
             delete_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
             fs.unlink(delete_file_path, (err) => {
@@ -369,10 +380,10 @@ function adminDeleteNovel(req, res) {
         }).then(novel => {
             return res.status(200).send({ novel });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al eliminar la novela ' });
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar la novela' });
         });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al encontrar la novela a eliminar ' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
     });
 }
 
@@ -382,10 +393,10 @@ function adminUpdateNovelVolume(req, res) {
         volume.update(body).then(() => {
             return res.status(200).send({ volume });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al actualizar el volumen ' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al actualizar el volumen ' });
         });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el volumen' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el volumen' });
     });
 }
 
@@ -399,10 +410,10 @@ function adminDeleteNovelVolume(req, res) {
         }).then(volume => {
             return res.status(200).send({ volume });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al eliminar el volumen indicado ' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar el volumen indicado' });
         });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el volumen indicado ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el volumen indicado' });
     });
 }
 
@@ -417,7 +428,7 @@ function adminGetChapter(req, res) {
             return res.status(404).send({ message: 'Capitulo no encontrado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo' });
     });
 }
 
@@ -438,19 +449,19 @@ function adminUpdateChapter(req, res) {
                     chapter.update(body).then(() => {
                         return res.status(200).send({ chapter });
                     }).catch(err => {
-                        return res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulos ' + err });
+                        return res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulo ' });
                     });
                 } else {
                     return res.status(404).send({ message: 'Capitulo no encontrado' });
                 }
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al buscar el capitulo' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo' });
             });
         } else {
             return res.status(404).send({ message: 'Novela o volumen inexistentes para la actualización del capitulo' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
     });
 }
 
@@ -465,13 +476,13 @@ function adminDeleteChapter(req, res) {
             }).then(chapter => {
                 return res.status(200).send({ chapter });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar el capitulo indicado ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el capitulo indicado' });
             });
         } else {
             return res.status(404).send({ message: 'Capitulo no encontrado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la capitulos' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo a eliminar' });
     });
 }
 
@@ -483,7 +494,7 @@ function adminCreateGenre(req, res) {
     genres_model.create(body).then(genre => {
         return res.status(200).send({ genre });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear el genero para las novelas ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al crear el genero' });
     });
 }
 
@@ -491,13 +502,17 @@ function adminUpdateGenre(req, res) {
     const body = req.body;
     console.log(body);
     genres_model.findByPk(body.id).then(genre => {
-        genre.update(body).then(() => {
-            return res.status(200).send({ genre });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
-        });
+        if (genre) {
+            genre.update(body).then(() => {
+                return res.status(200).send({ genre });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el genero' });
+            });
+        } else {
+            return res.status(404).send({ message: 'Genero no encontrado' });
+        }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el genero' });
     });
 }
 
@@ -512,10 +527,10 @@ function adminDeleteGenre(req, res) {
         }).then(genre => {
             return res.status(200).send({ genre });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al eliminar el genero indicado' });
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar el genero' });
         });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el genero indicado' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el genero a eliminar' });
     });
 }
 
@@ -524,7 +539,7 @@ function adminGetAdvertisements(req, res) {
         .then(advertisements => {
             return res.status(200).send({ advertisements });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error cargar los anuncios' + err });
+            return res.status(500).send({ message: 'Ocurrio un error cargar los anuncios' });
         });
 }
 
@@ -538,7 +553,7 @@ function adminGetAdvertisement(req, res) {
                 return res.status(500).send({ message: 'No se encuentra ningún anuncio por el id indicado' });
             }
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error cargar el anuncio' + err });
+            return res.status(500).send({ message: 'Ocurrio un error cargar el anuncio' });
         });
 }
 
@@ -548,7 +563,7 @@ function adminCreateAdvertisement(req, res) {
     advertisements_model.create(body).then(advertisement => {
         return res.status(200).send({ advertisement });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear el anuncio ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al crear el anuncio' });
     });
 }
 
@@ -556,16 +571,20 @@ function adminUpdateAdvertisement(req, res) {
     const body = req.body;
     advertisements_model.findByPk(body.id).then(advertisement => {
         if (advertisement) {
-            advertisement.update(body).then((advertisement) => {
+            advertisement.update({
+                adv_title: body.adv_title,
+                adv_content: body.adv_content,
+                adv_order: body.adv_order
+            }).then((advertisement) => {
                 return res.status(200).send({ advertisement });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el anuncio ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el anuncio' });
             });
         } else {
             return res.status(404).send({ message: 'No se encuentra el anuncio indicado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error cargar el anuncio ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error cargar el anuncio' });
     });
 }
 
@@ -578,7 +597,7 @@ function adminDeleteAdvertisement(req, res) {
             delete_file_path = './server/uploads/advertisements/' + old_img;
             fs.unlink(delete_file_path, (err) => {
                 if (err) {
-                    console.log('error eliminando la imagen de anuncio ' + err);
+                    console.log('error eliminando la imagen de anuncio');
                 } else {
                     console.log('Imagen de anuncio eliminada');
                 }
@@ -588,13 +607,13 @@ function adminDeleteAdvertisement(req, res) {
             where: {
                 id: id
             }
-        }).then(advertisement => {
-            return res.status(200).send({ advertisement });
+        }).then(() => {
+            return res.status(200).send({ message: 'Anuncio eliminado' });
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio un error al eliminar el anuncio' });
         });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el anuncio a eliminar ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el anuncio a eliminar' });
     });
 }
 
@@ -614,17 +633,11 @@ function adminUploadAdvertisementImage(req, res) {
                     if (exists) {
                         fs.unlink(old_file_path, (err) => {
                             if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' + err });
-                            } else {
-                                console.log('imagen de anuncio eliminada');
+                                res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
                             }
                         });
-                    } else {
-                        console.log('archivo con el nombre de imagen de anuncio inexistente.');
                     }
                 });
-            } else {
-                console.log('creating a new image in db');
             }
             const advertisement_image = {};
             advertisement_image.adv_img = file_name;
@@ -637,7 +650,7 @@ function adminUploadAdvertisementImage(req, res) {
                             return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                         }
                     });
-                    return res.status(500).send({ message: 'Ocurrio un error al actualziar el anuncio.' });
+                    return res.status(500).send({ message: 'Ocurrio un error al actualizar el anuncio.' });
                 });
             }).catch(err => {
                 fs.unlink(file_path, (err) => {
@@ -659,8 +672,6 @@ function adminUploadAdvertisementImage(req, res) {
         return res.status(400).send({ message: 'Debe Seleccionar anuncio.' });
     }
 }
-
-
 
 module.exports = {
     // Panel
