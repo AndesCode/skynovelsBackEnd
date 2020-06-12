@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
                     if (value) {
                         const self = this;
                         likes.findOne({
-                                attributes: ['id', 'novel_rating_id', 'comment_reply_id', 'comment_id', 'adv_id', 'user_id'],
+                                attributes: ['id', 'novel_rating_id', 'reply_id', 'comment_id', 'adv_id', 'user_id'],
                                 where: {
                                     [Op.and]: [{ user_id: this.user_id }, { novel_rating_id: value }]
                                 }
@@ -40,19 +40,19 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true,
             }
         },
-        comment_reply_id: {
+        reply_id: {
             type: DataTypes.INTEGER,
             validate: {
                 isUnique: function(value, next) {
                     if (value) {
                         const self = this;
                         likes.findOne({
-                                attributes: ['id', 'novel_rating_id', 'comment_reply_id', 'comment_id', 'adv_id', 'user_id'],
+                                attributes: ['id', 'novel_rating_id', 'reply_id', 'comment_id', 'adv_id', 'user_id'],
                                 where: {
-                                    [Op.and]: [{ user_id: this.user_id }, { comment_reply_id: value }]
+                                    [Op.and]: [{ user_id: this.user_id }, { reply_id: value }]
                                 }
-                            }).then(function(comment_reply_like) {
-                                if (comment_reply_like && self.id !== comment_reply_like.id) {
+                            }).then(function(reply_like) {
+                                if (reply_like && self.id !== reply_like.id) {
                                     return next({ message: 'error, No puedes dar like dos veces a un mismo elemento' });
                                 } else {
                                     return next();
@@ -75,7 +75,7 @@ module.exports = (sequelize, DataTypes) => {
                     if (value) {
                         const self = this;
                         likes.findOne({
-                                attributes: ['id', 'novel_rating_id', 'comment_reply_id', 'comment_id', 'adv_id', 'user_id'],
+                                attributes: ['id', 'novel_rating_id', 'reply_id', 'comment_id', 'adv_id', 'user_id'],
                                 where: {
                                     [Op.and]: [{ user_id: this.user_id }, { comment_id: value }]
                                 }
@@ -103,7 +103,7 @@ module.exports = (sequelize, DataTypes) => {
                     if (value) {
                         const self = this;
                         likes.findOne({
-                                attributes: ['id', 'novel_rating_id', 'comment_reply_id', 'comment_id', 'adv_id', 'user_id'],
+                                attributes: ['id', 'novel_rating_id', 'reply_id', 'comment_id', 'adv_id', 'user_id'],
                                 where: {
                                     [Op.and]: [{ user_id: this.user_id }, { adv_id: value }]
                                 }
@@ -147,6 +147,10 @@ module.exports = (sequelize, DataTypes) => {
         likes.belongsTo(models.comments, {
             foreignKey: 'comment_id',
             as: 'comment'
+        });
+        likes.belongsTo(models.replys, {
+            foreignKey: 'reply_id',
+            as: 'reply'
         });
         likes.belongsTo(models.users, {
             foreignKey: 'user_id',

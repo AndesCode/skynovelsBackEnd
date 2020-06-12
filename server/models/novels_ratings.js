@@ -75,9 +75,9 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'novel_rating_id',
             as: 'likes',
         });
-        novels_ratings.hasMany(models.novels_ratings_comments, {
+        novels_ratings.hasMany(models.replys, {
             foreignKey: 'novel_rating_id',
-            as: 'comments',
+            as: 'replys',
         });
     };
 

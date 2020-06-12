@@ -6,15 +6,6 @@ const chapters_model = require('../models').chapters;
 const volumes_model = require('../models').volumes;
 const users_model = require('../models').users;
 const genres_model = require('../models').genres;
-const novels_ratings_comments_model = require('../models').novels_ratings_comments;
-const chapters_comments_model = require('../models').chapters_comments;
-const chapters_comments_replys_model = require('../models').chapters_comments_replys;
-const advertisements_model = require('../models').advertisements;
-const advertisements_comments_model = require('../models').advertisements_comments;
-const advertisements_comments_replys_model = require('../models').advertisements_comments_replys;
-const likes_model = require('../models').likes;
-const comments_model = require('../models').comments;
-const comments_replys_model = require('../models').comments_replys;
 // files mannager
 const fs = require('fs');
 const thumb = require('node-thumbnail').thumb;
@@ -22,76 +13,6 @@ const path = require('path');
 //Sequelize
 const Sequelize = require('sequelize');
 
-// likes 
-
-function createLike(req, res) {
-    const body = req.body;
-    let modelDefined = false;
-    let model;
-    let objectId;
-    let objectName;
-    if (body.novel_rating_id && !modelDefined) {
-        model = novels_ratings_model;
-        modelDefined = true;
-        objectId = body.novel_rating_id;
-        objectName = 'novel_rating_id';
-    }
-    if (body.adv_id && !modelDefined) {
-        model = advertisements_model;
-        modelDefined = true;
-        objectId = body.adv_id;
-        objectName = 'adv_id';
-    }
-    if (body.comment_id && !modelDefined) {
-        model = comments_model;
-        modelDefined = true;
-        objectId = body.comment_id;
-        objectName = 'comment_id';
-    }
-    if (body.comment_reply_id && !modelDefined) {
-        model = comments_replys_model;
-        modelDefined = true;
-        objectId = body.comment_reply_id;
-        objectName = 'comment_reply_id';
-    }
-    model.findByPk(objectId, { attributes: ['id'] }).then(object => {
-        if (object) {
-            likes_model.create({
-                'user_id': req.user.id,
-                [objectName]: objectId
-            }).then(like => {
-                return res.status(200).send({ like });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al asignar el "Me gusta" ' + err });
-            });
-        } else {
-            return res.status(500).send({ message: 'No se encuentra el elemento al que se intenta asignar el "Me gusta"' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el elemento al que se intenta asignar el "Me gusta"' + err });
-    });
-}
-
-function deleteLike(req, res) {
-    const id = req.params.id;
-    likes_model.findByPk(id).then(like => {
-        if (req.user.id === like.user_id) {
-            like.destroy({
-                where: {
-                    id: id
-                }
-            }).then(like => {
-                return res.status(200).send({ like });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar el "Me gusta" ' + err });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el "Me gusta" ' + err });
-    });
-}
 
 // Novels
 
@@ -406,7 +327,7 @@ function deleteNovel(req, res) {
 // Novels chapters
 function getChapter(req, res) {
     const id = req.params.id;
-    chapters_model.sequelize.query('SELECT *,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", cc.id, "chapter_comment", cc.chapter_comment, "user_id", cc.user_id, "user_login", (SELECT user_login FROM users u where u.id = cc.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = cc.user_id), "createdAt", cc.createdAt, "updatedAt", cc.updatedAt, "likes_count", (SELECT COUNT(id) FROM likes l where l.chapter_comment_id = cc.id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "chapter_comment_id", l.chapter_comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.chapter_comment_id = cc.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM chapters_comments cc where cc.chapter_id = c.id), CONVERT(CONCAT("[]"), JSON)) as comments FROM chapters c where c.id = ? AND c.chp_status="Active"', { replacements: [id], type: chapters_model.sequelize.QueryTypes.SELECT })
+    chapters_model.sequelize.query('SELECT *, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", cms.id, "comment_content", cms.comment_content, "user_id", cms.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = cms.user_id), "user_profile_image", (SELECT user_profile_image FROM users u WHERE u.id = cms.user_id), "createdAt", cms.createdAt, "updatedAt", cms.updatedAt, "likes_count", (SELECT COUNT(id) FROM likes l WHERE l.comment_id = cms.id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "comment_id", l.comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = l.user_id))), "]"), JSON) FROM likes l WHERE l.comment_id = cms.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM comments cms WHERE cms.chp_id = c.id), CONVERT(CONCAT("[]"), JSON)) AS comments FROM chapters c WHERE c.id = ? AND c.chp_status="Active"', { replacements: [id], type: chapters_model.sequelize.QueryTypes.SELECT })
         .then(chapter => {
             if (chapter.length > 0) {
                 return res.status(200).send({ chapter });
@@ -450,7 +371,7 @@ function getChapterEdition(req, res) {
 
 function getNovelChapters(req, res) {
     const id = req.params.id;
-    novels_model.sequelize.query('SELECT id, nvl_author, nvl_title, nvl_name, nvl_writer, nvl_acronym, nvl_translator, nvl_img, createdAt, updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), CONVERT(CONCAT("[]"), JSON)) AS chapters, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "bkm_chapter", rl.bkm_chapter)), "]"), JSON) FROM bookmarks rl where rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "id", nr.id)), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as novel_ratings FROM novels n where n.id = ? AND n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
+    novels_model.sequelize.query('SELECT id, nvl_author, nvl_title, nvl_name, nvl_writer, nvl_acronym, nvl_translator, nvl_img, createdAt, updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), CONVERT(CONCAT("[]"), JSON)) AS chapters, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "bkm_chapter", rl.bkm_chapter)), "]"), JSON) FROM bookmarks rl WHERE rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "id", nr.id)), "]"), JSON) FROM novels_ratings nr WHERE nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS novel_ratings FROM novels n WHERE n.id = 23 AND n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v WHERE v.nvl_id = n.id AND (SELECT id FROM chapters c WHERE c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND (SELECT id FROM genres_novels gn WHERE gn.novel_id = n.id AND (SELECT id FROM genres g WHERE g.id = gn.genre_id LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
         .then(novel => {
             if (novel.length > 0) {
                 return res.status(200).send({ novel });
@@ -586,127 +507,6 @@ function deleteChapter(req, res) {
     });
 }
 
-function createChapterComment(req, res) {
-    const body = req.body;
-    body.user_id = req.user.id;
-    chapters_comments_model.create(body).then(chapter_comment => {
-        return res.status(200).send({ chapter_comment });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear el comentario' });
-    });
-}
-
-function getChapterComments(req, res) {
-    const id = req.params.id;
-    chapters_comments_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = cc.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = cc.user_id) as user_profile_image, (SELECT COUNT(id) FROM likes l where l.chapter_comment_id = cc.id) as likes_count, (SELECT COUNT(id) FROM chapters_comments_replys ccr where ccr.chapter_comment_id = cc.id) as replys_count, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "chapter_comment_id", l.chapter_comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.chapter_comment_id = cc.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM chapters_comments cc WHERE cc.chapter_id = ? ORDER BY likes_count DESC', { replacements: [id], type: chapters_comments_model.sequelize.QueryTypes.SELECT })
-        .then(chapters_comments => {
-            return res.status(200).send({ chapters_comments });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al cargar los comentarios' });
-        });
-}
-
-function updateChapterComment(req, res) {
-    const body = req.body;
-    chapters_comments_model.findByPk(body.id).then(chapter_comment => {
-        if (req.user.id === chapter_comment.user_id) {
-            chapter_comment.update({
-                chapter_comment: body.chapter_comment
-            }).then(() => {
-                return res.status(200).send({ chapter_comment });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario' });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario' });
-    });
-}
-
-function deleteChapterComment(req, res) {
-    const id = req.params.id;
-    console.log(id);
-    chapters_comments_model.findByPk(id).then(chapter_comment => {
-        if (req.user.id === chapter_comment.user_id) {
-            chapter_comment.destroy({
-                where: {
-                    id: id
-                }
-            }).then(chapter_comment => {
-                return res.status(200).send({ chapter_comment });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar el comentario' });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el comentario a eliminar' });
-    });
-}
-
-function createChapterCommentReply(req, res) {
-    const body = req.body;
-    body.user_id = req.user.id;
-    chapters_comments_replys_model.create(body).then(chapter_comment_reply => {
-        return res.status(200).send({ chapter_comment_reply });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear el comentario' });
-    });
-}
-
-function getChapterCommentReplys(req, res) {
-    const id = req.params.id;
-    chapters_comments_replys_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = ccr.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = ccr.user_id) as user_profile_image, (SELECT user_profile_image FROM users u where u.id = ccr.user_id) as user_profile_image, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "chapter_comment_reply_id", l.chapter_comment_reply_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.chapter_comment_reply_id = ccr.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM chapters_comments_replys ccr WHERE ccr.chapter_comment_id = ?', { replacements: [id], type: chapters_comments_replys_model.sequelize.QueryTypes.SELECT })
-        .then(chapter_comment_replys => {
-            return res.status(200).send({ chapter_comment_replys });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al cargar los comentarios' });
-        });
-}
-
-function updateChapterCommentReply(req, res) {
-    const body = req.body;
-    chapters_comments_replys_model.findByPk(body.id).then(chapter_comment_replys => {
-        if (req.user.id === chapter_comment_replys.user_id) {
-            chapter_comment_replys.update({
-                chapter_comment_reply: body.chapter_comment_reply
-            }).then(() => {
-                return res.status(200).send({ chapter_comment_replys });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario' });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el comentario' });
-    });
-}
-
-function deleteChapterCommentReply(req, res) {
-    const id = req.params.id;
-    chapters_comments_replys_model.findByPk(id).then(novel_rating_comment => {
-        if (req.user.id === novel_rating_comment.user_id) {
-            novel_rating_comment.destroy({
-                where: {
-                    id: id
-                }
-            }).then(novel_rating_comment => {
-                return res.status(200).send({ novel_rating_comment });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar el comentario ' });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el comentario a eliminar' });
-    });
-}
-
 // Genres
 
 function getGenres(req, res) {
@@ -716,6 +516,8 @@ function getGenres(req, res) {
         return res.status(500).send({ message: 'Ocurrio un error al cargar los generos de novelas' });
     });
 }
+
+// Novels ratings
 
 function createNovelRating(req, res) {
     const body = req.body;
@@ -765,67 +567,6 @@ function deleteNovelRating(req, res) {
         }
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al cargar la puntuación de la novela' });
-    });
-}
-
-function createNovelRatingComment(req, res) {
-    const body = req.body;
-    body.user_id = req.user.id;
-    novels_ratings_comments_model.create(body).then(novel_rating_comment => {
-        return res.status(200).send({ novel_rating_comment });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear el comentario' });
-    });
-}
-
-function getNovelRatingComments(req, res) {
-    const id = req.params.id;
-    novels_ratings_comments_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = nrc.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = nrc.user_id) as user_profile_image, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "novel_rating_comment_id", l.novel_rating_comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.novel_rating_comment_id = nrc.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM novels_ratings_comments nrc WHERE nrc.novel_rating_id = ?', { replacements: [id], type: novels_ratings_comments_model.sequelize.QueryTypes.SELECT })
-        .then(novel_rating_comments => {
-            return res.status(200).send({ novel_rating_comments });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al cargar los comentarios' });
-        });
-}
-
-function updateNovelRatingComment(req, res) {
-    const body = req.body;
-    novels_ratings_comments_model.findByPk(body.id).then(novel_rating_comment => {
-        if (req.user.id === novel_rating_comment.user_id) {
-            novel_rating_comment.update({
-                novel_rating_comment: body.novel_rating_comment
-            }).then(() => {
-                return res.status(200).send({ novel_rating_comment });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario' });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el comentario' });
-    });
-}
-
-function deleteNovelRatingComment(req, res) {
-    const id = req.params.id;
-    console.log(id);
-    novels_ratings_comments_model.findByPk(id).then(novel_rating_comment => {
-        if (req.user.id === novel_rating_comment.user_id) {
-            novel_rating_comment.destroy({
-                where: {
-                    id: id
-                }
-            }).then(novel_rating_comment => {
-                return res.status(200).send({ novel_rating_comment });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar el comentario de la clasificacion de la novela ' + err });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el comentario de la clasificacion de la novela ' + err });
     });
 }
 
@@ -917,347 +658,7 @@ function deleteNovelVolume(req, res) {
     });
 }
 
-// Advertisements
 
-function getAdvertisements(req, res) {
-    advertisements_model.sequelize.query('SELECT a.* FROM advertisements a WHERE a.adv_img IS NOT NULL', { type: advertisements_model.sequelize.QueryTypes.SELECT })
-        .then(advertisements => {
-            return res.status(200).send({ advertisements });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error cargar los anuncios' + err });
-        });
-}
-
-function getAdvertisement(req, res) {
-    const id = req.params.id;
-    advertisements_model.sequelize.query('SELECT a.*, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "adv_id", l.adv_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.adv_id = a.id), CONVERT(CONCAT("[]"), JSON)) AS likes, (SELECT user_login FROM users u WHERE u.id = a.user_id) AS user_login, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", ac.id, "adv_comment", ac.adv_comment, "user_id", ac.user_id, "user_login", (SELECT user_login FROM users u where u.id = ac.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = ac.user_id), "likes_count", (SELECT COUNT(id) FROM likes l where l.adv_comment_id = ac.id), "replys_count", (SELECT COUNT(id) FROM advertisements_comments_replys acr where acr.adv_comment_id = ac.id), "likes", (IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "adv_comment_id", l.adv_comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.adv_comment_id = ac.id), CONVERT(CONCAT("[]"), JSON))))), "]"), JSON) FROM advertisements_comments ac where ac.adv_id = a.id), CONVERT(CONCAT("[]"), JSON)) as comments FROM advertisements a WHERE a.id = ? AND a.adv_img IS NOT NULL', { replacements: [id], type: advertisements_model.sequelize.QueryTypes.SELECT })
-        .then(advertisements => {
-            if (advertisements.length > 0) {
-                return res.status(200).send({ advertisement: advertisements[0] });
-            } else {
-                return res.status(500).send({ message: 'No se encuentra ningún anuncio por el id indicado' });
-            }
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error cargar el anuncio' + err });
-        });
-}
-
-function createAdvertisementComment(req, res) {
-    const body = req.body;
-    body.user_id = req.user.id;
-    advertisements_comments_model.create(body).then(advertisement_comment => {
-        return res.status(200).send({ advertisement_comment });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear el comentario ' + err });
-    });
-}
-
-function updateAdvertisementComment(req, res) {
-    const body = req.body;
-    advertisements_comments_model.findByPk(body.id).then(advertisement_comment => {
-        if (req.user.id === advertisement_comment.user_id) {
-            advertisement_comment.update({
-                adv_comment: body.adv_comment
-            }).then(() => {
-                return res.status(200).send({ advertisement_comment });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario ' + err });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario ' + err });
-    });
-}
-
-function deleteAdvertisementComment(req, res) {
-    const id = req.params.id;
-    advertisements_comments_model.findByPk(id).then(advertisement_comment => {
-        if (advertisement_comment) {
-            if (req.user.id === advertisement_comment.user_id) {
-                advertisement_comment.destroy({
-                    where: {
-                        id: id
-                    }
-                }).then(advertisement_comment => {
-                    return res.status(200).send({ advertisement_comment });
-                }).catch(err => {
-                    return res.status(500).send({ message: 'Ocurrio un error al eliminar el comentario ' + err });
-                });
-            } else {
-                return res.status(401).send({ message: 'No autorizado' });
-            }
-        } else {
-            return res.status(401).send({ message: 'No se encuentra el elemento que se intenta eliminar' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el comentario ' + err });
-    });
-}
-
-function createAdvertisementCommentReply(req, res) {
-    const body = req.body;
-    body.user_id = req.user.id;
-    advertisements_comments_replys_model.create(body).then(advertisement_comment_reply => {
-        return res.status(200).send({ advertisement_comment_reply });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear el comentario ' + err });
-    });
-}
-
-function getAdvertisementCommentReplys(req, res) {
-    const id = req.params.id;
-    advertisements_comments_replys_model.sequelize.query('SELECT acr.*, (SELECT user_login FROM users u where u.id = acr.user_id) AS user_login, (SELECT user_profile_image FROM users u where u.id = acr.user_id) AS user_profile_image, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "adv_comment_reply_id", l.adv_comment_reply_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.adv_comment_reply_id = acr.id), CONVERT(CONCAT("[]"), JSON)) AS likes, (SELECT COUNT(id) FROM likes l where l.adv_comment_reply_id = acr.id) as likes_count FROM advertisements_comments_replys acr WHERE acr.adv_comment_id = ? ORDER BY likes_count DESC', { replacements: [id], type: advertisements_comments_replys_model.sequelize.QueryTypes.SELECT })
-        .then(advertisement_comment_replys => {
-            return res.status(200).send({ advertisement_comment_replys });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al cargar las respuestas' + err });
-        });
-}
-
-function updateAdvertisementCommentReply(req, res) {
-    const body = req.body;
-    advertisements_comments_replys_model.findByPk(body.id).then(advertisement_comment_reply => {
-        if (req.user.id === advertisement_comment_reply.user_id) {
-            advertisement_comment_reply.update({
-                adv_comment_reply: body.adv_comment_reply
-            }).then(() => {
-                return res.status(200).send({ advertisement_comment_reply });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario ' + err });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario ' + err });
-    });
-}
-
-function deleteAdvertisementCommentReply(req, res) {
-    const id = req.params.id;
-    advertisements_comments_replys_model.findByPk(id).then(advertisement_comment_reply => {
-        if (advertisement_comment_reply) {
-            if (req.user.id === advertisement_comment_reply.user_id) {
-                advertisement_comment_reply.destroy({
-                    where: {
-                        id: id
-                    }
-                }).then(advertisement_comment_reply => {
-                    return res.status(200).send({ advertisement_comment_reply });
-                }).catch(err => {
-                    return res.status(500).send({ message: 'Ocurrio un error al eliminar el comentario ' + err });
-                });
-            } else {
-                return res.status(401).send({ message: 'No autorizado' });
-            }
-        } else {
-            return res.status(401).send({ message: 'No se encuentra el elemento que se intenta eliminar' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el comentario ' + err });
-    });
-}
-
-function getAdvertisementImage(req, res) {
-    const img_path = './server/uploads/advertisements/' + req.params.advertisement_img;
-    fs.exists(img_path, (exists) => {
-        if (exists) {
-            return res.status(200).sendFile(path.resolve(img_path));
-        } else {
-            return res.status(404).send({ message: "No se encuentra la imagen de anuncio" });
-        }
-    });
-}
-
-function createComment(req, res) {
-    const body = req.body;
-    let modelDefined = false;
-    let model;
-    let objectId;
-    let atributes = [];
-    let objectName;
-    if (body.chp_id && !modelDefined) {
-        model = chapters_model;
-        modelDefined = true;
-        objectId = body.chp_id;
-        objectName = 'chp_id';
-        atributes = ['id', 'chp_status'];
-    }
-    if (body.adv_id && !modelDefined) {
-        model = advertisements_model;
-        modelDefined = true;
-        objectId = body.adv_id;
-        objectName = 'adv_id';
-        atributes = ['id', 'adv_img'];
-    }
-    model.findByPk(objectId, { attributes: atributes }).then(object => {
-        if (object) {
-            if (objectName === 'chp_id' && object.chp_status !== 'Active') {
-                return res.status(409).send({ message: 'No se pudo agregar el comentario' });
-            }
-            if (objectName === 'adv_id' && (object.adv_img === null || object.adv_img.length === 0)) {
-                return res.status(409).send({ message: 'No se pudo agregar el comentario' });
-            }
-            comments_model.create({
-                'user_id': req.user.id,
-                [objectName]: objectId,
-                comment_content: body.comment_content
-            }).then(comment => {
-                return res.status(200).send({ comment });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al crear el comentario ' + err });
-            });
-        } else {
-            return res.status(500).send({ message: 'No se encuentra el elemento al que se intenta asignar el comentario' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el elemento al que se intenta asignar el comentario ' + err });
-    });
-}
-
-function getComments(req, res) {
-    const objectType = req.params.objt;
-    const id = req.params.id;
-    comments_model.sequelize.query('SELECT c.*, (SELECT user_login FROM users u where u.id = c.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = c.user_id) as user_profile_image, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "comment_id", l.comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.comment_id = c.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM comments c WHERE ' + objectType + ' = ?', { replacements: [id], type: comments_model.sequelize.QueryTypes.SELECT })
-        .then(comments => {
-            return res.status(200).send({ comments });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al cargar los comentarios' });
-        });
-}
-
-function updateComment(req, res) {
-    const body = req.body;
-    comments_model.findByPk(body.id).then(comment => {
-        if (req.user.id === comment.user_id) {
-            comment.update({
-                comment_content: body.comment_content
-            }).then(() => {
-                return res.status(200).send({ comment });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario' });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el comentario' });
-    });
-}
-
-function deleteComment(req, res) {
-    const id = req.params.id;
-    console.log(id);
-    comments_model.findByPk(id).then(comment => {
-        if (comment && req.user.id === comment.user_id) {
-            comment.destroy({
-                where: {
-                    id: id
-                }
-            }).then(comment => {
-                return res.status(200).send({ comment });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar el comentario' });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el comentario' });
-    });
-}
-
-
-function createReply(req, res) {
-    const body = req.body;
-    let modelDefined = false;
-    let model;
-    let objectId;
-    let objectName;
-    if (body.comment_id && !modelDefined) {
-        model = comments_model;
-        modelDefined = true;
-        objectId = body.comment_id;
-        objectName = 'comment_id';
-    }
-    if (body.novel_rating_id && !modelDefined) {
-        model = novels_ratings_model;
-        modelDefined = true;
-        objectId = body.novel_rating_id;
-        objectName = 'novel_rating_id';
-    }
-    model.findByPk(objectId, { attributes: ['id'] }).then(object => {
-        if (object) {
-            comments_replys_model.create({
-                'user_id': req.user.id,
-                [objectName]: objectId,
-                reply_content: body.reply_content
-            }).then(comment_reply => {
-                return res.status(200).send({ comment_reply });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al crear la respuesta ' + err });
-            });
-        } else {
-            return res.status(500).send({ message: 'No se encuentra el elemento al que se intenta asignar la respuesta' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el elemento al que se intenta asignar la respuesta ' + err });
-    });
-}
-
-function getReplys(req, res) {
-    const objectType = req.params.objt;
-    const id = req.params.id;
-    comments_replys_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = cr.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = cr.user_id) as user_profile_image, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "comment_reply_id", l.comment_reply_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) FROM likes l where l.comment_reply_id = cr.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM comments_replys cr WHERE cr.' + objectType + ' = ?', { replacements: [id], type: chapters_comments_replys_model.sequelize.QueryTypes.SELECT })
-        .then(comment_replys => {
-            return res.status(200).send({ comment_replys });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al cargar las respuesta' });
-        });
-}
-
-function updateReplys(req, res) {
-    const body = req.body;
-    comments_replys_model.findByPk(body.id).then(comment_reply => {
-        if (req.user.id === comment_reply.user_id) {
-            comment_reply.update({
-                reply_content: body.reply_content
-            }).then(() => {
-                return res.status(200).send({ comment_reply });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar la respuesta' });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar la respuesta' });
-    });
-}
-
-function deleteReplys(req, res) {
-    const id = req.params.id;
-    console.log(id);
-    comments_replys_model.findByPk(id).then(comment_reply => {
-        if (comment_reply && req.user.id === comment_reply.user_id) {
-            comment_reply.destroy({
-                where: {
-                    id: id
-                }
-            }).then(comment_reply => {
-                return res.status(200).send({ comment_reply });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar la respuesta' });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar la respuesta' });
-    });
-}
 
 module.exports = {
     // Home
@@ -1282,49 +683,10 @@ module.exports = {
     createChapter,
     updateChapter,
     deleteChapter,
-    // Chapters comments
-    createChapterComment,
-    getChapterComments,
-    updateChapterComment,
-    deleteChapterComment,
-    // Chapters comments replys
-    createChapterCommentReply,
-    getChapterCommentReplys,
-    updateChapterCommentReply,
-    deleteChapterCommentReply,
     // Genres
     getGenres,
     // Novel ratings
     createNovelRating,
     updateNovelRating,
     deleteNovelRating,
-    // Novel ratings comments
-    createNovelRatingComment,
-    getNovelRatingComments,
-    updateNovelRatingComment,
-    deleteNovelRatingComment,
-    // Advertisements
-    getAdvertisement,
-    getAdvertisements,
-    getAdvertisementImage,
-    createAdvertisementComment,
-    updateAdvertisementComment,
-    deleteAdvertisementComment,
-    createAdvertisementCommentReply,
-    getAdvertisementCommentReplys,
-    updateAdvertisementCommentReply,
-    deleteAdvertisementCommentReply,
-    // Comments
-    createComment,
-    getComments,
-    updateComment,
-    deleteComment,
-    // Replys
-    createReply,
-    getReplys,
-    updateReplys,
-    deleteReplys,
-    // Likes
-    createLike,
-    deleteLike
 };

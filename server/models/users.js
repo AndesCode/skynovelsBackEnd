@@ -121,9 +121,13 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'chp_author',
             as: 'chapters',
         });
-        users.hasMany(models.chapters_comments, {
+        users.hasMany(models.comments, {
             foreignKey: 'user_id',
-            as: 'chapters_comments',
+            as: 'comments',
+        });
+        users.hasMany(models.replys, {
+            foreignKey: 'user_id',
+            as: 'replys',
         });
         users.hasMany(models.novels, {
             foreignKey: 'nvl_author',
@@ -144,10 +148,6 @@ module.exports = (sequelize, DataTypes) => {
         users.hasMany(models.volumes, {
             foreignKey: 'user_id',
             as: 'volumes',
-        });
-        users.hasMany(models.novels_ratings_comments, {
-            foreignKey: 'user_id',
-            as: 'novels_ratings_comments',
         });
         users.hasMany(models.likes, {
             foreignKey: 'user_id',

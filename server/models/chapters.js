@@ -140,8 +140,8 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'bkm_chapter',
             as: 'bookmarks',
         });
-        chapters.hasMany(models.chapters_comments, {
-            foreignKey: 'chapter_id',
+        chapters.hasMany(models.comments, {
+            foreignKey: 'chp_id',
             as: 'comments',
         });
     };

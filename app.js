@@ -16,18 +16,18 @@ const app = express();
 /**
  * Setting up CORS, such that it can work together with an Application at another domain / port
  */
- /*const whitelist = ['http://localhost:4200'];
- const corsOptions = {
-     origin: function(origin, callback) {
-         if (whitelist.indexOf(origin) !== -1) {
-             callback(null, true);
-         } else {
-             callback(new Error('Not allowed by CORS'));
-         }
-     },
-     credentials: true
- };
- app.use(cors(corsOptions));*/
+/*const whitelist = ['http://localhost:4200'];
+const corsOptions = {
+    origin: function(origin, callback) {
+        if (whitelist.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+};
+app.use(cors(corsOptions));*/
 
 app.use(cors({ origin: true, credentials: true }));
 app.options(cors({ origin: true, credentials: true }));
@@ -67,6 +67,7 @@ require('./server/routes/users')(app);
 require('./server/routes/novels')(app);
 require('./server/routes/forum')(app);
 require('./server/routes/adminPanel')(app);
+require('./server/routes/page')(app);
 // View engine setup
 app.set('view engine', 'handlebars');
 // Static folder

@@ -2,7 +2,7 @@
 const Sequelize = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-    const comments_replys = sequelize.define('comments_replys', {
+    const replys = sequelize.define('replys', {
         id: {
             autoIncrement: true,
             primaryKey: true,
@@ -39,24 +39,24 @@ module.exports = (sequelize, DataTypes) => {
         },
     });
 
-    comments_replys.associate = function(models) {
-        comments_replys.belongsTo(models.comments, {
+    replys.associate = function(models) {
+        replys.belongsTo(models.comments, {
             foreignKey: 'comment_id',
             as: 'comment'
         });
-        comments_replys.belongsTo(models.novels_ratings, {
+        replys.belongsTo(models.novels_ratings, {
             foreignKey: 'novel_rating_id',
             as: 'novel_rating'
         });
-        comments_replys.belongsTo(models.users, {
+        replys.belongsTo(models.users, {
             foreignKey: 'user_id',
             as: 'user'
         });
-        comments_replys.hasMany(models.likes, {
-            foreignKey: 'comment_reply_id',
+        replys.hasMany(models.likes, {
+            foreignKey: 'reply_id',
             as: 'likes',
         });
     };
 
-    return comments_replys;
+    return replys;
 };

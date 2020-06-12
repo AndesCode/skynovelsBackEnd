@@ -181,44 +181,48 @@ function passwordResetRequest(req, res) {
             user_email: req.body.user_email,
         }
     }).then(user => {
-        const token_data = jwt.createToken(user);
-        user.update({
-            user_verification_key: token_data.key
-        }).then(() => {
-            res.status(200).send({
-                message: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + token_data.token
+        if (user) {
+            const token_data = jwt.createToken(user);
+            user.update({
+                user_verification_key: token_data.key
+            }).then(() => {
+                res.status(200).send({
+                    message: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + token_data.token
+                });
+            }).catch(err => {
+                res.status(500).send({ message: 'Error al actualizar la key de usuario ' + err });
             });
-        }).catch(err => {
-            res.status(500).send({ message: 'Error al actualizar la key de usuario ' + err });
-        });
-        /*const transporter = nodemailer.createTransport({
-            host: 'smtp.ethereal.email',
-            port: 587,
-            auth: {
-                user: 'halle.lehner@ethereal.email',
-                pass: 'EQhdryhNC456BX7wKR'
-            }
-        });
-
-        let mailOptions = {
-            from: 'halle.lehner@ethereal.email',
-            to: req.body.user_email,
-            subject: 'Password reset test',
-            // template: '../templates/email-confirmation',
-            text: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + requestToken
-        };
-
-        transporter.sendMail(mailOptions, function(err, data) {
-            if (err) {
-                console.log(err);
-                res.status(500).send({ message: 'Error al enviar el correo ' + err });
-            } else {
-                console.log('Email enviado');
-                res.status(200).send({ message: 'Email enviado con exito' });
-            }
-        });*/
+            /*const transporter = nodemailer.createTransport({
+                host: 'smtp.ethereal.email',
+                port: 587,
+                auth: {
+                    user: 'halle.lehner@ethereal.email',
+                    pass: 'EQhdryhNC456BX7wKR'
+                }
+            });
+    
+            let mailOptions = {
+                from: 'halle.lehner@ethereal.email',
+                to: req.body.user_email,
+                subject: 'Password reset test',
+                // template: '../templates/email-confirmation',
+                text: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + requestToken
+            };
+    
+            transporter.sendMail(mailOptions, function(err, data) {
+                if (err) {
+                    console.log(err);
+                    res.status(500).send({ message: 'Error al enviar el correo ' + err });
+                } else {
+                    console.log('Email enviado');
+                    res.status(200).send({ message: 'Email enviado con exito' });
+                }
+            });*/
+        } else {
+            res.status(404).send({ message: 'No existe usuario registrado con el correo electronico especificado' });
+        }
     }).catch(err => {
-        res.status(500).send({ message: 'Error, No se encuentra el email especificado' });
+        res.status(500).send({ message: 'Error inesperado al cargar el usuario' });
     });
 }
 

@@ -53,6 +53,14 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'user_id',
             as: 'user'
         });
+        advertisements.hasMany(models.comments, {
+            foreignKey: 'adv_id',
+            as: 'comments'
+        });
+        advertisements.hasMany(models.likes, {
+            foreignKey: 'adv_id',
+            as: 'likes'
+        });
     };
 
     advertisements.beforeCreate((advertisement, options) => {
