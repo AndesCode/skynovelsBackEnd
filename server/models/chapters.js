@@ -20,8 +20,12 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
-        chp_translator: DataTypes.STRING(45),
-        chp_translator_eng: DataTypes.STRING(45),
+        chp_translator: {
+            type: DataTypes.STRING(12),
+            validate: {
+                len: [0, 12]
+            }
+        },
         nvl_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -89,24 +93,27 @@ module.exports = (sequelize, DataTypes) => {
         chp_content: {
             type: DataTypes.TEXT,
             allowNull: false,
+            validate: {
+                len: [50, 65535]
+            }
         },
         chp_review: {
-            type: DataTypes.STRING(1500),
+            type: DataTypes.STRING(5500),
             validate: {
-                len: [0, 1500]
+                len: [0, 5500]
             }
         },
         chp_title: {
-            type: DataTypes.STRING(90),
+            type: DataTypes.STRING(250),
             allowNull: false,
             validate: {
-                len: [2, 90]
+                len: [2, 250]
             }
         },
         chp_index_title: {
-            type: DataTypes.STRING(30),
+            type: DataTypes.STRING(60),
             allowNull: false,
-            validate: { len: [2, 30] }
+            validate: { len: [2, 60] }
         },
         chp_status: {
             type: DataTypes.STRING(8),
@@ -117,9 +124,8 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         chp_name: {
-            type: DataTypes.STRING(30),
-            allowNull: false,
-            validate: { len: [2, 30] }
+            type: DataTypes.STRING(60),
+            validate: { len: [2, 60] }
         },
     });
 
@@ -137,7 +143,7 @@ module.exports = (sequelize, DataTypes) => {
             as: 'author'
         });
         chapters.hasMany(models.bookmarks, {
-            foreignKey: 'bkm_chapter',
+            foreignKey: 'chp_id',
             as: 'bookmarks',
         });
         chapters.hasMany(models.comments, {

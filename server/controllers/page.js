@@ -53,21 +53,19 @@ function createLike(req, res) {
             }).then(like => {
                 return res.status(200).send({ like });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al asignar el "Me gusta" ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al asignar el "Me gusta"' });
             });
         } else {
             return res.status(500).send({ message: 'No se encuentra el elemento al que se intenta asignar el "Me gusta"' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el elemento al que se intenta asignar el "Me gusta"' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el elemento al que se intenta asignar el "Me gusta"' });
     });
 }
 
 function deleteLike(req, res) {
     const id = req.params.id;
-    likes_model.findByPk(id, {
-        attributes: ['id', 'novel_rating_id', 'reply_id', 'comment_id', 'adv_id', 'user_id'],
-    }).then(like => {
+    likes_model.findByPk(id).then(like => {
         if (req.user.id === like.user_id) {
             like.destroy({
                 where: {

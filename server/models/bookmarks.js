@@ -43,7 +43,7 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true,
             }
         },
-        bkm_chapter: {
+        chp_id: {
             type: DataTypes.INTEGER,
             validate: {
                 isNumeric: true
@@ -61,14 +61,10 @@ module.exports = (sequelize, DataTypes) => {
             as: 'novel'
         });
         bookmarks.belongsTo(models.chapters, {
-            foreignKey: 'bkm_chapter',
-            as: 'bookmarks'
+            foreignKey: 'chp_id',
+            as: 'chapter'
         });
     };
-
-    bookmarks.beforeCreate((bookmark, options) => {
-        bookmark.bkm_chapter = 1;
-    });
 
     return bookmarks;
 };

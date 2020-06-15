@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         vlm_title: {
-            type: DataTypes.STRING(65),
+            type: DataTypes.STRING(125),
             validate: {
                 isUnique: function(value, next) {
                     var self = this;
@@ -37,7 +37,7 @@ module.exports = (sequelize, DataTypes) => {
                             return next(err);
                         });
                 },
-                len: [4, 65]
+                len: [4, 125]
             }
         },
         user_id: {

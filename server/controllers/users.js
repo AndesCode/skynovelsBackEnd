@@ -451,10 +451,79 @@ function getUserBookmarks(req, res) {
 function createUserbookmark(req, res) {
     const body = req.body;
     body.user_id = req.user.id;
-    bookmarks_model.create(body).then(bookmark => {
-        return res.status(200).send({ bookmark });
+    novels_model.findOne({
+        where: {
+            id: body.nvl_id,
+            nvl_status: 'Active'
+        },
+        attributes: ['id', 'nvl_status']
+    }).then(novel => {
+        if (novel) {
+            if (body.chp_id !== null) {
+                chapters_model.findOne({
+                    where: {
+                        id: body.chp_id,
+                        chp_status: 'Active',
+                    },
+                    attributes: ['id', 'chp_status']
+                }).then(chapter => {
+                    if (chapter) {
+                        bookmarks_model.create(body).then(bookmark => {
+                            return res.status(200).send({ bookmark });
+                        }).catch(err => {
+                            return res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
+                        });
+                    } else {
+                        return res.status(404).send({ message: 'El capitulo no existe o no esta activo' });
+                    }
+                }).catch(err => {
+                    return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo' });
+                });
+            } else {
+                bookmarks_model.create(body).then(bookmark => {
+                    return res.status(200).send({ bookmark });
+                }).catch(err => {
+                    return res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
+                });
+            }
+        } else {
+            return res.status(404).send({ message: 'La novela no existe o no esta activa' });
+        }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
+    });
+}
+
+function updateUserbookmark(req, res) {
+    const body = req.body;
+    bookmarks_model.findByPk(body.id).then(bookmark => {
+        if (req.user.id === bookmark.user_id) {
+            chapters_model.findOne({
+                where: {
+                    id: body.chp_id,
+                    chp_status: 'Active',
+                },
+                attributes: ['id', 'chp_status']
+            }).then(chapter => {
+                if (chapter) {
+                    bookmark.update({
+                        chp_id: body.chp_id
+                    }).then(() => {
+                        return res.status(200).send({ bookmark });
+                    }).catch(err => {
+                        return res.status(500).send({ message: 'Ocurrio un error al actualizar el marca-paginas' });
+                    });
+                } else {
+                    return res.status(404).send({ message: 'El capitulo no existe o no esta activo' });
+                }
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo' });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el marca-paginas' });
     });
 }
 
@@ -476,26 +545,6 @@ function removeUserbookmark(req, res) {
         }
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al cargar el marca libro' });
-    });
-}
-
-function updateUserbookmark(req, res) {
-    const body = req.body;
-    bookmarks_model.findByPk(body.id).then(bookmark => {
-        if (req.user.id === bookmark.user_id) {
-            console.log(body.bkm_chapter);
-            bookmark.update({
-                bkm_chapter: body.bkm_chapter
-            }).then(() => {
-                return res.status(200).send({ bookmark });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el marcapaginas' });
-            });
-        } else {
-            return res.status(401).send({ message: 'No autorizado' });
-        }
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el marcapaginas' });
     });
 }
 

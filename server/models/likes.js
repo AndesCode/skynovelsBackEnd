@@ -19,7 +19,6 @@ module.exports = (sequelize, DataTypes) => {
                     if (value) {
                         const self = this;
                         likes.findOne({
-                                attributes: ['id', 'novel_rating_id', 'reply_id', 'comment_id', 'adv_id', 'user_id'],
                                 where: {
                                     [Op.and]: [{ user_id: this.user_id }, { novel_rating_id: value }]
                                 }
@@ -47,7 +46,6 @@ module.exports = (sequelize, DataTypes) => {
                     if (value) {
                         const self = this;
                         likes.findOne({
-                                attributes: ['id', 'novel_rating_id', 'reply_id', 'comment_id', 'adv_id', 'user_id'],
                                 where: {
                                     [Op.and]: [{ user_id: this.user_id }, { reply_id: value }]
                                 }
@@ -75,7 +73,6 @@ module.exports = (sequelize, DataTypes) => {
                     if (value) {
                         const self = this;
                         likes.findOne({
-                                attributes: ['id', 'novel_rating_id', 'reply_id', 'comment_id', 'adv_id', 'user_id'],
                                 where: {
                                     [Op.and]: [{ user_id: this.user_id }, { comment_id: value }]
                                 }
@@ -103,7 +100,6 @@ module.exports = (sequelize, DataTypes) => {
                     if (value) {
                         const self = this;
                         likes.findOne({
-                                attributes: ['id', 'novel_rating_id', 'reply_id', 'comment_id', 'adv_id', 'user_id'],
                                 where: {
                                     [Op.and]: [{ user_id: this.user_id }, { adv_id: value }]
                                 }
