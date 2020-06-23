@@ -13,7 +13,7 @@ function changePasswordTokenAuth(req, res, next) {
         const decodedJwtData = JSON.parse(atob(jwtData));
         const user_id = decodedJwtData.sub;
         users.findByPk(user_id).then((user) => {
-            if (user.dataValues.user_status === 'Active') {
+            if (user && user.dataValues.user_status === 'Active') {
                 const payload = nJwT.verify(token, user.dataValues.user_verification_key, 'HS384', (err, verifiedJwT) => {
                     if (!err) {
                         next();
@@ -25,22 +25,7 @@ function changePasswordTokenAuth(req, res, next) {
                 return res.status(401).send({ message: 'No autorizado' });
             }
         }).catch(err => {
-            res.status(500).send({ message: 'No se encuentra usuario por el id indicado' });
-        });
-    }
-}
-
-function changePasswordAccessToken(req, res, next) {
-    if (!req.params.token) {
-        return res.status(403).send({ message: 'La petición no tiene la cabezera de autenticación' });
-    } else {
-        const token = req.params.token.replace(/['"]+/g, '');
-        const payload = nJwT.verify(token, user.dataValues.user_verification_key, 'HS384', (err, verifiedJwT) => {
-            if (!err) {
-                next();
-            } else {
-                return res.status(401).send({ message: 'No autorizado' });
-            }
+            res.status(500).send({ message: 'Ocurrio un error al cargar el usuario' });
         });
     }
 }
@@ -90,7 +75,7 @@ function auth(req, res, next) {
 }
 
 function forumAuth(req, res, next) {
-    if (req.user && req.user.user_status === 'Active' && req.user.user_forum_auth === 'Active' && req.isAuthenticated()) {
+    if (req.user && req.isAuthenticated() && req.user.user_status === 'Active' && req.user.user_forum_auth === 'Active') {
         next();
     } else {
         return res.status(401).send({ message: 'No autorizado' });
@@ -103,6 +88,5 @@ module.exports = {
     adminAuth,
     adminListsAuth,
     EditorAuth,
-    changePasswordTokenAuth,
-    changePasswordAccessToken
+    changePasswordTokenAuth
 };

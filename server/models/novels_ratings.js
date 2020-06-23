@@ -1,7 +1,6 @@
 /*jshint esversion: 6 */
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-
 module.exports = (sequelize, DataTypes) => {
     const novels_ratings = sequelize.define('novels_ratings', {
         id: {
@@ -56,9 +55,11 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(2000),
             allowNull: false,
             validate: {
-                len: [2, 2000]
+                len: {
+                    args: [2, 2000],
+                    msg: 'El comentario debe tener entre 2 y 2000 caracteres'
+                },
             }
-
         },
     });
 

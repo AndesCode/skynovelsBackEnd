@@ -1,7 +1,6 @@
 /*jshint esversion: 6 */
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-
 module.exports = (sequelize, DataTypes) => {
     const bookmarks = sequelize.define('bookmarks', {
         id: {
@@ -31,7 +30,7 @@ module.exports = (sequelize, DataTypes) => {
                             }
                         }).then(function(user_reading_list) {
                             if (user_reading_list && self.id !== user_reading_list.id) {
-                                return next({ message: 'error, No puedes agregar dos veces una misma novela a una lista de lectura' });
+                                return next({ message: 'Error, no puedes agregar dos veces una misma novela a una lista de lectura' });
                             } else {
                                 return next();
                             }

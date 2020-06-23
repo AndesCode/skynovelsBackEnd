@@ -1,12 +1,10 @@
 /*jshint esversion: 6 */
-var passport = require('passport');
-var LocalStrategy = require('passport-local').Strategy;
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcrypt');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-
-var users = require('../models').users;
-
+const users = require('../models').users;
 
 passport.serializeUser((user, done) => {
     console.log('serializando');

@@ -10,7 +10,6 @@ const replys_model = require('../models').replys;
 // files mannager
 const fs = require('fs');
 const path = require('path');
-const Sequelize = require('sequelize');
 
 // likes 
 
@@ -51,9 +50,13 @@ function createLike(req, res) {
                 'user_id': req.user.id,
                 [objectName]: objectId
             }).then(like => {
-                return res.status(200).send({ like });
+                return res.status(201).send({ like });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al asignar el "Me gusta"' });
+                if (err && err.errors && err.errors[0].message) {
+                    return res.status(400).send({ message: err.errors[0].message });
+                } else {
+                    return res.status(500).send({ message: 'Ocurrio un error al asignar el "Me gusta"' });
+                }
             });
         } else {
             return res.status(500).send({ message: 'No se encuentra el elemento al que se intenta asignar el "Me gusta"' });
@@ -74,13 +77,13 @@ function deleteLike(req, res) {
             }).then(like => {
                 return res.status(200).send({ like });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar el "Me gusta" ' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar el "Me gusta"' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el "Me gusta" ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el "Me gusta"' });
     });
 }
 
@@ -91,7 +94,7 @@ function getAdvertisements(req, res) {
         .then(advertisements => {
             return res.status(200).send({ advertisements });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error cargar los anuncios' + err });
+            return res.status(500).send({ message: 'Ocurrio un error cargar los anuncios' });
         });
 }
 
@@ -105,7 +108,7 @@ function getAdvertisement(req, res) {
                 return res.status(404).send({ message: 'No se encuentra ningún anuncio por el id indicado' });
             }
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error cargar el anuncio' + err });
+            return res.status(500).send({ message: 'Ocurrio un error cargar el anuncio' });
         });
 }
 
@@ -115,7 +118,7 @@ function getAdvertisementImage(req, res) {
         if (exists) {
             return res.status(200).sendFile(path.resolve(img_path));
         } else {
-            return res.status(404).send({ message: "No se encuentra la imagen de anuncio" });
+            return res.status(404).send({ message: 'No se encuentra la imagen de anuncio' });
         }
     });
 }
@@ -154,15 +157,19 @@ function createComment(req, res) {
                 [objectName]: objectId,
                 comment_content: body.comment_content
             }).then(comment => {
-                return res.status(200).send({ comment });
+                return res.status(201).send({ comment });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al crear el comentario ' + err });
+                if (err && err.errors && err.errors[0].message) {
+                    return res.status(400).send({ message: err.errors[0].message });
+                } else {
+                    return res.status(500).send({ message: 'Ocurrio un error al crear el comentario' });
+                }
             });
         } else {
             return res.status(500).send({ message: 'No se encuentra el elemento al que se intenta asignar el comentario' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el elemento al que se intenta asignar el comentario ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el elemento al que se intenta asignar el comentario' });
     });
 }
 
@@ -186,7 +193,11 @@ function updateComment(req, res) {
             }).then(() => {
                 return res.status(200).send({ comment });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario' });
+                if (err && err.errors && err.errors[0].message) {
+                    return res.status(400).send({ message: err.errors[0].message });
+                } else {
+                    return res.status(500).send({ message: 'Ocurrio un error al actualizar el comentario' });
+                }
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
@@ -244,22 +255,26 @@ function createReply(req, res) {
                 [objectName]: objectId,
                 reply_content: body.reply_content
             }).then(reply => {
-                return res.status(200).send({ reply });
+                return res.status(201).send({ reply });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al crear la respuesta ' });
+                if (err && err.errors && err.errors[0].message) {
+                    return res.status(400).send({ message: err.errors[0].message });
+                } else {
+                    return res.status(500).send({ message: 'Ocurrio un error al crear la respuesta' });
+                }
             });
         } else {
-            return res.status(500).send({ message: 'No se encuentra el elemento al que se intenta asignar la respuesta' });
+            return res.status(404).send({ message: 'No se encuentra el elemento al que se intenta asignar la respuesta' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el elemento al que se intenta asignar la respuesta ' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el elemento al que se intenta asignar la respuesta' });
     });
 }
 
 function getReplys(req, res) {
     const objectType = req.params.objt;
     const id = req.params.id;
-    replys_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = r.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = r.user_id) as user_profile_image, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "reply_id", l.reply_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = l.user_id))), "]"), JSON) FROM likes l WHERE l.reply_id = r.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM replys r WHERE r.' + objectType + ' = ?', { replacements: [id], type: chapters_replys_model.sequelize.QueryTypes.SELECT })
+    replys_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = r.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = r.user_id) as user_profile_image, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "reply_id", l.reply_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = l.user_id))), "]"), JSON) FROM likes l WHERE l.reply_id = r.id), CONVERT(CONCAT("[]"), JSON)) as likes FROM replys r WHERE r.' + objectType + ' = ?', { replacements: [id], type: replys_model.sequelize.QueryTypes.SELECT })
         .then(replys => {
             return res.status(200).send({ replys });
         }).catch(err => {
@@ -276,7 +291,11 @@ function updateReplys(req, res) {
             }).then(() => {
                 return res.status(200).send({ reply });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar la respuesta' });
+                if (err && err.errors && err.errors[0].message) {
+                    return res.status(400).send({ message: err.errors[0].message });
+                } else {
+                    return res.status(500).send({ message: 'Ocurrio un error al actualizar la respuesta' });
+                }
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });

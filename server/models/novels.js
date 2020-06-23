@@ -14,36 +14,68 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(25),
             defaultValue: null,
             validate: {
-                len: [0, 25],
+                len: {
+                    args: [0, 25],
+                    msg: 'El nombre del traductor de la novela debe tener entre 0 y 25 caracteres'
+                }
             }
         },
         nvl_translator_eng: {
             type: DataTypes.STRING(25),
+            defaultValue: null,
             validate: {
-                len: [0, 25],
+                len: {
+                    args: [0, 25],
+                    msg: 'El nombre del traductor a ingles de la novela debe tener entre 0 y 25 caracteres'
+                }
             }
         },
         nvl_content: {
             type: DataTypes.STRING(2500),
             allowNull: false,
             validate: {
-                len: [15, 2500],
+                len: {
+                    args: [15, 2500],
+                    msg: 'La sinopsis de la novela debe tener entre 15 y 2500 caracteres'
+                }
             }
         },
         nvl_title: {
             type: DataTypes.STRING(60),
             allowNull: false,
             validate: {
-                len: [4, 60],
+                isUnique: function(value, next) {
+                    const self = this;
+                    novels.findOne({ where: { nvl_title: value } })
+                        .then(function(novel) {
+                            if (novel && self.id !== novel.id) {
+                                return next({ message: 'error, nombre de novela coincidente' });
+                            }
+                            return next();
+                        })
+                        .catch(function(err) {
+                            return next(err);
+                        });
+                },
+                len: {
+                    args: [4, 60],
+                    msg: 'El titulo de la novela debe tener entre 4 y 60 caracteres'
+                },
+                notNull: {
+                    msg: 'Falta Indicar un titulo para la novela'
+                }
             }
         },
         nvl_acronym: DataTypes.STRING(8),
         nvl_status: {
             type: DataTypes.STRING(8),
             validate: {
-                isIn: [
-                    ['Active', 'Disabled', 'Finished']
-                ],
+                isIn: {
+                    args: [
+                        ['Active', 'Disabled', 'Finished']
+                    ],
+                    msg: 'El estado que se intenta asignar no esta permitido'
+                }
             }
         },
         nvl_publication_date: DataTypes.DATE,
@@ -51,10 +83,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(75),
             validate: {
                 isUnique: function(value, next) {
-                    var self = this;
+                    const self = this;
                     novels.findOne({ where: { nvl_name: value } })
-                        .then(function(novels) {
-                            if (novels && self.id !== novels.id) {
+                        .then(function(novel) {
+                            if (novel && self.id !== novel.id) {
                                 return next({ message: 'error, nombre de novela coincidente' });
                             }
                             return next();
@@ -68,14 +100,21 @@ module.exports = (sequelize, DataTypes) => {
         },
         nvl_writer: {
             type: DataTypes.STRING(25),
+            allowNull: false,
             validate: {
-                len: [0, 25],
+                len: {
+                    args: [0, 25],
+                    msg: 'El escritor de la novela debe tener entre 0 y 25 caracteres'
+                },
+                notNull: {
+                    msg: 'Falta Indicar el autor de la novela'
+                }
             }
         },
         nvl_img: {
-            type: DataTypes.STRING(65),
+            type: DataTypes.STRING(250),
             validate: {
-                len: [0, 65],
+                len: [0, 250],
             }
         },
         nvl_recommended: DataTypes.BOOLEAN,

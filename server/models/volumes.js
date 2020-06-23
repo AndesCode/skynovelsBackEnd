@@ -37,7 +37,10 @@ module.exports = (sequelize, DataTypes) => {
                             return next(err);
                         });
                 },
-                len: [4, 125]
+                len: {
+                    args: [4, 125],
+                    msg: 'El titulo del volumen o libro debe tener entre 4 y 125 caracteres'
+                },
             }
         },
         user_id: {

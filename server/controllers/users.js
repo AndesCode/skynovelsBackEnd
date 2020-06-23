@@ -1,18 +1,12 @@
 /*jshint esversion: 6 */
-var config = require('../config/config');
+const config = require('../config/config');
 // Models
 const bookmarks_model = require('../models').bookmarks;
 const invitations_model = require('../models').invitations;
 const users_model = require('../models').users;
 const novels_model = require('../models').novels;
 const novels_collaborators_model = require('../models').novels_collaborators;
-const novels_ratings_model = require('../models').novels_ratings;
 const chapters_model = require('../models').chapters;
-const forum_posts_model = require('../models').forum_posts;
-const posts_comments_model = require('../models').posts_comments;
-const forum_categories_model = require('../models').forum_categories;
-const genres_model = require('../models').genres;
-const volumes_model = require('../models').volumes;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
@@ -31,21 +25,21 @@ const thumb = require('node-thumbnail').thumb;
 const path = require('path');
 const passport = require('passport');
 
-
-// TESTS
-
 function createUser(req, res) {
     const body = req.body;
     if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/.test(body.user_pass)) {
-        res.status(500).send({ message: 'La contraseña no cumple con el parametro regex' });
-        return;
+        return res.status(400).send({ message: 'La contraseña no cumple con el parametro regex' });
     }
     console.log(body);
     users_model.create(body).then(user => {
         const activation_user_key = cryptr.encrypt(user.user_verification_key);
-        res.status(201).send({ activation_user_key }); // Aqui debe ir NodeMailer enviando la clave a traves de una URL
+        return res.status(201).send({ activation_user_key }); // Aqui debe ir NodeMailer enviando la clave a traves de una URL
     }).catch(err => {
-        res.status(500).send({ message: 'Error en el registro del usuario.<br>' + err.message });
+        if (err && err.errors && err.errors[0].message) {
+            return res.status(400).send({ message: err.errors[0].message });
+        } else {
+            return res.status(500).send({ message: 'Ocurrio un error en el registro del usuario' });
+        }
     });
 }
 
@@ -64,7 +58,7 @@ function getUser(req, res) {
                 return res.status(404).send({ message: 'No se encuentra ningún usuario' });
             }
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al buscar el usuario' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al buscar el usuario' });
         });
 }
 
@@ -76,34 +70,32 @@ function getUserNovels(req, res) {
                 .then(collaborations => {
                     return res.status(200).send({ novels, collaborations });
                 }).catch(err => {
-                    return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+                    return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas' });
                 });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+            return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas' });
         });
 }
 
 function activateUser(req, res) {
-    const key = req.params.key;
-    const decryptedkey = cryptr.decrypt(key);
+    const decryptedkey = cryptr.decrypt(req.body.key);
     console.log(decryptedkey);
     users_model.findOne({
         where: {
             user_verification_key: decryptedkey
         }
     }).then(user => {
-        console.log('activando el usuario con el email = ');
         const new_user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         user.update({
             user_status: 'Active',
             user_verification_key: new_user_verification_key
         }).then(() => {
-            res.status(200).send({ message: 'Usuario activado con exito! bienvenido ' + user.user_login });
+            return res.status(200).send({ message: '¡Usuario activado con exito!' });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio algún error activando el usuario ' + err });
+            return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario' });
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio algún error al encontrar esta clave secreta ' + err });
+        return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario' });
     });
 }
 
@@ -117,16 +109,20 @@ function updateUser(req, res) {
             user.update({
                 user_description: body.user_description
             }).then(() => {
-                res.status(200).send({ message: '¡Cambios guardados con exito!' });
+                return res.status(200).send({ message: '¡Cambios guardados con exito!' });
             }).catch(err => {
-                res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario ' + err });
+                if (err && err.errors && err.errors[0].message) {
+                    return res.status(400).send({ message: err.errors[0].message });
+                } else {
+                    return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario ' });
+                }
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
         }
 
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al buscar el usuario ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al buscar el usuario' });
     });
 }
 
@@ -146,7 +142,7 @@ function login(req, res, next) {
                         sknvl_s: token_data.token
                     });
                 }).catch(err => {
-                    res.status(500).send({ message: 'Error al actualizar la key de administrador ' + err });
+                    return res.status(500).send({ message: 'Error al actualizar la key de administrador' });
                 });
             } else {
                 let sToken;
@@ -168,11 +164,10 @@ function login(req, res, next) {
 }
 
 function logout(req, res) {
-    console.log("Usuario deslogeado " + req.user.user_login);
     req.logOut();
     req.session.destroy();
     res.clearCookie('sessionId');
-    res.status(200).send({ message: 'sesion finalizada' });
+    return res.status(200).send({ message: 'Sesion finalizada' });
 }
 
 function passwordResetRequest(req, res) {
@@ -182,15 +177,15 @@ function passwordResetRequest(req, res) {
         }
     }).then(user => {
         if (user) {
-            const token_data = jwt.createToken(user);
+            const token_data = jwt.createPasswordRecoveryToken(user);
             user.update({
                 user_verification_key: token_data.key
             }).then(() => {
-                res.status(200).send({
-                    message: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + token_data.token
+                return res.status(200).send({
+                    message: 'haz click en el enlace para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + token_data.token
                 });
             }).catch(err => {
-                res.status(500).send({ message: 'Error al actualizar la key de usuario ' + err });
+                return res.status(500).send({ message: 'Error al actualizar la key de usuario' });
             });
             /*const transporter = nodemailer.createTransport({
                 host: 'smtp.ethereal.email',
@@ -219,10 +214,10 @@ function passwordResetRequest(req, res) {
                 }
             });*/
         } else {
-            res.status(404).send({ message: 'No existe usuario registrado con el correo electronico especificado' });
+            return res.status(404).send({ message: 'No existe usuario registrado con el correo electronico especificado' });
         }
     }).catch(err => {
-        res.status(500).send({ message: 'Error inesperado al cargar el usuario' });
+        return res.status(500).send({ message: 'Error inesperado al cargar el usuario' });
     });
 }
 
@@ -240,25 +235,24 @@ function updateUserPassword(req, res) {
             const salt = bcrypt.genSaltSync(saltRounds);
             body.user_pass = bcrypt.hashSync(body.user_pass, salt);
             body.user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            user.update({
+                user_pass: body.user_pass,
+                user_verification_key: body.user_verification_key
+            }).then(() => {
+                return res.status(200).send({ message: '¡Contraseña actualizada con exito!' });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la contraseña ' });
+            });
         } else {
-            res.status(500).send({ message: 'La contraseña no cumple con el parametro regex' });
-            return;
+            return res.status(400).send({ message: 'La contraseña no cumple con el parametro regex' });
         }
-        user.update({
-            user_pass: body.user_pass,
-            user_verification_key: body.user_verification_key
-        }).then(() => {
-            res.status(200).send({ message: '¡Contraseña actualizada con exito!' });
-        }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar la contraseña ' + err });
-        });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar el usuario ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error cargar el usuario ' });
     });
 }
 
 function passwordResetAccess(req, res) {
-    res.status(200).send({ message: 'Acceso otorgado' });
+    return res.status(200).send({ message: 'Acceso otorgado' });
 }
 
 function uploadUserProfileImg(req, res) {
@@ -278,38 +272,27 @@ function uploadUserProfileImg(req, res) {
                     if (exists) {
                         fs.unlink(old_file_path, (err) => {
                             if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' + err });
-                            } else {
-                                console.log('imagen de usuario eliminada');
+                                return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
                             }
                         });
-                    } else {
-                        console.log('archivo con el nombre de imagen de usuario inexistente.');
                     }
                 });
                 fs.exists(old_file_thumb_path, (exists) => {
                     if (exists) {
                         fs.unlink(old_file_thumb_path, (err) => {
                             if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo.' + err });
-                            } else {
-                                console.log('thumb de usuario eliminada');
+                                return res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo' });
                             }
                         });
-                    } else {
-                        console.log('archivo con el nombre de imagen de usuario inexistente.');
                     }
                 });
             }
             const user_profile_image = {};
             user_profile_image.user_profile_image = file_name;
-
             users_model.findByPk(id).then(user => {
                 user.update(user_profile_image).then(() => {
-
                     const newPath = './server/uploads/users/' + file_name;
                     const thumbPath = './server/uploads/users/thumbs';
-
                     thumb({
                         source: path.resolve(newPath),
                         destination: path.resolve(thumbPath),
@@ -317,41 +300,41 @@ function uploadUserProfileImg(req, res) {
                         height: 280,
                         suffix: ''
                     }).then(() => {
-                        res.status(200).send({ user });
+                        return res.status(200).send({ user });
                     }).catch(err => {
                         fs.unlink(file_path, (err) => {
                             if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
+                                return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
                             }
                         });
-                        res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail.' });
+                        return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail.' });
                     });
                 }).catch(err => {
                     fs.unlink(file_path, (err) => {
                         if (err) {
-                            res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
+                            return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                         }
                     });
-                    res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario.' });
+                    return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario.' });
                 });
             }).catch(err => {
                 fs.unlink(file_path, (err) => {
                     if (err) {
-                        res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
+                        return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                     }
                 });
-                res.status(500).send({ message: 'No existe el usuario.' });
+                return res.status(500).send({ message: 'No existe el usuario.' });
             });
         } else {
             fs.unlink(file_path, (err) => {
                 if (err) {
-                    res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
+                    return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                 }
             });
-            res.status(500).send({ message: 'La extensión del archivo no es valida.' });
+            return res.status(400).send({ message: 'La extensión del archivo no es valida.' });
         }
     } else {
-        res.status(400).send({ message: 'Debe Seleccionar un usuario.' });
+        return res.status(400).send({ message: 'Debe Seleccionar un usuario.' });
     }
 }
 
@@ -368,9 +351,9 @@ function getUserProfileImage(req, res) {
 
     fs.exists(img_path, (exists) => {
         if (exists) {
-            res.sendFile(path.resolve(img_path));
+            return res.sendFile(path.resolve(img_path));
         } else {
-            res.status(404).send({
+            return res.status(404).send({
                 message: "No se encuentra la imagen del usuario"
             });
         }
@@ -469,9 +452,13 @@ function createUserbookmark(req, res) {
                 }).then(chapter => {
                     if (chapter) {
                         bookmarks_model.create(body).then(bookmark => {
-                            return res.status(200).send({ bookmark });
+                            return res.status(201).send({ bookmark });
                         }).catch(err => {
-                            return res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
+                            if (err && err.errors && err.errors[0].message) {
+                                return res.status(400).send({ message: err.errors[0].message });
+                            } else {
+                                return res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' });
+                            }
                         });
                     } else {
                         return res.status(404).send({ message: 'El capitulo no existe o no esta activo' });
@@ -481,9 +468,13 @@ function createUserbookmark(req, res) {
                 });
             } else {
                 bookmarks_model.create(body).then(bookmark => {
-                    return res.status(200).send({ bookmark });
+                    return res.status(201).send({ bookmark });
                 }).catch(err => {
-                    return res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' + err });
+                    if (err && err.errors && err.errors[0].message) {
+                        return res.status(400).send({ message: err.errors[0].message });
+                    } else {
+                        return res.status(500).send({ message: 'Ocurrio un error al agregar la novela a la lista de lectura' });
+                    }
                 });
             }
         } else {
@@ -511,7 +502,11 @@ function updateUserbookmark(req, res) {
                     }).then(() => {
                         return res.status(200).send({ bookmark });
                     }).catch(err => {
-                        return res.status(500).send({ message: 'Ocurrio un error al actualizar el marca-paginas' });
+                        if (err && err.errors && err.errors[0].message) {
+                            return res.status(400).send({ message: err.errors[0].message });
+                        } else {
+                            return res.status(500).send({ message: 'Ocurrio un error al actualizar el marca-paginas' });
+                        }
                     });
                 } else {
                     return res.status(404).send({ message: 'El capitulo no existe o no esta activo' });
@@ -523,7 +518,7 @@ function updateUserbookmark(req, res) {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el marca-paginas' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el marca-paginas' });
     });
 }
 
@@ -538,7 +533,7 @@ function removeUserbookmark(req, res) {
             }).then(bookmark => {
                 return res.status(200).send({ bookmark });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar la novela de la lista de lectura' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar la novela de la lista de lectura' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
@@ -593,28 +588,28 @@ function createUserInvitation(req, res) {
                                             invitation_to_id: user.id,
                                             invitation_novel: body.invitation_novel
                                         }).then(invitation => {
-                                            return res.status(200).send({ invitation });
+                                            return res.status(201).send({ invitation });
                                         }).catch(err => {
                                             return res.status(500).send({ message: 'Ocurrio un error al crear la invitación del usuario' });
                                         });
                                     } else {
-                                        return res.status(500).send({ message: 'Ya has invitado al usuario' });
+                                        return res.status(400).send({ message: 'Ya has invitado al usuario' });
                                     }
                                 }).catch(err => {
-                                    return res.status(500).send({ message: 'Ocurrio un error al buscar la invitación ' + err });
+                                    return res.status(500).send({ message: 'Ocurrio un error al buscar la invitación' });
                                 });
                             } else {
-                                return res.status(500).send({ message: '¡No te puedes invitar a ti mismo!' });
+                                return res.status(400).send({ message: '¡No te puedes invitar a ti mismo!' });
                             }
                         }
                     } else {
-                        return res.status(500).send({ message: 'Usuario debe ser Editor o Administrador' });
+                        return res.status(400).send({ message: 'Usuario debe ser Editor o Administrador' });
                     }
                 } else {
-                    return res.status(500).send({ message: 'No se encuentra ningún usuario por ese nombre' });
+                    return res.status(400).send({ message: 'No se encuentra ningún usuario por ese nombre' });
                 }
             }).catch(err => {
-                return res.status(500).send({ message: 'Ha ocurrido algún error durante la busqueda de usuario ' + err });
+                return res.status(500).send({ message: 'Ha ocurrido algún error durante la carga del usuario' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
@@ -628,7 +623,7 @@ function getUserInvitations(req, res) {
             .then(invitations => {
                 return res.status(200).send({ invitations });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' + err });
+                return res.status(500).send({ message: 'Ocurrio un error al buscar la novela' });
             });
     } else {
         return res.status(401).send({ message: 'No autorizado' });
@@ -666,7 +661,7 @@ function updateUserInvitation(req, res) {
             return res.status(401).send({ message: 'No autorizado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar la invitación ' + err });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la invitación ' });
     });
 }
 

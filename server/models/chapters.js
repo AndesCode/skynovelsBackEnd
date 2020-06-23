@@ -1,8 +1,6 @@
 /*jshint esversion: 6 */
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-const novels_model = require('../models').novels;
-
 module.exports = (sequelize, DataTypes) => {
     const chapters = sequelize.define('chapters', {
         id: {
@@ -23,26 +21,16 @@ module.exports = (sequelize, DataTypes) => {
         chp_translator: {
             type: DataTypes.STRING(12),
             validate: {
-                len: [0, 12]
+                len: {
+                    args: [0, 12],
+                    msg: 'El traductor del capitulo debe tener entre 0 y 12 caracteres'
+                },
             }
         },
         nvl_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
             validate: {
-                isValidNovel: function(value, next) {
-                    chapters.sequelize.query('SELECT n.id FROM novels n WHERE n.id = ' + value, { type: chapters.sequelize.QueryTypes.SELECT })
-                        .then(function(novel) {
-                            if (novel.length > 0) {
-                                return next();
-                            } else {
-                                return next({ message: 'error, No existe una novela para asociar el capitulo' });
-                            }
-                        })
-                        .catch(function(err) {
-                            return next(err);
-                        });
-                },
                 isNumeric: true
             }
         },
@@ -50,19 +38,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
             validate: {
-                isValidNovel: function(value, next) {
-                    chapters.sequelize.query('SELECT v.id FROM volumes v WHERE v.id = ' + value + ' AND v.nvl_id = ' + this.nvl_id, { type: chapters.sequelize.QueryTypes.SELECT })
-                        .then(function(volume) {
-                            if (volume.length > 0) {
-                                return next();
-                            } else {
-                                return next({ message: 'error, No existe un volumen para asociar el capitulo' });
-                            }
-                        })
-                        .catch(function(err) {
-                            return next(err);
-                        });
-                },
                 isNumeric: true
             }
         },
@@ -78,7 +53,7 @@ module.exports = (sequelize, DataTypes) => {
                             }
                         }).then(function(chapter) {
                             if (chapter && self.id !== chapter.id) {
-                                return next({ message: 'error, ya tienes un capitulo con este numero de capitulo' });
+                                return next({ message: 'Error, ya tienes un capitulo con este numero de capitulo' });
                             } else {
                                 return next();
                             }
@@ -87,40 +62,59 @@ module.exports = (sequelize, DataTypes) => {
                             return next(err);
                         });
                 },
-                isNumeric: true,
+                isNumeric: {
+                    msg: 'El numero de capitulo debe ser numerico'
+                }
             }
         },
         chp_content: {
             type: DataTypes.TEXT,
             allowNull: false,
             validate: {
-                len: [50, 65535]
+                len: {
+                    args: [50, 65535],
+                    msg: 'El contenido del capitulo debe tener entre 50 y 65.535 caracteres'
+                },
             }
         },
         chp_review: {
             type: DataTypes.STRING(5500),
             validate: {
-                len: [0, 5500]
+                len: {
+                    args: [0, 5500],
+                    msg: 'El comentario del escritor debe tener entre 0 y 5.500 caracteres'
+                },
             }
         },
         chp_title: {
             type: DataTypes.STRING(250),
             allowNull: false,
             validate: {
-                len: [2, 250]
+                len: {
+                    args: [2, 250],
+                    msg: 'El titulo del capitulo debe tener entre 2 y 250 caracteres'
+                },
             }
         },
         chp_index_title: {
             type: DataTypes.STRING(60),
             allowNull: false,
-            validate: { len: [2, 60] }
+            validate: {
+                len: {
+                    args: [2, 60],
+                    msg: 'El titulo indice del capitulo debe tener entre 2 y 60 caracteres'
+                },
+            }
         },
         chp_status: {
             type: DataTypes.STRING(8),
             validate: {
-                isIn: [
-                    ['Active', 'Disabled']
-                ],
+                isIn: {
+                    args: [
+                        ['Active', 'Disabled']
+                    ],
+                    msg: 'El estado que se intenta asignar no esta permitido'
+                }
             }
         },
         chp_name: {

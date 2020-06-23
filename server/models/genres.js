@@ -17,16 +17,19 @@ module.exports = (sequelize, DataTypes) => {
                     genres.findOne({ where: { genre_name: value } })
                         .then(function(genre) {
                             if (genre && self.id !== genre.id) {
-                                return next({ message: 'error, nombre de genero coincidente' });
+                                return next({ message: 'Error, ya existe un genero con ese nombre' });
                             }
                             return next();
                         })
                         .catch(function(err) {
                             return next(err);
                         });
-                }
-            },
-            len: [2, 25],
+                },
+                len: {
+                    args: [2, 25],
+                    msg: 'El nombre del genero debe tener entre 2 y 25 caracteres'
+                },
+            }
         },
     }, {
         timestamps: false,

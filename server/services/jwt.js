@@ -1,8 +1,8 @@
 /*jshint esversion: 6 */
 const njwt = require('njwt');
 
-// Account activation token
-exports.createToken = (user) => {
+// Password recovery token
+exports.createPasswordRecoveryToken = (user) => {
     const signingKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const params = {
         sub: user.id,

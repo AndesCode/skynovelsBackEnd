@@ -13,7 +13,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(125),
             allowNull: false,
             validate: {
-                len: [5, 125],
+                len: {
+                    args: [5, 125],
+                    msg: 'El titulo del anuncio debe tener entre 5 y 125 caracteres'
+                },
             }
         },
         adv_name: {
@@ -30,20 +33,42 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(10000),
             allowNull: false,
             validate: {
-                len: [2, 10000]
+                len: {
+                    args: [2, 10000],
+                    msg: 'El contenido del anuncio debe tener entre 2 y 10.000 caracteres'
+                },
             }
         },
         adv_img: {
-            type: DataTypes.STRING(65),
+            type: DataTypes.STRING(250),
             validate: {
-                len: [0, 65],
+                len: [0, 250],
             }
         },
         adv_order: {
             type: DataTypes.INTEGER,
             allowNull: false,
             validate: {
-                isNumeric: true
+                isUniqueOrder: function(value, next) {
+                    const self = this;
+                    advertisements.findOne({
+                            where: {
+                                adv_order: value
+                            }
+                        }).then(function(advertisement) {
+                            if (advertisement && self.id !== advertisement.id) {
+                                return next({ message: 'Error, ya tienes un anuncio con este numero de orden' });
+                            } else {
+                                return next();
+                            }
+                        })
+                        .catch(function(err) {
+                            return next(err);
+                        });
+                },
+                isNumeric: {
+                    msg: 'El orden de anuncio debe ser numerico'
+                }
             }
         }
     });

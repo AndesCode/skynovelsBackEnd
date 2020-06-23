@@ -3,13 +3,11 @@
 const forum_categories_model = require('../models').forum_categories;
 const users_model = require('../models').users;
 const novels_model = require('../models').novels;
-const novels_ratings_model = require('../models').novels_ratings;
 const chapters_model = require('../models').chapters;
 const volumes_model = require('../models').volumes;
 const genres_model = require('../models').genres;
 const forum_posts_model = require('../models').forum_posts;
 const posts_comments_model = require('../models').posts_comments;
-const bookmarks_model = require('../models').bookmarks;
 const advertisements_model = require('../models').advertisements;
 // Sequelize
 const Sequelize = require('sequelize');
@@ -18,7 +16,7 @@ const Op = Sequelize.Op;
 const fs = require('fs');
 
 function adminPanelAccess(req, res) {
-    res.status(200).send({ message: 'Acceso otorgado', status: 200 });
+    return res.status(200).send({ message: 'Acceso otorgado', status: 200 });
 }
 
 // forum
@@ -31,7 +29,7 @@ function adminGetCategories(req, res) {
             attributes: ['id'],
         }]
     }).then(forum_categories => {
-        res.status(200).send({ forum_categories });
+        return res.status(200).send({ forum_categories });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error cargar las categorias' });
     });
@@ -40,9 +38,13 @@ function adminGetCategories(req, res) {
 function adminCreateCategory(req, res) {
     const body = req.body;
     forum_categories_model.create(body).then(forum_category => {
-        res.status(200).send({ forum_category });
+        return res.status(201).send({ forum_category });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria' });
+        if (err && err.errors && err.errors[0].message) {
+            return res.status(400).send({ message: err.errors[0].message });
+        } else {
+            return res.status(500).send({ message: 'Ocurrio un error al crear la nueva categoria' });
+        }
     });
 }
 
@@ -55,12 +57,16 @@ function adminUpdateCategory(req, res) {
             category_description: body.category_description,
             category_order: body.category_order
         }).then((forum_category) => {
-            res.status(200).send({ forum_category });
+            return res.status(200).send({ forum_category });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar la categoria' });
+            if (err && err.errors && err.errors[0].message) {
+                return res.status(400).send({ message: err.errors[0].message });
+            } else {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la categoria' });
+            }
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error cargar la categoria' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la categoria' });
     });
 }
 
@@ -72,12 +78,12 @@ function adminDeleteCategory(req, res) {
                 id: id
             }
         }).then(() => {
-            res.status(200).send({ forum_category });
+            return res.status(200).send({ forum_category });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro' });
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar la categoria del foro' });
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro' });
+        return res.status(500).send({ message: 'Ocurrio un error al encontrar la categoria del foro' });
     });
 }
 
@@ -101,9 +107,9 @@ function adminGetPosts(req, res) {
             }
         ]
     }).then(forum_posts => {
-        res.status(200).send({ forum_posts });
+        return res.status(200).send({ forum_posts });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar la publicación' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar las publicaciones' });
     });
 }
 
@@ -112,9 +118,13 @@ function adminUpdatePost(req, res) {
     const body = req.body;
     forum_posts_model.findByPk(body.id).then(post => {
         post.update(body).then((post) => {
-            res.status(200).send({ post });
+            return res.status(200).send({ post });
         }).catch(err => {
-            res.status(500).send({ message: 'Ocurrio un error al actualizar la publicación' });
+            if (err && err.errors && err.errors[0].message) {
+                return res.status(400).send({ message: err.errors[0].message });
+            } else {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la publicación' });
+            }
         });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al cargar la publicación' });
@@ -226,7 +236,7 @@ function adminDeleteUser(req, res) {
             return res.status(500).send({ message: 'Ocurrio un error al eliminar el usuario' });
         });
     }).catch(err => {
-        res.status(500).send({ message: 'Ocurrio un error al cargar el usuario' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el usuario' });
     });
 }
 
@@ -245,7 +255,11 @@ function adminUpdateUser(req, res) {
         }).then((user) => {
             return res.status(200).send({ user });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario' });
+            if (err && err.errors && err.errors[0].message) {
+                return res.status(400).send({ message: err.errors[0].message });
+            } else {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario' });
+            }
         });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error cargar el usuario' });
@@ -341,7 +355,11 @@ function adminUpdateNovel(req, res) {
                 }
                 return res.status(200).send({ novel });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
+                if (err && err.errors && err.errors[0].message) {
+                    return res.status(400).send({ message: err.errors[0].message });
+                } else {
+                    return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
+                }
             });
         } else {
             return res.status(404).send({ message: 'No se encuentra la novela indicada' });
@@ -393,7 +411,11 @@ function adminUpdateNovelVolume(req, res) {
         volume.update(body).then(() => {
             return res.status(200).send({ volume });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al actualizar el volumen ' });
+            if (err && err.errors && err.errors[0].message) {
+                return res.status(400).send({ message: err.errors[0].message });
+            } else {
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar el volumen ' });
+            }
         });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al cargar el volumen' });
@@ -449,7 +471,11 @@ function adminUpdateChapter(req, res) {
                     chapter.update(body).then(() => {
                         return res.status(200).send({ chapter });
                     }).catch(err => {
-                        return res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulo ' });
+                        if (err && err.errors && err.errors[0].message) {
+                            return res.status(400).send({ message: err.errors[0].message });
+                        } else {
+                            return res.status(500).send({ message: 'Ocurrio un error al actualizar el capitulo' });
+                        }
                     });
                 } else {
                     return res.status(404).send({ message: 'Capitulo no encontrado' });
@@ -492,9 +518,13 @@ function adminCreateGenre(req, res) {
     const body = req.body;
     console.log(body);
     genres_model.create(body).then(genre => {
-        return res.status(200).send({ genre });
+        return res.status(201).send({ genre });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear el genero' });
+        if (err && err.errors && err.errors[0].message) {
+            return res.status(400).send({ message: err.errors[0].message });
+        } else {
+            return res.status(500).send({ message: 'Ocurrio un error al crear el genero' });
+        }
     });
 }
 
@@ -506,7 +536,11 @@ function adminUpdateGenre(req, res) {
             genre.update(body).then(() => {
                 return res.status(200).send({ genre });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el genero' });
+                if (err && err.errors && err.errors[0].message) {
+                    return res.status(400).send({ message: err.errors[0].message });
+                } else {
+                    return res.status(500).send({ message: 'Ocurrio un error al actualizar el genero' });
+                }
             });
         } else {
             return res.status(404).send({ message: 'Genero no encontrado' });
@@ -563,7 +597,11 @@ function adminCreateAdvertisement(req, res) {
     advertisements_model.create(body).then(advertisement => {
         return res.status(200).send({ advertisement });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al crear el anuncio' });
+        if (err && err.errors && err.errors[0].message) {
+            return res.status(400).send({ message: err.errors[0].message });
+        } else {
+            return res.status(500).send({ message: 'Ocurrio un error al crear el anuncio' });
+        }
     });
 }
 
@@ -578,7 +616,11 @@ function adminUpdateAdvertisement(req, res) {
             }).then((advertisement) => {
                 return res.status(200).send({ advertisement });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar el anuncio' });
+                if (err && err.errors && err.errors[0].message) {
+                    return res.status(400).send({ message: err.errors[0].message });
+                } else {
+                    return res.status(500).send({ message: 'Ocurrio un error al actualizar el anuncio' });
+                }
             });
         } else {
             return res.status(404).send({ message: 'No se encuentra el anuncio indicado' });
@@ -633,7 +675,7 @@ function adminUploadAdvertisementImage(req, res) {
                     if (exists) {
                         fs.unlink(old_file_path, (err) => {
                             if (err) {
-                                res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
+                                return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
                             }
                         });
                     }

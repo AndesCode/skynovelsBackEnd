@@ -1,11 +1,6 @@
 /*jshint esversion: 6 */
-const config = require('../config/config');
-// Encrypters
 const bcrypt = require('bcrypt');
-const Cryptr = require('cryptr');
-const cryptr = new Cryptr(config.key);
 const saltRounds = 10;
-
 module.exports = (sequelize, DataTypes) => {
     const users = sequelize.define('users', {
         id: {
@@ -21,7 +16,10 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             unique: true,
             validate: {
-                len: [2, 12],
+                len: {
+                    args: [2, 12],
+                    msg: 'El login de usuario debe tener entre 2 y 12 caracteres'
+                },
                 isUnique: function(value, next) {
                     const self = this;
                     users.findOne({ where: { user_login: value } })
@@ -60,32 +58,46 @@ module.exports = (sequelize, DataTypes) => {
                             return next(err);
                         });
                 },
-                isEmail: true,
-                len: [1, 75],
+                isEmail: {
+                    msg: 'El email indicado no es valido'
+                },
+                len: {
+                    args: [1, 75],
+                    msg: 'El email de usuario debe tener entre 1 y 75 caracteres'
+                },
             }
         },
         user_rol: {
             type: DataTypes.STRING(6),
             validate: {
-                isIn: [
-                    ['User', 'Admin', 'Editor']
-                ],
+                isIn: {
+                    args: [
+                        ['User', 'Admin', 'Editor']
+                    ],
+                    msg: 'El rol que se intenta asignar no esta permitido'
+                }
             }
         },
         user_status: {
             type: DataTypes.STRING(8),
             validate: {
-                isIn: [
-                    ['Active', 'Disabled']
-                ],
+                isIn: {
+                    args: [
+                        ['Active', 'Disabled']
+                    ],
+                    msg: 'El estado de usuario que se intenta asignar no esta permitido'
+                }
             }
         },
         user_forum_auth: {
             type: DataTypes.STRING(8),
             validate: {
-                isIn: [
-                    ['Active', 'Disabled']
-                ],
+                isIn: {
+                    args: [
+                        ['Active', 'Disabled']
+                    ],
+                    msg: 'El estado de acceso al foro que se intenta asignar no esta permitido'
+                }
             }
         },
         user_verification_key: DataTypes.STRING,
@@ -98,7 +110,10 @@ module.exports = (sequelize, DataTypes) => {
         user_description: {
             type: DataTypes.STRING(500),
             validate: {
-                len: [0, 500],
+                len: {
+                    args: [0, 500],
+                    msg: 'La descripción de usuario debe tener entre 0 y 500 caracteres'
+                },
             }
         },
     });

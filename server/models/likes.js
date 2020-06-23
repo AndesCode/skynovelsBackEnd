@@ -1,7 +1,6 @@
 /*jshint esversion: 6 */
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-
 module.exports = (sequelize, DataTypes) => {
     const likes = sequelize.define('likes', {
         id: {
@@ -24,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
                                 }
                             }).then(function(novel_rating_like) {
                                 if (novel_rating_like && self.id !== novel_rating_like.id) {
-                                    return next({ message: 'error, No puedes dar like dos veces a un mismo elemento' });
+                                    return next({ message: 'Error, No puedes dar like dos veces a un mismo elemento' });
                                 } else {
                                     return next();
                                 }
@@ -51,7 +50,7 @@ module.exports = (sequelize, DataTypes) => {
                                 }
                             }).then(function(reply_like) {
                                 if (reply_like && self.id !== reply_like.id) {
-                                    return next({ message: 'error, No puedes dar like dos veces a un mismo elemento' });
+                                    return next({ message: 'Error, No puedes dar like dos veces a un mismo elemento' });
                                 } else {
                                     return next();
                                 }
@@ -78,7 +77,7 @@ module.exports = (sequelize, DataTypes) => {
                                 }
                             }).then(function(comment_like) {
                                 if (comment_like && self.id !== comment_like.id) {
-                                    return next({ message: 'error, No puedes dar like dos veces a un mismo elemento' });
+                                    return next({ message: 'Error, No puedes dar like dos veces a un mismo elemento' });
                                 } else {
                                     return next();
                                 }
@@ -105,7 +104,7 @@ module.exports = (sequelize, DataTypes) => {
                                 }
                             }).then(function(advertisement_like) {
                                 if (advertisement_like && self.id !== advertisement_like.id) {
-                                    return next({ message: 'error, No puedes dar like dos veces a un mismo elemento' });
+                                    return next({ message: 'Error, No puedes dar like dos veces a un mismo elemento' });
                                 } else {
                                     return next();
                                 }
