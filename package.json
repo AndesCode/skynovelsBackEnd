@@ -2,7 +2,8 @@
     "name": "skynovels-server",
     "version": "1.0.0",
     "engines": {
-        "node": "6.11.1"
+        "npm": "6.13.6",
+        "node": "13.7.0"
     },
     "description": "skynovels-rest-api",
     "main": "app.js",
