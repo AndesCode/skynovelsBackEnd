@@ -14,10 +14,10 @@
         "dialect": "mysql"
     },
     "production": {
-        "username": "root",
-        "password": "andres23722",
-        "database": "skynovelsdb_new",
-        "host": "localhost",
+        "username": "b1988cfcaa083a",
+        "password": "278d5d8d",
+        "database": "heroku_eab4560e538bdb9",
+        "host": "eu-cdbr-west-03.cleardb.net",
         "dialect": "mysql"
     },
     "token_secret": "123ABc456r%SERT987o_",
