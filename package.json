@@ -1,37 +1,38 @@
 {
-    "name": "skynovels-server",
+    "name": "skynovels-api",
     "version": "1.0.0",
+    "description": "WebService for Skynovels",
+    "main": "app.js",
     "engines": {
         "npm": "6.13.6",
         "node": "13.7.0"
     },
-    "description": "skynovels-rest-api",
-    "main": "app.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "nodemon ./app.js",
         "start": "node ."
     },
-    "author": "andescode dev team",
+    "author": "AndesCode",
     "license": "ISC",
     "dependencies": {
         "atob": "^2.1.2",
-        "bcrypt": "^3.0.7",
+        "bcrypt": "^5.0.0",
         "connect-multiparty": "^2.2.0",
         "cors": "^2.8.5",
-        "cryptr": "^6.0.1",
+        "cryptr": "^6.0.2",
         "dotenv": "^8.2.0",
         "express": "^4.17.1",
-        "express-session": "^1.17.0",
+        "express-session": "^1.17.1",
         "fs": "0.0.1-security",
-        "morgan": "^1.9.1",
+        "helmet": "^3.23.2",
+        "morgan": "^1.10.0",
         "mysql2": "^2.1.0",
         "njwt": "^1.0.0",
-        "node-thumbnail": "^0.15.0",
-        "nodemailer": "^6.4.2",
+        "nodemailer": "^6.4.10",
         "passport": "^0.4.1",
         "passport-local": "^1.0.0",
-        "path": "https://github.com/AndesCode/SkynovelsWebApp.git^0.12.7",
-        "sequelize": "^5.21.3"
+        "path": "^0.12.7",
+        "sequelize": "^6.1.0",
+        "image-thumbnail": "^1.0.9"
     },
     "devDependencies": {
         "nodemon": "^2.0.2"

@@ -6,13 +6,6 @@
         "host": "localhost",
         "dialect": "mysql"
     },
-    "test": {
-        "username": "root",
-        "password": "andres23722",
-        "database": "skynovelsdb_new",
-        "host": "localhost",
-        "dialect": "mysql"
-    },
     "production": {
         "username": "b1988cfcaa083a",
         "password": "278d5d8d",

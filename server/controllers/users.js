@@ -21,7 +21,7 @@ const jwt = require('../services/jwt');
 const nodemailer = require("nodemailer");
 const atob = require('atob');
 const fs = require('fs');
-const thumb = require('node-thumbnail').thumb;
+const imageThumbnail = require('image-thumbnail');
 const path = require('path');
 const passport = require('passport');
 
@@ -290,33 +290,43 @@ function uploadUserProfileImg(req, res) {
             const user_profile_image = {};
             user_profile_image.user_profile_image = file_name;
             users_model.findByPk(id).then(user => {
-                user.update(user_profile_image).then(() => {
-                    const newPath = './server/uploads/users/' + file_name;
-                    const thumbPath = './server/uploads/users/thumbs';
-                    thumb({
-                        source: path.resolve(newPath),
-                        destination: path.resolve(thumbPath),
-                        width: 210,
-                        height: 280,
-                        suffix: ''
-                    }).then(() => {
-                        return res.status(200).send({ user });
+                if (user.id === req.user.id) {
+                    user.update(user_profile_image).then(() => {
+                        const newPath = './server/uploads/users/' + file_name;
+                        const thumbPath = './server/uploads/users/thumbs/' + file_name;
+                        const options = { width: 210, height: 280 };
+                        imageThumbnail(path.resolve(newPath), options)
+                            .then(thumbnail => {
+                                const buf = new Buffer(thumbnail, 'buffer');
+                                fs.writeFile(thumbPath, buf, function(err) {
+                                    if (err) {
+                                        fs.unlink(file_path, (error) => {
+                                            if (error) {
+                                                return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
+                                            }
+                                        });
+                                    }
+                                });
+                                return res.status(200).send({ message: 'Imagen de usuario cargada con exito' });
+                            }).catch(err => {
+                                fs.unlink(file_path, (err) => {
+                                    if (err) {
+                                        return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
+                                    }
+                                });
+                                return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail. ' });
+                            });
                     }).catch(err => {
                         fs.unlink(file_path, (err) => {
                             if (err) {
-                                return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
+                                return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                             }
                         });
-                        return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail.' });
+                        return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario.' });
                     });
-                }).catch(err => {
-                    fs.unlink(file_path, (err) => {
-                        if (err) {
-                            return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                        }
-                    });
-                    return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario.' });
-                });
+                } else {
+                    return res.status(401).send({ message: 'No autorizado' });
+                }
             }).catch(err => {
                 fs.unlink(file_path, (err) => {
                     if (err) {

@@ -7,10 +7,6 @@ const session = require('express-session');
 const cors = require('cors');
 const morgan = require('morgan');
 const passport = require('passport');
-
-/**
- * Creating a new express app
- */
 const app = express();
 
 /**
@@ -44,6 +40,14 @@ app.use(morgan('dev'));
 /**
  * Initializing the session magic of express-session package
  */
+/*app.use(session({
+    name: 'sessionId',
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: false
+        // cookie: { secure: true }
+})); Usa esto para ambiente de desarrollo*/
+
 app.use(session({
     name: 'sessionId',
     secret: 'keyboard cat',

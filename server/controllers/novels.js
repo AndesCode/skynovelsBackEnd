@@ -8,7 +8,8 @@ const users_model = require('../models').users;
 const genres_model = require('../models').genres;
 // files mannager
 const fs = require('fs');
-const thumb = require('node-thumbnail').thumb;
+// const thumb = require('node-thumbnail').thumb; // quitar esto
+const imageThumbnail = require('image-thumbnail');
 const path = require('path');
 //Sequelize
 const Sequelize = require('sequelize');
@@ -183,8 +184,6 @@ function uploadNovelImage(req, res) {
                 const old_img = req.body.old_novel_image;
                 old_file_path = './server/uploads/novels/' + old_img;
                 old_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
-                console.log(old_file_path);
-                console.log(old_file_thumb_path);
                 fs.exists(old_file_path, (exists) => {
                     if (exists) {
                         fs.unlink(old_file_path, (err) => {
@@ -210,33 +209,39 @@ function uploadNovelImage(req, res) {
                 if (novel.nvl_author === req.user.id) {
                     novel.update(novel_image).then(() => {
                         const newPath = './server/uploads/novels/' + file_name;
-                        const thumbPath = './server/uploads/novels/thumbs';
-                        thumb({
-                            source: path.resolve(newPath),
-                            destination: path.resolve(thumbPath),
-                            width: 210,
-                            height: 280,
-                            suffix: ''
-                        }).then(() => {
-                            return res.status(200).send({ novel });
-                        }).catch(err => {
-                            fs.unlink(file_path, (err) => {
-                                if (err) {
-                                    return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
-                                }
+                        const thumbPath = './server/uploads/novels/thumbs/' + file_name;
+                        const options = { width: 210, height: 280 };
+                        imageThumbnail(path.resolve(newPath), options)
+                            .then(thumbnail => {
+                                const buf = new Buffer(thumbnail, 'buffer');
+                                fs.writeFile(thumbPath, buf, function(err) {
+                                    if (err) {
+                                        fs.unlink(file_path, (error) => {
+                                            if (error) {
+                                                return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
+                                            }
+                                        });
+                                    }
+                                });
+                                return res.status(200).send({ message: 'Imagen de novela cargada con exito' });
+                            }).catch(err => {
+                                fs.unlink(file_path, (err) => {
+                                    if (err) {
+                                        return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
+                                    }
+                                });
+                                return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail. ' });
                             });
-                            return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail.' });
-                        });
                     }).catch(err => {
                         fs.unlink(file_path, (err) => {
                             if (err) {
                                 return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                             }
                         });
-                        return res.status(500).send({ message: 'Ocurrio un error al actualziar la novela.' });
+                        return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela.' + err });
                     });
                 } else {
-                    return res.status(401).send({ message: 'No autorizado a cambiar la imagen de la novela' });
+                    return res.status(401).send({ message: 'No autorizado' });
                 }
             }).catch(err => {
                 fs.unlink(file_path, (err) => {
