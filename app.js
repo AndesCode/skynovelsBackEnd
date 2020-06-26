@@ -76,12 +76,12 @@ require('./server/routes/page')(app);
 app.set('view engine', 'handlebars');
 // Static folder
 app.use('server', express.static(path.join(__dirname, 'server')));
-const port = parseInt(process.env.port, 10) || 3000;
+// const port = parseInt(process.env.port, 10) || 3000;
 app.get('*', (req, res) => {
     res.status(200).send({ message: 'Welcome to the server' });
 });
 const server = http.createServer(app);
-server.listen(port, function() {
+server.listen(process.env.PORT || 3000, function() {
     const host = server.address().address;
     const port = server.address().port;
     console.log('running at http://' + host + ':' + port);
