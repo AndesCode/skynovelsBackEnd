@@ -4,10 +4,18 @@ const http = require('http');
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
+const Sequelize = require("sequelize");
 const cors = require('cors');
 const morgan = require('morgan');
 const passport = require('passport');
 const app = express();
+
+const SequelizeStore = require("connect-session-sequelize")(session.Store);
+
+const sequelize = new Sequelize("skynovelsdb_new", "root", "andres23722", {
+    dialect: "mysql",
+    storage: "./session.mysql"
+});
 
 /**
  * Setting up CORS, such that it can work together with an Application at another domain / port
@@ -52,6 +60,11 @@ app.use(session({
     name: 'sessionId',
     secret: 'keyboard cat',
     resave: false,
+    store: new SequelizeStore({
+        db: sequelize,
+        checkExpirationInterval: 14400000, // The interval at which to cleanup expired sessions in milliseconds.
+        expiration: 15550000000 // The maximum age (in milliseconds) of a valid session.
+    }),
     saveUninitialized: false
         // cookie: { secure: true }
 }));
@@ -76,7 +89,6 @@ require('./server/routes/page')(app);
 app.set('view engine', 'handlebars');
 // Static folder
 app.use('server', express.static(path.join(__dirname, 'server')));
-// const port = parseInt(process.env.port, 10) || 3000;
 app.get('*', (req, res) => {
     res.status(200).send({ message: 'Welcome to the server' });
 });
