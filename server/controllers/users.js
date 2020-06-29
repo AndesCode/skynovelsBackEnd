@@ -58,7 +58,7 @@ function getUser(req, res) {
                 return res.status(404).send({ message: 'No se encuentra ningún usuario' });
             }
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al buscar el usuario' });
+            return res.status(500).send({ message: 'Ocurrio un error al cargar el usuario' + err });
         });
 }
 
