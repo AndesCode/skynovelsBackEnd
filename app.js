@@ -21,7 +21,7 @@ const sequelize = new Sequelize("skynovelsdb_new", "root", "andres23722", {
 if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
     app.use(cors({ origin: true, credentials: true }));
 } else {
-    const whitelist = ['https://skynovels.net'];
+    /*const whitelist = ['https://skynovels.net'];
     const corsOptions = {
         origin: function(origin, callback) {
             if (whitelist.indexOf(origin) !== -1) {
@@ -32,7 +32,8 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         },
         credentials: true
     };
-    app.use(cors(corsOptions));
+    app.use(cors(corsOptions));*/
+    app.use(cors({ origin: true, credentials: true }));
 }
 require('./server/passport/local-auth');
 app.use(express.json());
