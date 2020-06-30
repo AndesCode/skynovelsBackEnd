@@ -7,10 +7,10 @@
         "dialect": "mysql"
     },
     "production": {
-        "username": "b1988cfcaa083a",
-        "password": "278d5d8d",
-        "database": "heroku_eab4560e538bdb9",
-        "host": "eu-cdbr-west-03.cleardb.net",
+        "username": "d4k0imrxxsvazgb1",
+        "password": "ler3ssd05el9no24",
+        "database": "a52fqk1va6ivyh8l",
+        "host": "n2o93bb1bwmn0zle.chr7pe7iynqr.eu-west-1.rds.amazonaws.com",
         "dialect": "mysql"
     },
     "token_secret": "123ABc456r%SERT987o_",
