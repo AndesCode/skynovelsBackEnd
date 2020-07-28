@@ -12,9 +12,9 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 // Encrypters
 const bcrypt = require('bcrypt');
+const saltRounds = 10;
 const Cryptr = require('cryptr');
 const cryptr = new Cryptr(config.key);
-const saltRounds = 10;
 // Json web tokens
 const jwt = require('../services/jwt');
 // More requires
@@ -24,6 +24,21 @@ const fs = require('fs');
 const imageThumbnail = require('image-thumbnail');
 const path = require('path');
 const passport = require('passport');
+const hbs = require('nodemailer-express-handlebars');
+
+const transporter = nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    auth: {
+        user: 'mayra71@ethereal.email',
+        pass: 'numBwzhaPczEE6HjcJ'
+    }
+});
+
+transporter.use('compile', hbs({
+    viewEngine: 'express-handlebars',
+    viewPath: './views/'
+}));
 
 function createUser(req, res) {
     const body = req.body;
@@ -32,13 +47,35 @@ function createUser(req, res) {
     }
     console.log(body);
     users_model.create(body).then(user => {
+        console.log(user.user_verification_key);
         const activation_user_key = cryptr.encrypt(user.user_verification_key);
-        return res.status(201).send({ activation_user_key }); // Aqui debe ir NodeMailer enviando la clave a traves de una URL
+        console.log(activation_user_key);
+        const mailOptions = {
+            from: 'lucas.kessler13@ethereal.email',
+            to: req.body.user_email,
+            subject: 'Skynovels: Confirmación de registro',
+            text: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/activacion-de-usuario/' + activation_user_key,
+            context: {
+                token: 'http://localhost:4200/activacion-de-usuario/' + activation_user_key,
+                user: user.user_login
+            },
+            template: 'createUser'
+        };
+
+        transporter.sendMail(mailOptions, function(err, data) {
+            if (err) {
+                return res.status(500).send({ message: 'Error al enviar el correo' });
+            } else {
+                console.log('Email enviado');
+                return res.status(201).send({ message: 'Usuario creado con exito' });
+            }
+        });
+
     }).catch(err => {
         if (err && err.errors && err.errors[0].message) {
             return res.status(400).send({ message: err.errors[0].message });
         } else {
-            return res.status(500).send({ message: 'Ocurrio un error en el registro del usuario' });
+            return res.status(500).send({ message: 'Ocurrio un error en el registro de usuario' });
         }
     });
 }
@@ -90,7 +127,8 @@ function activateUser(req, res) {
             user_status: 'Active',
             user_verification_key: new_user_verification_key
         }).then(() => {
-            return res.status(200).send({ message: '¡Usuario activado con exito!' });
+            const userLogin = user.user_login;
+            return res.status(200).send({ user_login: userLogin });
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario' });
         });
@@ -171,6 +209,7 @@ function logout(req, res) {
 }
 
 function passwordResetRequest(req, res) {
+    console.log(req.body.user_email);
     users_model.findOne({
         where: {
             user_email: req.body.user_email,
@@ -181,43 +220,38 @@ function passwordResetRequest(req, res) {
             user.update({
                 user_verification_key: token_data.key
             }).then(() => {
-                return res.status(200).send({
-                    message: 'haz click en el enlace para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + token_data.token
+                const mailOptions = {
+                    from: 'lucas.kessler13@ethereal.email',
+                    to: req.body.user_email,
+                    subject: 'Skynovels: Restablecer contraseña',
+                    text: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/nueva-contraseña/' + token_data.token,
+                    context: {
+                        token: 'http://localhost:4200/nueva-contraseña/' + token_data.token,
+                        user: user.user_login
+                    },
+                    template: 'passwordResetRequest'
+                };
+
+                transporter.sendMail(mailOptions, function(err, data) {
+                    if (err) {
+                        return res.status(500).send({ message: 'Error al enviar el correo ' + err });
+                    } else {
+                        console.log('Email enviado');
+                        return res.status(200).send({ message: 'Email enviado con exito' });
+                    }
                 });
             }).catch(err => {
-                return res.status(500).send({ message: 'Error al actualizar la key de usuario' });
+                return res.status(500).send({ message: 'Error al actualizar la clave de usuario' });
             });
-            /*const transporter = nodemailer.createTransport({
-                host: 'smtp.ethereal.email',
-                port: 587,
-                auth: {
-                    user: 'halle.lehner@ethereal.email',
-                    pass: 'EQhdryhNC456BX7wKR'
-                }
-            });
-    
-            let mailOptions = {
-                from: 'halle.lehner@ethereal.email',
-                to: req.body.user_email,
-                subject: 'Password reset test',
-                // template: '../templates/email-confirmation',
-                text: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/reseteo-de-contraseña/' + requestToken
-            };
-    
-            transporter.sendMail(mailOptions, function(err, data) {
-                if (err) {
-                    console.log(err);
-                    res.status(500).send({ message: 'Error al enviar el correo ' + err });
-                } else {
-                    console.log('Email enviado');
-                    res.status(200).send({ message: 'Email enviado con exito' });
-                }
-            });*/
         } else {
             return res.status(404).send({ message: 'No existe usuario registrado con el correo electronico especificado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Error inesperado al cargar el usuario' });
+        if (err.message.includes('Invalid value')) {
+            return res.status(404).send({ message: 'No existe usuario registrado con el correo electronico especificado' });
+        } else {
+            return res.status(500).send({ message: 'Ocurrio algún error al enviar el correo, intentelo de nuevo' });
+        }
     });
 }
 
@@ -307,7 +341,7 @@ function uploadUserProfileImg(req, res) {
                                         });
                                     }
                                 });
-                                return res.status(200).send({ message: 'Imagen de usuario cargada con exito' });
+                                return res.status(200).send({ image: user.user_profile_image });
                             }).catch(err => {
                                 fs.unlink(file_path, (err) => {
                                     if (err) {
@@ -369,67 +403,6 @@ function getUserProfileImage(req, res) {
         }
     });
 }
-
-
-
-
-
-
-// Esta función create tiene la función de enviar email de confirmación deshabilitada temporalmente *nodemailer*
-/*function create(req, res) {
-    if (req.body.user_pass == req.body.user_confirm_pass) {
-        console.log(req.body);
-        var user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        var crypted_verification_key = cryptr.encrypt(user_verification_key);
-        users.create(req.body).then(user => {
-            console.log(req.body.user_pass);
-            var hashed_password = bcrypt.hash(req.body.user_pass, saltRounds, function(err, hash) {
-                if (err) {
-                    console.log('error ' + err);
-                } else {
-                    hashed_password = hash;
-                    user.update({
-                        user_verification_key: crypted_verification_key,
-                        user_pass: hashed_password
-                    }).then(() => {
-                        res.status(200).send({ user });
-                        const transporter = nodemailer.createTransport({
-                            host: 'smtp.ethereal.email',
-                            port: 587,
-                            auth: {
-                                user: 'halle.lehner@ethereal.email',
-                                pass: 'EQhdryhNC456BX7wKR'
-                            }
-                        });
-                        let mailOptions = {
-                            from: 'halle.lehner@ethereal.email',
-                            to: req.body.user_email,
-                            subject: 'testing stuff',
-                            // template: '../templates/email-confirmation',
-                            text: 'haz click en el enalce para activar tu cuenta de Skynovels! http://localhost:4200/verificacion/' + crypted_verification_key
-                        };
-                        transporter.sendMail(mailOptions, function(err, data) {
-                            if (err) {
-                                console.log(err);
-                                res.status(500).send({ message: 'Error al enviar el correo ' + err });
-                            } else {
-                                console.log('Email enviado');
-                            }
-                        });
-                    }).catch(err => {
-                        res.status(500).send({ message: 'Error al generar la clave secreta de usuario ' + err });
-                    });
-                }
-            });
-            console.log(user_verification_key);
-            console.log(hashed_password);
-        }).catch(err => {
-            res.status(500).send({ message: 'Error en el registro del usuario.<br>' + err.message });
-        });
-    } else {
-        res.status(500).send({ message: 'La contraseña no coincide con el campo de confirmación de contraseña.<br>' });
-    }
-}*/
 
 function getUserBookmarks(req, res) {
     const uid = req.user.id;

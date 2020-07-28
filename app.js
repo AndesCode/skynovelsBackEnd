@@ -4,19 +4,32 @@ const http = require('http');
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
-const Sequelize = require("sequelize");
+const MySQLStore = require('express-mysql-session')(session);
 const cors = require('cors');
 const morgan = require('morgan');
 const passport = require('passport');
 const app = express();
 const helmet = require("helmet");
 
-const SequelizeStore = require("connect-session-sequelize")(session.Store);
+const options = {
+    host: 'localhost',
+    user: 'root',
+    password: 'andres23722',
+    database: 'skynovelsdb_new',
+    expiration: 3024000000,
+    checkExpirationInterval: 14400000,
+    createDatabaseTable: true,
+    schema: {
+        tableName: 'sessions',
+        columnNames: {
+            session_id: 'sessionId',
+            expires: 'expires',
+            data: 'data'
+        }
+    }
+};
 
-const sequelize = new Sequelize("skynovelsdb_new", "root", "andres23722", {
-    dialect: "mysql",
-    storage: "./session.mysql"
-});
+const sessionStore = new MySQLStore(options);
 
 if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
     app.use(cors({ origin: true, credentials: true }));
@@ -47,27 +60,16 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         name: 'sessionId',
         secret: 'SimpleSecret',
         resave: false,
-        store: new SequelizeStore({
-            db: new Sequelize("skynovelsdb_new", "root", "andres23722", {
-                dialect: "mysql",
-                storage: "./session.mysql"
-            }),
-            checkExpirationInterval: 14400000,
-            expiration: 3024000000
-        }),
+        store: sessionStore,
         saveUninitialized: false,
     }));
 } else {
     console.log('Environment: production');
     app.use(session({
         name: 'sessionId',
-        secret: '$2b$10$ze2woQDHn5muWBmhW4XMHuJgn7R4HYSm6b0MDGxjr.CME4XKOriWK',
+        secret: '$2b$24$ze2wpHDHn5muWBmiq4XMHuJgn7R4_YSm6b0MDGxjr.CME4YKOriWK',
         resave: false,
-        store: new SequelizeStore({
-            db: sequelize,
-            checkExpirationInterval: 14400000,
-            expiration: 3024000000
-        }),
+        store: sessionStore,
         saveUninitialized: false,
         cookie: {
             secure: true,
@@ -101,6 +103,7 @@ app.set('view engine', 'handlebars');
 // Static folder
 app.use('server', express.static(path.join(__dirname, 'server')));
 app.get('*', (req, res) => {
+    console.log('ruta actual: ' + req.originalUrl);
     res.status(200).send({ message: 'Welcome to the server' });
 });
 const server = http.createServer(app);

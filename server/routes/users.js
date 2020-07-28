@@ -19,7 +19,7 @@ module.exports = (app) => {
     // Passwords
     app.post('/api/password-reset-request', userController.passwordResetRequest);
     app.post('/api/password-reset', md_auth.changePasswordTokenAuth, userController.updateUserPassword);
-    app.get('/api/password-reset-access/:token', md_auth.changePasswordTokenAuth, userController.passwordResetAccess);
+    app.get('/api/password-reset-access', md_auth.changePasswordTokenAuth, userController.passwordResetAccess);
     // Imgs
     app.post('/api/upload-user-profile-img/:id', [md_auth.auth, md_upload], userController.uploadUserProfileImg);
     app.get('/api/user-profile-img/:profile_img/:thumb', userController.getUserProfileImage);

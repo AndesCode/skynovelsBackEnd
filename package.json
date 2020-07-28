@@ -22,6 +22,7 @@
         "cryptr": "^6.0.2",
         "dotenv": "^8.2.0",
         "express": "^4.17.1",
+        "express-mysql-session": "^2.1.4",
         "express-session": "^1.17.1",
         "fs": "0.0.1-security",
         "helmet": "^3.23.3",
@@ -30,12 +31,13 @@
         "mysql2": "^2.1.0",
         "njwt": "^1.0.0",
         "nodemailer": "^6.4.10",
+        "nodemailer-express-handlebars": "^4.0.0",
         "passport": "^0.4.1",
         "passport-local": "^1.0.0",
         "path": "^0.12.7",
-        "sequelize": "^6.2.0"
+        "sequelize": "^6.3.0"
     },
     "devDependencies": {
-        "nodemon": "^2.0.2"
+        "nodemon": "^2.0.4"
     }
 }

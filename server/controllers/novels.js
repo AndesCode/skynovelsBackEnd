@@ -205,8 +205,16 @@ function uploadNovelImage(req, res) {
             }
             const novel_image = {};
             novel_image.nvl_img = file_name;
-            novels_model.findByPk(id).then(novel => {
-                if (novel.nvl_author === req.user.id) {
+            novels_model.findByPk(id, {
+                include: [{
+                    model: users_model,
+                    as: 'collaborators',
+                    attributes: ['id'],
+                    through: { attributes: [] },
+                }]
+            }).then(novel => {
+                const collaborators = novel.collaborators.map(collaborator => collaborator.id);
+                if (novel.nvl_author === req.user.id || collaborators.includes(req.user.id)) {
                     novel.update(novel_image).then(() => {
                         const newPath = './server/uploads/novels/' + file_name;
                         const thumbPath = './server/uploads/novels/thumbs/' + file_name;
@@ -223,7 +231,7 @@ function uploadNovelImage(req, res) {
                                         });
                                     }
                                 });
-                                return res.status(200).send({ message: 'Imagen de novela cargada con exito' });
+                                return res.status(200).send({ image: novel.nvl_img });
                             }).catch(err => {
                                 fs.unlink(file_path, (err) => {
                                     if (err) {
