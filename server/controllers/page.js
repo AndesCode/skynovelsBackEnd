@@ -2,7 +2,6 @@
 //Models
 const novels_ratings_model = require('../models').novels_ratings;
 const chapters_model = require('../models').chapters;
-const chapters_replys_model = require('../models').chapters_comments_replys;
 const advertisements_model = require('../models').advertisements;
 const likes_model = require('../models').likes;
 const comments_model = require('../models').comments;

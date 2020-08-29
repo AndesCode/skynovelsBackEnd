@@ -42,7 +42,7 @@ transporter.use('compile', hbs({
 
 function createUser(req, res) {
     const body = req.body;
-    if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/.test(body.user_pass)) {
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.,"'#{}()¡¿])[A-Za-z\d@$!%*?&.,"'#{}()¡¿]{8,16}$/.test(body.user_pass)) {
         return res.status(400).send({ message: 'La contraseña no cumple con el parametro regex' });
     }
     console.log(body);
@@ -265,7 +265,7 @@ function updateUserPassword(req, res) {
         return res.status(401).send({ message: 'Operación no permitida' });
     }
     users_model.findByPk(id).then(user => {
-        if (/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z_.\d]{8,16}$/.test(body.user_pass)) {
+        if (/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.,"'#{}()¡¿])[A-Za-z\d@$!%*?&.,"'#{}()¡¿]{8,16}$/.test(body.user_pass)) {
             const salt = bcrypt.genSaltSync(saltRounds);
             body.user_pass = bcrypt.hashSync(body.user_pass, salt);
             body.user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -297,7 +297,7 @@ function uploadUserProfileImg(req, res) {
         const file_name = file_split[3];
         const ext_split = file_name.split('\.');
         const file_ext = ext_split[1];
-        if (file_ext == 'jpg') {
+        if (file_ext.toUpperCase() === 'JPG' || file_ext.toUpperCase() === 'JEPG') {
             if (req.body.old_user_profile_image) {
                 const old_img = req.body.old_user_profile_image;
                 old_file_path = './server/uploads/users/' + old_img;

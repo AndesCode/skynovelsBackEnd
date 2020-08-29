@@ -8,7 +8,6 @@ const users_model = require('../models').users;
 const genres_model = require('../models').genres;
 // files mannager
 const fs = require('fs');
-// const thumb = require('node-thumbnail').thumb; // quitar esto
 const imageThumbnail = require('image-thumbnail');
 const path = require('path');
 //Sequelize
@@ -178,7 +177,7 @@ function uploadNovelImage(req, res) {
         const file_name = file_split[3];
         const ext_split = file_name.split('\.');
         const file_ext = ext_split[1];
-        if (file_ext == 'jpg') {
+        if (file_ext.toUpperCase() === 'JPG' || file_ext.toUpperCase() === 'JEPG') {
             if (req.body.old_novel_image) {
                 console.log('deleting old image from the novel');
                 const old_img = req.body.old_novel_image;
@@ -285,7 +284,7 @@ function getNovelImage(req, res) {
         if (exists) {
             return res.status(200).sendFile(path.resolve(img_path));
         } else {
-            return res.status(404).send({ message: "No se encuentra la imagen de novela" });
+            return res.status(404).send({ message: 'No se encuentra la imagen de novela' });
         }
     });
 }
@@ -301,11 +300,11 @@ function deleteNovel(req, res) {
                 delete_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
                 fs.unlink(delete_file_path, (err) => {
                     if (err) {
-                        return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua. ' });
+                        return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' });
                     } else {
                         fs.unlink(delete_file_thumb_path, (err) => {
                             if (err) {
-                                return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen thumb antigua. ' });
+                                return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen thumb antigua.' });
                             } else {
                                 return res.status(200);
                             }
@@ -320,13 +319,13 @@ function deleteNovel(req, res) {
             }).then(novel => {
                 return res.status(200).send({ novel });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar la novela ' });
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar la novela' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado a eliminar la novela' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela a eliminar ' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela a eliminar' });
     });
 }
 
@@ -356,8 +355,7 @@ function getChapterEdition(req, res) {
             include: [{
                 model: users_model,
                 as: 'collaborators',
-                attributes: ['id', 'user_login'],
-                through: { attributes: [] },
+                attributes: ['id', 'user_login']
             }]
         }]
     }).then(chapter => {
