@@ -16,6 +16,35 @@ const Sequelize = require('sequelize');
 
 // Novels
 
+function getHomeNovelsTest(req, res) {
+
+}
+
+function getHomeNovels(req, res) {
+    novels_model.sequelize.query('SELECT n.*, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating FROM  novels n  WHERE  n.nvl_status IN ("Active", "Finished") ORDER BY nvl_rating desc LIMIT 10', { type: novels_model.sequelize.QueryTypes.SELECT })
+        .then(topNovels => {
+            novels_model.sequelize.query('SELECT n.*, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating FROM  novels n  WHERE  n.nvl_status IN ("Active", "Finished") ORDER BY n.createdAt desc LIMIT 10', { type: novels_model.sequelize.QueryTypes.SELECT })
+                .then(recentNovels => {
+                    novels_model.sequelize.query('SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active") AS nvl_chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n  WHERE n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND n.nvl_recommended = true LIMIT 1', { type: novels_model.sequelize.QueryTypes.SELECT })
+                        .then(recommendedNovel => {
+                            novels_model.sequelize.query('SELECT n.*, (SELECT createdAt FROM chapters c where c.nvl_id = n.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS nvl_last_update FROM novels n  WHERE  n.nvl_status IN ("Active", "Finished") ORDER BY nvl_last_update DESC LIMIT 10', { type: novels_model.sequelize.QueryTypes.SELECT })
+                                .then(updatedNovels => {
+                                    return res.status(200).send({ topNovels, recentNovels, recommendedNovel, updatedNovels });
+                                }).catch(err => {
+                                    return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas actualizadas' });
+                                });
+                        }).catch(err => {
+                            return res.status(500).send({ message: 'Ocurrio un error al cargar la novela recomendada' });
+                        });
+                }).catch(err => {
+                    return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas recientes' });
+                });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al cargar las top novelas' });
+        });
+}
+
+/*
 function getHomeNovels(req, res) {
     novels_model.sequelize.query('SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id) AS chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n  WHERE  n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL ORDER BY nvl_rating desc LIMIT 10', { type: novels_model.sequelize.QueryTypes.SELECT })
         .then(topNovels => {
@@ -39,6 +68,7 @@ function getHomeNovels(req, res) {
             return res.status(500).send({ message: 'Ocurrio un error al cargar las top novelas' });
         });
 }
+*/
 
 function getUpdatedNovelsChapters(req, res) {
     const id = req.params.id;
@@ -55,9 +85,11 @@ function getNovel(req, res) {
     let query = '';
     if (req.params.action === 'reading' || req.params.action === 'edition') {
         if (req.params.action === 'reading') {
-            query = 'SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active") AS nvl_chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id, "chp_name", (SELECT chp_name FROM chapters ch WHERE ch.id = rl.chp_id))), "]"), JSON) FROM bookmarks rl where rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "id", v.id, "nvl_id", v.nvl_id, "user_id", v.user_id,"chapters", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) AS chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active"), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM volumes v WHERE v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1)), CONVERT(CONCAT("[]"), JSON)) as volumes,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) as likes FROM likes l where l.novel_rating_id = nr.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as novel_ratings,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n WHERE  n.id = ? AND n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL';
+            //query = 'SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active") AS nvl_chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id, "chp_name", (SELECT chp_name FROM chapters ch WHERE ch.id = rl.chp_id))), "]"), JSON) FROM bookmarks rl where rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "id", v.id, "nvl_id", v.nvl_id, "user_id", v.user_id,"chapters", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) AS chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active"), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM volumes v WHERE v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1)), CONVERT(CONCAT("[]"), JSON)) as volumes,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) as likes FROM likes l where l.novel_rating_id = nr.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as novel_ratings,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS genres FROM novels n WHERE n.id = ? AND n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL';
+            query = 'SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active" AND c.vlm_id IS NOT NULL) AS nvl_chapters, (SELECT createdAt FROM chapters c where c.nvl_id = n.id AND c.chp_status = "Active" AND c.vlm_id IS NOT NULL ORDER BY c.createdAt DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id, "chp_name", (SELECT chp_name FROM chapters ch WHERE ch.id = rl.chp_id))), "]"), JSON) FROM bookmarks rl WHERE rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "id", v.id, "nvl_id", v.nvl_id, "user_id", v.user_id,"chapters", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) AS chapters FROM chapters c WHERE c.vlm_id = v.id AND c.chp_status = "Active" AND c.vlm_id IS NOT NULL), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM volumes v WHERE v.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as volumes,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) as likes FROM likes l where l.novel_rating_id = nr.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as novel_ratings,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS genres FROM novels n WHERE n.id = ? AND n.nvl_status IN ("Active", "Finished")';
         } else {
-            query = 'SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id) AS nvl_chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id, "chp_name", (SELECT chp_name FROM chapters ch WHERE ch.id = rl.chp_id))), "]"), JSON) FROM bookmarks rl where rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "id", v.id, "nvl_id", v.nvl_id, "user_id", v.user_id,"chapters", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) AS chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status IS NOT NULL ), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM volumes v where v.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as volumes,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) as likes FROM likes l where l.novel_rating_id = nr.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as novel_ratings,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n  WHERE  n.id = ?';
+            // query = 'SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id) AS nvl_chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id, "chp_name", (SELECT chp_name FROM chapters ch WHERE ch.id = rl.chp_id))), "]"), JSON) FROM bookmarks rl where rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "id", v.id, "nvl_id", v.nvl_id, "user_id", v.user_id,"chapters", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) AS chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status IS NOT NULL ), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM volumes v where v.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as volumes,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) as likes FROM likes l where l.novel_rating_id = nr.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as novel_ratings,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS genres FROM novels n WHERE  n.id = ?';
+            query = 'SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id) AS nvl_chapters, (SELECT createdAt FROM chapters c where c.nvl_id = n.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id, "chp_name", (SELECT chp_name FROM chapters ch WHERE ch.id = rl.chp_id))), "]"), JSON) FROM bookmarks rl where rl.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "id", v.id, "nvl_id", v.nvl_id, "user_id", v.user_id,"chapters", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) AS chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status IS NOT NULL ), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM volumes v where v.nvl_id = n.id), CONVERT(CONCAT("[]"), JSON)) as volumes,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) as likes FROM likes l where l.novel_rating_id = nr.id), CONVERT(CONCAT("[]"), JSON)))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as novel_ratings,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS genres FROM novels n WHERE  n.id = ?';
         }
     } else {
         return res.status(500).send({ message: 'petición invalida' });
@@ -74,7 +106,19 @@ function getNovel(req, res) {
                 }
             } else {
                 if (novel[0].volumes && novel[0].volumes.length > 0) {
-                    return res.status(200).send({ novel });
+                    const activeVolumes = [];
+                    for (const volume of novel[0].volumes) {
+                        if (volume.chapters.length > 0) {
+                            activeVolumes.push(volume);
+                        }
+                    }
+                    novel[0].volumes = activeVolumes;
+                    if (novel[0].volumes.length > 0) {
+                        return res.status(200).send({ novel });
+                    } else {
+                        return res.status(404).send({ message: 'No se encontro ninguna novela' });
+                    }
+                    // test.push(this.novel.volumes[this.novel.volumes.findIndex(x => x.id === volume.id)]);
                 } else {
                     return res.status(404).send({ message: 'No se encontro ninguna novela' });
                 }
@@ -83,10 +127,30 @@ function getNovel(req, res) {
             return res.status(404).send({ message: 'No se encontro ninguna novela' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela ' + err });
     });
 }
 
+function getNovels(req, res) {
+    novels_model.sequelize.query('SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active") AS nvl_chapters, (SELECT createdAt FROM chapters c where c.nvl_id = n.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS genres FROM novels n WHERE n.nvl_status IN ("Active", "Finished")', { type: novels_model.sequelize.QueryTypes.SELECT })
+        .then(ActiveNovels => {
+            const novels = [];
+            for (const novel of ActiveNovels) {
+                if (novel.nvl_chapters > 0 && novel.genres.length > 0) {
+                    novels.push(novel);
+                }
+            }
+            if (novels.length > 0) {
+                return res.status(200).send({ novels });
+            } else {
+                return res.status(404).send({ message: 'No se encontraron novelas activas' });
+            }
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas' });
+        });
+}
+
+/* 
 function getNovels(req, res) {
     novels_model.sequelize.query('SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active") AS nvl_chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM novels n WHERE n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL', { type: novels_model.sequelize.QueryTypes.SELECT })
         .then(novels => {
@@ -95,11 +159,11 @@ function getNovels(req, res) {
             return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas' });
         });
 }
+*/
 
 function createNovel(req, res) {
     const body = req.body;
     body.nvl_author = req.user.id;
-
     novels_model.create(body).then(novel => {
         if (body.genres && body.genres.length > 0) {
             novel.setGenres(body.genres);
@@ -119,48 +183,60 @@ function updateNovel(req, res) {
     novels_model.findByPk(body.id).then(novel => {
         novels_model.sequelize.query('SELECT user_id FROM novels_collaborators WHERE novel_id = ' + novel.id, { type: novels_model.sequelize.QueryTypes.SELECT })
             .then(collaboratorsNovel => {
-                const novelCollaborators = collaboratorsNovel.map(collaborator => collaborator.user_id);
-                if (req.user && (req.user.id === novel.nvl_author || novelCollaborators.includes(req.user.id))) {
-                    if (body.nvl_status === 'Disabled') {
-                        body.nvl_recommended = 0;
-                    } else {
-                        body.nvl_recommended = novel.nvl_recommended;
-                    }
-                    if (novel.nvl_publication_date === null && body.nvl_status === 'Active') {
-                        body.nvl_publication_date = Sequelize.fn('NOW');
-                    } else {
-                        if (body.nvl_publication_date) {
-                            body.nvl_publication_date = novel.nvl_publication_date;
+                chapters_model.sequelize.query('SELECT id, chp_status FROM chapters WHERE nvl_id = ?', { replacements: [novel.id], type: chapters_model.sequelize.QueryTypes.SELECT })
+                    .then(novelsChapters => {
+                        const chapterNovels = novelsChapters.map(chapter => chapter.chp_status);
+                        if (novelsChapters.length <= 0 || chapterNovels.includes('Active') === false) {
+                            body.nvl_status = 'Disabled';
                         }
-                    }
-                    novel.update({
-                        nvl_content: body.nvl_content,
-                        nvl_title: body.nvl_title,
-                        nvl_acronym: body.nvl_acronym,
-                        nvl_status: body.nvl_status,
-                        nvl_publication_date: body.nvl_publication_date,
-                        nvl_recommended: body.nvl_recommended,
-                        nvl_writer: body.nvl_writer,
-                        nvl_translator: body.nvl_translator,
-                        nvl_translator_eng: body.nvl_translator_eng
-                    }).then((novel) => {
-                        if (body.genres && body.genres.length > 0) {
-                            novel.setGenres(body.genres);
-                        }
-                        if (body.collaborators && novel.nvl_author === req.user.id) {
-                            novel.setCollaborators(body.collaborators);
-                        }
-                        return res.status(200).send({ novel });
-                    }).catch(err => {
-                        if (err && err.errors && err.errors[0].message) {
-                            return res.status(400).send({ message: err.errors[0].message });
+                        const novelCollaborators = collaboratorsNovel.map(collaborator => collaborator.user_id);
+                        if (req.user && (req.user.id === novel.nvl_author || novelCollaborators.includes(req.user.id))) {
+                            if (body.genres && body.genres.length <= 0) {
+                                body.nvl_status = 'Disabled';
+                            }
+                            if (body.nvl_status === 'Disabled') {
+                                body.nvl_recommended = 0;
+                            } else {
+                                body.nvl_recommended = novel.nvl_recommended;
+                            }
+                            if (novel.nvl_publication_date === null && body.nvl_status === 'Active') {
+                                body.nvl_publication_date = Sequelize.fn('NOW');
+                            } else {
+                                if (body.nvl_publication_date) {
+                                    body.nvl_publication_date = novel.nvl_publication_date;
+                                }
+                            }
+                            novel.update({
+                                nvl_content: body.nvl_content,
+                                nvl_title: body.nvl_title,
+                                nvl_acronym: body.nvl_acronym,
+                                nvl_status: body.nvl_status,
+                                nvl_publication_date: body.nvl_publication_date,
+                                nvl_recommended: body.nvl_recommended,
+                                nvl_writer: body.nvl_writer,
+                                nvl_translator: body.nvl_translator,
+                                nvl_translator_eng: body.nvl_translator_eng
+                            }).then((novel) => {
+                                if (body.genres && body.genres.length > 0) {
+                                    novel.setGenres(body.genres);
+                                }
+                                if (body.collaborators && novel.nvl_author === req.user.id) {
+                                    novel.setCollaborators(body.collaborators);
+                                }
+                                return res.status(200).send({ novel });
+                            }).catch(err => {
+                                if (err && err.errors && err.errors[0].message) {
+                                    return res.status(400).send({ message: err.errors[0].message });
+                                } else {
+                                    return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
+                                }
+                            });
                         } else {
-                            return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
+                            return res.status(401).send({ message: 'No autorizado' });
                         }
+                    }).catch(err => {
+                        return res.status(500).send({ message: 'Ocurrio un error al cargar los capítulos de la novela' });
                     });
-                } else {
-                    return res.status(401).send({ message: 'No autorizado' });
-                }
             }).catch(err => {
                 return res.status(500).send({ message: 'Ocurrio un error al cargar los colaboradores de la novela' });
             });
@@ -177,7 +253,7 @@ function uploadNovelImage(req, res) {
         const file_name = file_split[3];
         const ext_split = file_name.split('\.');
         const file_ext = ext_split[1];
-        if (file_ext.toUpperCase() === 'JPG' || file_ext.toUpperCase() === 'JEPG') {
+        if (file_ext.toUpperCase() === 'JPG' || file_ext.toUpperCase() === 'JPEG') {
             if (req.body.old_novel_image) {
                 console.log('deleting old image from the novel');
                 const old_img = req.body.old_novel_image;
@@ -450,8 +526,7 @@ function updateChapter(req, res) {
                         as: 'volumes',
                         attributes: ['id']
                     }
-                ],
-                attributes: ['nvl_author']
+                ]
             }).then(novel => {
                 const collaborators = novel.collaborators.map(collaborator => collaborator.id);
                 const volumes = novel.volumes.map(volume => volume.id);
@@ -468,7 +543,27 @@ function updateChapter(req, res) {
                             chp_index_title: body.chp_index_title,
                             chp_status: body.chp_status
                         }).then(() => {
-                            return res.status(200).send({ chapter });
+                            if (novel.nvl_status === 'Active' || novel.nvl_status === 'Finished') {
+                                chapters_model.sequelize.query('SELECT id, chp_status FROM chapters WHERE nvl_id = ?', { replacements: [novel.id], type: chapters_model.sequelize.QueryTypes.SELECT })
+                                    .then(novelsChapters => {
+                                        const chapterNovels = novelsChapters.map(chapter => chapter.chp_status);
+                                        if (novelsChapters.length <= 0 || chapterNovels.includes('Active') === false) {
+                                            novel.update({
+                                                nvl_status: "Disabled"
+                                            }).then(() => {
+                                                return res.status(200).send({ chapter });
+                                            }).catch(err => {
+                                                return res.status(500).send({ message: 'Ocurrio un error actualizando el estado de la novela' });
+                                            });
+                                        } else {
+                                            return res.status(200).send({ chapter });
+                                        }
+                                    }).catch(err => {
+                                        return res.status(500).send({ message: 'Ocurrio un error cargando los capítulos de la novela' });
+                                    });
+                            } else {
+                                return res.status(200).send({ chapter });
+                            }
                         }).catch(err => {
                             if (err && err.errors && err.errors[0].message) {
                                 return res.status(400).send({ message: err.errors[0].message });
@@ -499,17 +594,48 @@ function deleteChapter(req, res) {
         include: [{
             model: novels_model,
             as: 'novel',
-            attributes: ['nvl_author']
+            attributes: ['id', 'nvl_author', 'nvl_status']
         }]
     }).then(chapter => {
+        const novel_id = chapter.novel.id;
         if (req.user.id === chapter.novel.nvl_author || req.user.id === chapter.chp_author) {
             chapter.destroy({
                 where: {
                     id: id
                 }
             }).then(chapter => {
-                return res.status(200).send({ chapter });
+                if (chapter.novel.nvl_status === 'Disabled') {
+                    return res.status(200).send({ chapter });
+                } else {
+                    chapters_model.sequelize.query('SELECT id, chp_status FROM chapters WHERE nvl_id = ?', { replacements: [novel_id], type: chapters_model.sequelize.QueryTypes.SELECT })
+                        .then(novelsChapters => {
+                            const chapterNovels = novelsChapters.map(chapter => chapter.chp_status);
+                            if (novelsChapters.length <= 0 || chapterNovels.includes('Active') === false) {
+                                console.log(novel_id);
+                                novels_model.findByPk(novel_id)
+                                    .then(novel => {
+                                        novel.update({
+                                            nvl_status: "Disabled"
+                                        }).then(() => {
+                                            return res.status(200).send({ chapter });
+                                        }).catch(err => {
+                                            console.log(err);
+                                            return res.status(500).send({ message: 'Ocurrio un error actualizando el estado de la novela' });
+                                        });
+                                    }).catch(err => {
+                                        console.log(err);
+                                        return res.status(500).send({ message: 'Ocurrio un error actualizando el estado de la novela' });
+                                    });
+                            } else {
+                                return res.status(200).send({ chapter });
+                            }
+                        }).catch(err => {
+                            console.log(err);
+                            return res.status(500).send({ message: 'Ocurrio un error al cargar los capítulos de la novela' });
+                        });
+                }
             }).catch(err => {
+                console.log(err);
                 return res.status(500).send({ message: 'Ocurrio un error al eliminar el capitulo indicado' });
             });
         } else {
@@ -662,28 +788,40 @@ function updateNovelVolume(req, res) {
 
 function deleteNovelVolume(req, res) {
     const id = req.params.id;
-    volumes_model.findByPk(id, {
-        include: [{
-            model: novels_model,
-            as: 'novel',
-            attributes: ['nvl_author']
-        }]
-    }).then(volume => {
-        if (req.user.id === volume.novel.nvl_author || req.user.id === volume.user_id) {
-            volume.destroy({
-                where: {
-                    id: id
-                }
-            }).then(volume => {
-                return res.status(200).send({ volume });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar el volumen indicado' });
-            });
+    chapters_model.findAll({
+        where: {
+            vlm_id: id
+        }
+    }).then(chapters => {
+        if (chapters.length > 0) {
+            return res.status(405).send({ message: 'No se puede eliminar un volumen con capitulos asociados' });
         } else {
-            return res.status(401).send({ message: 'No autorizado a eliminar el volumen de esta novela' });
+            volumes_model.findByPk(id, {
+                include: [{
+                    model: novels_model,
+                    as: 'novel',
+                    attributes: ['nvl_author']
+                }]
+            }).then(volume => {
+                if (req.user.id === volume.novel.nvl_author || req.user.id === volume.user_id) {
+                    volume.destroy({
+                        where: {
+                            id: id
+                        }
+                    }).then(volume => {
+                        return res.status(200).send({ volume });
+                    }).catch(err => {
+                        return res.status(500).send({ message: 'Ocurrio un error al eliminar el volumen indicado' });
+                    });
+                } else {
+                    return res.status(401).send({ message: 'No autorizado' });
+                }
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al cargar el volumen indicado' });
+            });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al buscar el volumen indicado' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar los capítulos del volumen' });
     });
 }
 
@@ -718,4 +856,6 @@ module.exports = {
     createNovelRating,
     updateNovelRating,
     deleteNovelRating,
+    // Test
+    getHomeNovelsTest
 };

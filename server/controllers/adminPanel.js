@@ -325,45 +325,55 @@ function adminGetNovels(req, res) {
 function adminUpdateNovel(req, res) {
     const body = req.body;
     novels_model.findByPk(body.id).then(novel => {
-        if (novel) {
-            if (body.nvl_status === 'Disabled') {
-                body.nvl_recommended = 0;
-            }
-            if (novel.nvl_publication_date === null && body.nvl_status === 'Active') {
-                body.nvl_publication_date = Sequelize.fn('NOW');
-            } else {
-                if (body.nvl_publication_date) {
-                    body.nvl_publication_date = novel.nvl_publication_date;
+        chapters_model.sequelize.query('SELECT id, chp_status FROM chapters WHERE nvl_id = ?', { replacements: [novel.id], type: chapters_model.sequelize.QueryTypes.SELECT })
+            .then(novelsChapters => {
+                const chapterNovels = novelsChapters.map(chapter => chapter.chp_status);
+                if (novelsChapters.length <= 0 || chapterNovels.includes('Active') === false) {
+                    body.nvl_status = 'Disabled';
                 }
-            }
-            novel.update({
-                nvl_content: body.nvl_content,
-                nvl_title: body.nvl_title,
-                nvl_acronym: body.nvl_acronym,
-                nvl_status: body.nvl_status,
-                nvl_publication_date: body.nvl_publication_date,
-                nvl_recommended: body.nvl_recommended,
-                nvl_writer: body.nvl_writer,
-                nvl_translator: body.nvl_translator,
-                nvl_translator_eng: body.nvl_translator_eng
-            }).then((novel) => {
-                if (body.genres && body.genres.length > 0) {
-                    novel.setGenres(body.genres);
+                if (body.genres && body.genres.length <= 0) {
+                    body.nvl_status = 'Disabled';
                 }
-                if (body.collaborators && body.collaborators.length > 0) {
-                    novel.setCollaborators(body.collaborators);
-                }
-                return res.status(200).send({ novel });
-            }).catch(err => {
-                if (err && err.errors && err.errors[0].message) {
-                    return res.status(400).send({ message: err.errors[0].message });
+                if (body.nvl_status === 'Disabled') {
+                    body.nvl_recommended = 0;
                 } else {
-                    return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
+                    body.nvl_recommended = novel.nvl_recommended;
                 }
+                if (novel.nvl_publication_date === null && body.nvl_status === 'Active') {
+                    body.nvl_publication_date = Sequelize.fn('NOW');
+                } else {
+                    if (body.nvl_publication_date) {
+                        body.nvl_publication_date = novel.nvl_publication_date;
+                    }
+                }
+                novel.update({
+                    nvl_content: body.nvl_content,
+                    nvl_title: body.nvl_title,
+                    nvl_acronym: body.nvl_acronym,
+                    nvl_status: body.nvl_status,
+                    nvl_publication_date: body.nvl_publication_date,
+                    nvl_recommended: body.nvl_recommended,
+                    nvl_writer: body.nvl_writer,
+                    nvl_translator: body.nvl_translator,
+                    nvl_translator_eng: body.nvl_translator_eng
+                }).then((novel) => {
+                    if (body.genres && body.genres.length > 0) {
+                        novel.setGenres(body.genres);
+                    }
+                    if (body.collaborators && novel.nvl_author === req.user.id) {
+                        novel.setCollaborators(body.collaborators);
+                    }
+                    return res.status(200).send({ novel });
+                }).catch(err => {
+                    if (err && err.errors && err.errors[0].message) {
+                        return res.status(400).send({ message: err.errors[0].message });
+                    } else {
+                        return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela' });
+                    }
+                });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al cargar los capítulos de la novela' });
             });
-        } else {
-            return res.status(404).send({ message: 'No se encuentra la novela indicada' });
-        }
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
     });
@@ -424,18 +434,30 @@ function adminUpdateNovelVolume(req, res) {
 
 function adminDeleteNovelVolume(req, res) {
     const id = req.params.id;
-    volumes_model.findByPk(id).then(volume => {
-        volume.destroy({
-            where: {
-                id: id
-            }
-        }).then(volume => {
-            return res.status(200).send({ volume });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error al eliminar el volumen indicado' });
-        });
+    chapters_model.findAll({
+        where: {
+            vlm_id: id
+        }
+    }).then(chapters => {
+        if (chapters.length > 0) {
+            return res.status(405).send({ message: 'No se puede eliminar un volumen con capitulos asociados' });
+        } else {
+            volumes_model.findByPk(id).then(volume => {
+                volume.destroy({
+                    where: {
+                        id: id
+                    }
+                }).then(volume => {
+                    return res.status(200).send({ volume });
+                }).catch(err => {
+                    return res.status(500).send({ message: 'Ocurrio un error al eliminar el volumen indicado' });
+                });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al cargar el volumen indicado' });
+            });
+        }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar el volumen indicado' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar los capítulos del volumen' });
     });
 }
 
@@ -456,20 +478,49 @@ function adminGetChapter(req, res) {
 
 function adminUpdateChapter(req, res) {
     const body = req.body;
-    novels_model.findByPk(body.nvl_id, {
-        include: [{
-            model: volumes_model,
-            as: 'volumes',
-            attributes: ['id']
-        }],
-        attributes: ['nvl_author']
-    }).then(novel => {
-        const volumes = novel.volumes.map(volume => volume.id);
-        if (novel && volumes.includes(Number(body.vlm_id))) {
-            chapters_model.findByPk(body.id).then(chapter => {
-                if (chapter) {
-                    chapter.update(body).then(() => {
-                        return res.status(200).send({ chapter });
+    chapters_model.findByPk(body.id).then(chapter => {
+        if (chapter) {
+            novels_model.findByPk(chapter.nvl_id, {
+                include: [{
+                    model: volumes_model,
+                    as: 'volumes',
+                    attributes: ['id']
+                }]
+            }).then(novel => {
+                const volumes = novel.volumes.map(volume => volume.id);
+                if (novel && (!body.vlm_id || volumes.includes(Number(body.vlm_id)))) {
+                    chapter.update({
+                        chp_translator: body.chp_translator,
+                        chp_translator_eng: body.chp_translator_eng,
+                        vlm_id: body.vlm_id,
+                        chp_number: body.chp_number,
+                        chp_content: body.chp_content,
+                        chp_review: body.chp_review,
+                        chp_title: body.chp_title,
+                        chp_index_title: body.chp_index_title,
+                        chp_status: body.chp_status
+                    }).then(() => {
+                        if (novel.nvl_status === 'Active' || novel.nvl_status === 'Finished') {
+                            chapters_model.sequelize.query('SELECT id, chp_status FROM chapters WHERE nvl_id = ?', { replacements: [novel.id], type: chapters_model.sequelize.QueryTypes.SELECT })
+                                .then(novelsChapters => {
+                                    const chapterNovels = novelsChapters.map(chapter => chapter.chp_status);
+                                    if (novelsChapters.length <= 0 || chapterNovels.includes('Active') === false) {
+                                        novel.update({
+                                            nvl_status: "Disabled"
+                                        }).then(() => {
+                                            return res.status(200).send({ chapter });
+                                        }).catch(err => {
+                                            return res.status(500).send({ message: 'Ocurrio un error actualizando el estado de la novela' });
+                                        });
+                                    } else {
+                                        return res.status(200).send({ chapter });
+                                    }
+                                }).catch(err => {
+                                    return res.status(500).send({ message: 'Ocurrio un error cargando los capítulos de la novela' });
+                                });
+                        } else {
+                            return res.status(200).send({ chapter });
+                        }
                     }).catch(err => {
                         if (err && err.errors && err.errors[0].message) {
                             return res.status(400).send({ message: err.errors[0].message });
@@ -478,35 +529,68 @@ function adminUpdateChapter(req, res) {
                         }
                     });
                 } else {
-                    return res.status(404).send({ message: 'Capitulo no encontrado' });
+                    return res.status(404).send({ message: 'Novela o volumen inexistentes para la actualización del capitulo' });
                 }
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo' });
+                return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
             });
         } else {
-            return res.status(404).send({ message: 'Novela o volumen inexistentes para la actualización del capitulo' });
+            return res.status(404).send({ message: 'No se encuentra el capitulo indicado' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo' });
     });
 }
 
 function adminDeleteChapter(req, res) {
     const id = req.params.id;
-    chapters_model.findByPk(id).then(chapter => {
-        if (chapter) {
-            chapter.destroy({
-                where: {
-                    id: id
-                }
-            }).then(chapter => {
+    chapters_model.findByPk(id, {
+        include: [{
+            model: novels_model,
+            as: 'novel',
+            attributes: ['id', 'nvl_author', 'nvl_status']
+        }]
+    }).then(chapter => {
+        const novel_id = chapter.novel.id;
+        chapter.destroy({
+            where: {
+                id: id
+            }
+        }).then(chapter => {
+            if (chapter.novel.nvl_status === 'Disabled') {
                 return res.status(200).send({ chapter });
-            }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al eliminar el capitulo indicado' });
-            });
-        } else {
-            return res.status(404).send({ message: 'Capitulo no encontrado' });
-        }
+            } else {
+                chapters_model.sequelize.query('SELECT id, chp_status FROM chapters WHERE nvl_id = ?', { replacements: [novel_id], type: chapters_model.sequelize.QueryTypes.SELECT })
+                    .then(novelsChapters => {
+                        const chapterNovels = novelsChapters.map(chapter => chapter.chp_status);
+                        if (novelsChapters.length <= 0 || chapterNovels.includes('Active') === false) {
+                            console.log(novel_id);
+                            novels_model.findByPk(novel_id)
+                                .then(novel => {
+                                    novel.update({
+                                        nvl_status: "Disabled"
+                                    }).then(() => {
+                                        return res.status(200).send({ chapter });
+                                    }).catch(err => {
+                                        console.log(err);
+                                        return res.status(500).send({ message: 'Ocurrio un error actualizando el estado de la novela' });
+                                    });
+                                }).catch(err => {
+                                    console.log(err);
+                                    return res.status(500).send({ message: 'Ocurrio un error actualizando el estado de la novela' });
+                                });
+                        } else {
+                            return res.status(200).send({ chapter });
+                        }
+                    }).catch(err => {
+                        console.log(err);
+                        return res.status(500).send({ message: 'Ocurrio un error al cargar los capítulos de la novela' });
+                    });
+            }
+        }).catch(err => {
+            console.log(err);
+            return res.status(500).send({ message: 'Ocurrio un error al eliminar el capitulo indicado' });
+        });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al cargar el capitulo a eliminar' });
     });

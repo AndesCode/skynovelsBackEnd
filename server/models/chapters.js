@@ -29,7 +29,6 @@ module.exports = (sequelize, DataTypes) => {
         },
         nvl_id: {
             type: DataTypes.INTEGER,
-            allowNull: false,
             validate: {
                 isNumeric: true
             }

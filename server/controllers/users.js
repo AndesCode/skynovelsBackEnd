@@ -101,9 +101,25 @@ function getUser(req, res) {
 
 function getUserNovels(req, res) {
     const id = req.user.id;
-    novels_model.sequelize.query('SELECT n.*, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n WHERE n.nvl_author = ?', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
+    novels_model.sequelize.query('SELECT n.*, (SELECT createdAt FROM chapters c where c.nvl_id = n.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS genres FROM novels n WHERE n.nvl_author = ?', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
         .then(novels => {
-            novels_collaborators_model.sequelize.query('SELECT n.*, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) as genres FROM  novels n, novels_collaborators nc WHERE nc.user_id = ? AND nc.novel_id = n.id', { replacements: [id], type: novels_collaborators_model.sequelize.QueryTypes.SELECT })
+            novels_collaborators_model.sequelize.query('SELECT n.*, (SELECT createdAt FROM chapters c where c.nvl_id = n.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS genres FROM novels n, novels_collaborators nc WHERE nc.novel_id = n.id AND nc.user_id = ?', { replacements: [id], type: novels_collaborators_model.sequelize.QueryTypes.SELECT })
+                .then(collaborations => {
+                    return res.status(200).send({ novels, collaborations });
+                }).catch(err => {
+                    return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas ' + err });
+                });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas ' + err });
+        });
+}
+
+/*
+function getUserNovels(req, res) {
+    const id = req.user.id;
+    novels_model.sequelize.query('SELECT n.*, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS genres FROM novels n WHERE n.nvl_author = ?', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
+        .then(novels => {
+            novels_collaborators_model.sequelize.query('SELECT n.*, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS genres FROM  novels n, novels_collaborators nc WHERE nc.user_id = ? AND nc.novel_id = n.id', { replacements: [id], type: novels_collaborators_model.sequelize.QueryTypes.SELECT })
                 .then(collaborations => {
                     return res.status(200).send({ novels, collaborations });
                 }).catch(err => {
@@ -113,6 +129,7 @@ function getUserNovels(req, res) {
             return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas' });
         });
 }
+*/
 
 function activateUser(req, res) {
     const decryptedkey = cryptr.decrypt(req.body.key);
@@ -297,7 +314,7 @@ function uploadUserProfileImg(req, res) {
         const file_name = file_split[3];
         const ext_split = file_name.split('\.');
         const file_ext = ext_split[1];
-        if (file_ext.toUpperCase() === 'JPG' || file_ext.toUpperCase() === 'JEPG') {
+        if (file_ext.toUpperCase() === 'JPG' || file_ext.toUpperCase() === 'JPEG') {
             if (req.body.old_user_profile_image) {
                 const old_img = req.body.old_user_profile_image;
                 old_file_path = './server/uploads/users/' + old_img;
