@@ -17,7 +17,6 @@
         "atob": "^2.1.2",
         "bcrypt": "^5.0.0",
         "connect-multiparty": "^2.2.0",
-        "connect-session-sequelize": "^7.0.0",
         "cors": "^2.8.5",
         "cryptr": "^6.0.2",
         "dotenv": "^8.2.0",
@@ -25,17 +24,17 @@
         "express-mysql-session": "^2.1.4",
         "express-session": "^1.17.1",
         "fs": "0.0.1-security",
-        "helmet": "^3.23.3",
-        "image-thumbnail": "^1.0.9",
+        "helmet": "^4.1.1",
+        "image-thumbnail": "^1.0.11",
         "morgan": "^1.10.0",
-        "mysql2": "^2.1.0",
+        "mysql2": "^2.2.5",
         "njwt": "^1.0.0",
         "nodemailer": "^6.4.10",
         "nodemailer-express-handlebars": "^4.0.0",
         "passport": "^0.4.1",
         "passport-local": "^1.0.0",
         "path": "^0.12.7",
-        "sequelize": "^6.3.0"
+        "sequelize": "^6.3.5"
     },
     "devDependencies": {
         "nodemon": "^2.0.4"

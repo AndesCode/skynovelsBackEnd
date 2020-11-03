@@ -102,13 +102,28 @@ require('./server/routes/page')(app);
 app.set('view engine', 'handlebars');
 // Static folder
 app.use('server', express.static(path.join(__dirname, 'server')));
-app.get('*', (req, res) => {
-    console.log('ruta actual: ' + req.originalUrl);
-    res.status(200).send({ message: 'Welcome to the server' });
-});
+
+if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
+    app.get('*', (req, res) => {
+        console.log('ruta actual: ' + req.originalUrl);
+        res.status(200).send({ message: 'Welcome to the server' });
+    });
+} else {
+    app.get('/api', (req, res) => {
+        console.log('ruta actual: ' + req.originalUrl);
+        res.status(200).send({ message: 'Welcome to the server' });
+    });
+}
+
 const server = http.createServer(app);
-server.listen(process.env.PORT || 3000, function() {
-    const port = server.address().port;
-    console.log('running at http://localhost:' + port);
+let port;
+if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
+    port = 3000;
+} else {
+    port = 30000;
+}
+server.listen(process.env.PORT || port, function() {
+    console.log('running at http://localhost:' + server.address().port);
 });
+
 module.exports = app;
