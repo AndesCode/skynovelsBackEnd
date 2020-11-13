@@ -10,6 +10,7 @@ const morgan = require('morgan');
 const passport = require('passport');
 const app = express();
 const helmet = require("helmet");
+const { NONAME } = require('dns');
 
 const options = {
     host: 'localhost',
@@ -64,7 +65,7 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         saveUninitialized: false,
     }));
 } else {
-    console.log('Environment: production');
+    console.log('Environment: production test');
     app.use(session({
         name: 'sessionId',
         secret: '$2b$24$ze2wpHDHn5muWBmiq4XMHuJgn7R4_YSm6b0MDGxjr.CME4YKOriWK',
@@ -74,8 +75,9 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         cookie: {
             secure: true,
             httpOnly: true,
-            domain: 'skynovels.net',
-            path: 'foo/bar',
+            sameSite: 'none',
+            // domain: 'skynovels.net',
+            // path: 'foo/bar',
             maxAge: 3024000000
         }
     }));
