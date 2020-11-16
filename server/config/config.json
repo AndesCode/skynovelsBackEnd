@@ -6,12 +6,46 @@
         "host": "localhost",
         "dialect": "mysql"
     },
+    "development_session": {
+        "host": "localhost",
+        "user": "root",
+        "password": "andres23722",
+        "database": "skynovelsdb_new",
+        "expiration": 3024000000,
+        "checkExpirationInterval": 14400000,
+        "createDatabaseTable": true,
+        "schema": {
+            "tableName": "sessions",
+            "columnNames": {
+                "session_id": "sessionId",
+                "expires": "expires",
+                "data": "data"
+            }
+        }
+    },
     "production": {
-        "username": "d4k0imrxxsvazgb1",
-        "password": "ler3ssd05el9no24",
-        "database": "a52fqk1va6ivyh8l",
-        "host": "n2o93bb1bwmn0zle.chr7pe7iynqr.eu-west-1.rds.amazonaws.com",
+        "username": "skynovel_root",
+        "password": "d)eflcM;(iXn",
+        "database": "skynovel_test_database",
+        "host": "68.66.224.41",
         "dialect": "mysql"
+    },
+    "production_session": {
+        "host": "68.66.224.41",
+        "user": "skynovel_root",
+        "password": "d)eflcM;(iXn",
+        "database": "skynovel_test_database",
+        "expiration": 3024000000,
+        "checkExpirationInterval": 14400000,
+        "createDatabaseTable": true,
+        "schema": {
+            "tableName": "sessions",
+            "columnNames": {
+                "session_id": "sessionId",
+                "expires": "expires",
+                "data": "data"
+            }
+        }
     },
     "token_secret": "123ABc456r%SERT987o_",
     "key": "865{05c4d%73769b.b1e2_6bb"
