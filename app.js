@@ -86,9 +86,7 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         saveUninitialized: false,
         cookie: {
             // secure: true,
-            httpOnly: true,
-            // sameSite: 'Strict', utilizar en servidor!!!
-            domain: 'skynovelstesting.a2hosted.com',
+            // sameSite: 'Strict', utilizar en servidor!!!,
             maxAge: 3024000000
         }
     }));
