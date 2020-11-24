@@ -33,7 +33,7 @@ const httpsOptionsTest = {
     cert: certTest
 };
 
-console.log(httpsOptions);
+// console.log(httpsOptions);
 
 if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
     app.use(cors({ origin: true, credentials: true }));
@@ -71,7 +71,7 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         store: sessionStore,
         saveUninitialized: false,
         cookie: {
-            httpOnly: true,
+            // secure: true,
             maxAge: 3024000000
         }
     }));
@@ -85,7 +85,7 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         store: sessionStore,
         saveUninitialized: false,
         cookie: {
-            // secure: true,
+            secure: true,
             // sameSite: 'Strict', utilizar en servidor!!!,
             maxAge: 3024000000
         }
@@ -126,13 +126,15 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
     });
 }
 
-// const server = http.createServer(app);
-const server = https.createServer(httpsOptions, app);
+
+let server;
 let port;
 if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
     port = 3000;
+    server = http.createServer(app);
 } else {
-    port = 30000;
+    port = 40000;
+    server = https.createServer(httpsOptions, app);
 }
 server.listen(process.env.PORT || port, function() {
     console.log(server.address().port ? 'running at http://localhost:' + server.address().port : 'running at http://localhost:' + process.env.PORT);
