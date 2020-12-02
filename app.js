@@ -1,7 +1,6 @@
 /*jshint esversion: 6 */
 require('dotenv').config();
 const http = require('http');
-const https = require('https');
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
@@ -12,46 +11,12 @@ const passport = require('passport');
 const app = express();
 const helmet = require("helmet");
 const config = require(__dirname + '/server/config/config.json');
-const fs = require('fs');
 
 let sessionConfiguration;
 
-// key and certs 
-const key = fs.readFileSync(path.join(__dirname, '../ssl/keys/b488b_99ae9_e7c015ecebdcb61e95d824f2665262dc.key'), 'utf8');
-const cert = fs.readFileSync(path.join(__dirname, '../ssl/certs/skynovelstesting_a2hosted_com_b488b_99ae9_1608016588_dfa422c0b725d4023b8fea4978ad675b.crt'), 'utf8');
-
-const keyTest = fs.readFileSync(path.join(__dirname, '../ssltest/selfsigned.key'), 'utf8');
-const certTest = fs.readFileSync(path.join(__dirname, '../ssltest/selfsigned.crt'), 'utf8');
-
-const httpsOptions = {
-    key: key,
-    cert: cert
-};
-
-const httpsOptionsTest = {
-    key: keyTest,
-    cert: certTest
-};
-
-// console.log(httpsOptions);
-
 if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
-    app.use(cors({ origin: true, credentials: true }));
     sessionConfiguration = config.development_session;
 } else {
-    /*const whitelist = ['https://skynovels.net'];
-    const corsOptions = {
-        origin: function(origin, callback) {
-            if (whitelist.indexOf(origin) !== -1) {
-                callback(null, true);
-            } else {
-                callback(new Error('Not allowed by CORS'));
-            }
-        },
-        credentials: true
-    };
-    app.use(cors(corsOptions));*/
-    app.use(cors({ origin: true, credentials: true }));
     sessionConfiguration = config.production_session;
 }
 
@@ -71,12 +36,11 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         store: sessionStore,
         saveUninitialized: false,
         cookie: {
-            // secure: true,
             maxAge: 3024000000
         }
     }));
 } else {
-    console.log('Environment: production test');
+    console.log('Environment: production');
     // NODE_ENV=production node app.js
     app.use(session({
         name: 'sessionId',
@@ -84,8 +48,10 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         resave: false,
         store: sessionStore,
         saveUninitialized: false,
+        proxy: true,
         cookie: {
             secure: true,
+            httpOnly: true,
             // sameSite: 'Strict', utilizar en servidor!!!,
             maxAge: 3024000000
         }
@@ -95,13 +61,20 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
 app.use(passport.initialize());
 app.use(passport.session());
 
-
-app.use((req, res, next) => {
-    if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
-        res.header('Access-Control-Allow-Origin', '*');
-    } else {
-        res.header('Access-Control-Allow-Origin', 'https://skynovelstesting.a2hosted.com');
-    }
+const whitelist = ['https://skynovelstesting.a2hosted.com', 'http://localhost:4200'];
+const corsOptions = {
+    origin: function(origin, callback) {
+        if (whitelist.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+};
+app.use(cors(corsOptions), (req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    // res.header('Access-Control-Allow-Origin', 'https://skynovelstesting.a2hosted.com*'); utilizar en servidor!!!
     res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
     res.header('Allow', 'GET, POST, OPTIONS, PUT, DELETE');
@@ -118,30 +91,25 @@ app.set('view engine', 'handlebars');
 // Static folder
 app.use('server', express.static(path.join(__dirname, 'server')));
 
+let port;
+
 if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
+    port = 3000;
     app.get('*', (req, res) => {
         console.log('ruta actual: ' + req.originalUrl);
         res.status(200).send({ message: 'Welcome to the server' });
     });
 } else {
+    port = 40000;
     app.get('/api', (req, res) => {
         console.log('ruta actual: ' + req.originalUrl);
         res.status(200).send({ message: 'Welcome to the server' });
     });
 }
 
-
-let server;
-let port;
-if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
-    port = 3000;
-    server = http.createServer(app);
-} else {
-    port = 40000;
-    server = https.createServer(httpsOptions, app);
-}
+const server = http.createServer(app);
 server.listen(process.env.PORT || port, function() {
-    console.log(server.address().port ? 'running at http://localhost:' + server.address().port : 'running at http://localhost:' + process.env.PORT);
+    console.log('server running on:');
     console.log(server.address());
 });
 
