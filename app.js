@@ -1,5 +1,4 @@
 /*jshint esversion: 6 */
-require('dotenv').config();
 const http = require('http');
 const express = require('express');
 const path = require('path');
@@ -10,18 +9,17 @@ const morgan = require('morgan');
 const passport = require('passport');
 const app = express();
 const helmet = require("helmet");
-const config = require(__dirname + '/server/config/config.json');
+require('./server/passport/local-auth');
+require('dotenv').config();
 
 let sessionConfiguration;
-
 if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
-    sessionConfiguration = config.development_session;
+    sessionConfiguration = JSON.parse(process.env.devDataBaseSession);
 } else {
-    sessionConfiguration = config.production_session;
+    sessionConfiguration = JSON.parse(process.env.prodDataBaseSession);
 }
 
 const sessionStore = new MySQLStore(sessionConfiguration);
-require('./server/passport/local-auth');
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(morgan('dev'));
@@ -31,12 +29,12 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
     console.log('Environment: development');
     app.use(session({
         name: 'sessionId',
-        secret: 'SimpleSecret',
+        secret: process.env.devSessionSecret,
         resave: false,
         store: sessionStore,
         saveUninitialized: false,
         cookie: {
-            maxAge: 3024000000
+            maxAge: 5616000000
         }
     }));
 } else {
@@ -44,7 +42,7 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
     // NODE_ENV=production node app.js
     app.use(session({
         name: 'sessionId',
-        secret: '$2b$24$ze2wpHDHn5muWBmiq4XMHuJgn7R4_YSm6b0MDGxjr.CME4YKOriWK',
+        secret: process.env.prodSessionSecret,
         resave: false,
         store: sessionStore,
         saveUninitialized: false,
@@ -53,7 +51,7 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
             secure: true,
             httpOnly: true,
             // sameSite: 'Strict', utilizar en servidor!!!,
-            maxAge: 3024000000
+            maxAge: 5616000000
         }
     }));
 }

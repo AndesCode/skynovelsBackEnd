@@ -7,12 +7,10 @@ const Op = Sequelize.Op;
 const users = require('../models').users;
 
 passport.serializeUser((user, done) => {
-    console.log('serializando');
     done(null, user.id);
 });
 
 passport.deserializeUser((id, done) => {
-    console.log('deserializando');
     users.findByPk(id).then(user => {
         done(null, user);
     }).catch(err => {

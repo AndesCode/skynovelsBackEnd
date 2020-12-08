@@ -1,5 +1,5 @@
 /*jshint esversion: 6 */
-const config = require('../config/config');
+require('dotenv').config();
 // Models
 const bookmarks_model = require('../models').bookmarks;
 const invitations_model = require('../models').invitations;
@@ -14,7 +14,7 @@ const Op = Sequelize.Op;
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const Cryptr = require('cryptr');
-const cryptr = new Cryptr(config.key);
+const cryptr = new Cryptr(process.env.cryptrKey);
 // Json web tokens
 const jwt = require('../services/jwt');
 // More requires
@@ -423,9 +423,19 @@ function getUserProfileImage(req, res) {
 
 function getUserBookmarks(req, res) {
     const uid = req.user.id;
-    novels_model.sequelize.query('SELECT n.*, (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active") AS nvl_chapters, (SELECT (SELECT createdAt FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1) AS recentChapter FROM volumes v WHERE v.nvl_id = n.id ORDER BY recentChapter DESC LIMIT 1) AS nvl_last_update, (SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS genres FROM novels n, bookmarks b WHERE b.nvl_id = n.id AND b.user_id = ? AND n.nvl_status IN ("Active", "Finished") AND (SELECT id FROM volumes v where v.nvl_id = n.id AND (SELECT id FROM chapters c where c.vlm_id = v.id AND c.chp_status = "Active" LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL AND (SELECT id FROM genres_novels gn where gn.novel_id = n.id AND (SELECT id FROM genres g where g.id = gn.genre_id LIMIT 1) IS NOT NULL LIMIT 1) IS NOT NULL', { replacements: [uid], type: novels_model.sequelize.QueryTypes.SELECT })
-        .then(novels => {
-            return res.status(200).send({ novels });
+    novels_model.sequelize.query('SELECT n.*, COUNT(c.id) AS nvl_chapters, MAX(c.createdAt) AS nvl_last_update, ROUND((select AVG(nr.rate_value) from novels_ratings nr where nr.novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), CONVERT(CONCAT("[]"), JSON)) AS genres FROM bookmarks b, novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.nvl_status IN ("Active", "Finished") AND b.nvl_id = n.id AND b.user_id = ? GROUP BY n.id;', { replacements: [uid], type: novels_model.sequelize.QueryTypes.SELECT })
+        .then(ActiveNovels => {
+            const novels = [];
+            for (const novel of ActiveNovels) {
+                if (novel.nvl_chapters > 0 && novel.genres.length > 0) {
+                    novels.push(novel);
+                }
+            }
+            if (novels.length > 0) {
+                return res.status(200).send({ novels });
+            } else {
+                return res.status(404).send({ message: 'No se encontraron novelas activas' });
+            }
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas' });
         });
