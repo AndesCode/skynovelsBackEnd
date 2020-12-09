@@ -431,11 +431,7 @@ function getUserBookmarks(req, res) {
                     novels.push(novel);
                 }
             }
-            if (novels.length > 0) {
-                return res.status(200).send({ novels });
-            } else {
-                return res.status(404).send({ message: 'No se encontraron novelas activas' });
-            }
+            return res.status(200).send({ novels });
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas' });
         });
