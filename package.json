@@ -4,8 +4,8 @@
     "description": "WebService for Skynovels",
     "main": "app.js",
     "engines": {
-        "npm": "6.13.6",
-        "node": "13.7.0"
+        "npm": "6.14.8",
+        "node": "14.15.1"
     },
     "scripts": {
         "test": "nodemon ./app.js",

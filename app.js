@@ -14,6 +14,7 @@ require('dotenv').config();
 
 let sessionConfiguration;
 if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
+    process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
     sessionConfiguration = JSON.parse(process.env.devDataBaseSession);
 } else {
     sessionConfiguration = JSON.parse(process.env.prodDataBaseSession);
