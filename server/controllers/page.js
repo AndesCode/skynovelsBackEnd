@@ -42,7 +42,6 @@ function createLike(req, res) {
         objectId = body.reply_id;
         objectName = 'reply_id';
     }
-    console.log(body);
     model.findByPk(objectId, { attributes: ['id'] }).then(object => {
         if (object) {
             likes_model.create({
@@ -208,7 +207,6 @@ function updateComment(req, res) {
 
 function deleteComment(req, res) {
     const id = req.params.id;
-    console.log(id);
     comments_model.findByPk(id).then(comment => {
         if (comment && req.user.id === comment.user_id) {
             comment.destroy({
@@ -306,7 +304,6 @@ function updateReplys(req, res) {
 
 function deleteReplys(req, res) {
     const id = req.params.id;
-    console.log(id);
     replys_model.findByPk(id).then(reply => {
         if (reply && req.user.id === reply.user_id) {
             reply.destroy({

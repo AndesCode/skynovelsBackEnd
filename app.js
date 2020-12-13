@@ -99,7 +99,7 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         res.status(200).send({ message: 'Welcome to the server' });
     });
 } else {
-    port = 40000;
+    port = 80;
     app.get('/api', (req, res) => {
         console.log('ruta actual: ' + req.originalUrl);
         res.status(200).send({ message: 'Welcome to the server' });

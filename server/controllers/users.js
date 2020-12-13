@@ -45,11 +45,8 @@ function createUser(req, res) {
     if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.,"'#{}()¡¿])[A-Za-z\d@$!%*?&.,"'#{}()¡¿]{8,16}$/.test(body.user_pass)) {
         return res.status(400).send({ message: 'La contraseña no cumple con el parametro regex' });
     }
-    console.log(body);
     users_model.create(body).then(user => {
-        console.log(user.user_verification_key);
         const activation_user_key = cryptr.encrypt(user.user_verification_key);
-        console.log(activation_user_key);
         const mailOptions = {
             from: 'wayne15@ethereal.email',
             to: req.body.user_email,
@@ -67,7 +64,6 @@ function createUser(req, res) {
             if (err) {
                 return res.status(500).send({ message: 'Error al enviar el correo' });
             } else {
-                console.log('Email enviado');
                 return res.status(201).send({ message: 'Usuario creado con exito' });
             }
         });
@@ -117,7 +113,6 @@ function getUserNovels(req, res) {
 
 function activateUser(req, res) {
     const decryptedkey = cryptr.decrypt(req.body.key);
-    console.log(decryptedkey);
     users_model.findOne({
         where: {
             user_verification_key: decryptedkey
@@ -210,7 +205,6 @@ function logout(req, res) {
 }
 
 function passwordResetRequest(req, res) {
-    console.log(req.body.user_email);
     users_model.findOne({
         where: {
             user_email: req.body.user_email,
@@ -238,7 +232,6 @@ function passwordResetRequest(req, res) {
                     if (err) {
                         return res.status(500).send({ message: 'Error al enviar el correo ' + err });
                     } else {
-                        console.log('Email enviado');
                         return res.status(200).send({ message: 'Email enviado con exito' });
                     }
                 });

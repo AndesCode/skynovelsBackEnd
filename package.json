@@ -9,7 +9,7 @@
     },
     "scripts": {
         "test": "nodemon ./app.js",
-        "start": "node ."
+        "start": "node app.js"
     },
     "author": "AndesCode",
     "license": "ISC",

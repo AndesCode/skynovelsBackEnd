@@ -571,7 +571,6 @@ function adminDeleteChapter(req, res) {
                     .then(novelsChapters => {
                         const chapterNovels = novelsChapters.map(chapter => chapter.chp_status);
                         if (novelsChapters.length <= 0 || chapterNovels.includes('Active') === false) {
-                            console.log(novel_id);
                             novels_model.findByPk(novel_id)
                                 .then(novel => {
                                     novel.update({
@@ -579,23 +578,19 @@ function adminDeleteChapter(req, res) {
                                     }).then(() => {
                                         return res.status(200).send({ chapter });
                                     }).catch(err => {
-                                        console.log(err);
                                         return res.status(500).send({ message: 'Ocurrio un error actualizando el estado de la novela' });
                                     });
                                 }).catch(err => {
-                                    console.log(err);
                                     return res.status(500).send({ message: 'Ocurrio un error actualizando el estado de la novela' });
                                 });
                         } else {
                             return res.status(200).send({ chapter });
                         }
                     }).catch(err => {
-                        console.log(err);
                         return res.status(500).send({ message: 'Ocurrio un error al cargar los capítulos de la novela' });
                     });
             }
         }).catch(err => {
-            console.log(err);
             return res.status(500).send({ message: 'Ocurrio un error al eliminar el capitulo indicado' });
         });
     }).catch(err => {
@@ -607,7 +602,6 @@ function adminDeleteChapter(req, res) {
 
 function adminCreateGenre(req, res) {
     const body = req.body;
-    console.log(body);
     genres_model.create(body).then(genre => {
         return res.status(201).send({ genre });
     }).catch(err => {
@@ -621,7 +615,6 @@ function adminCreateGenre(req, res) {
 
 function adminUpdateGenre(req, res) {
     const body = req.body;
-    console.log(body);
     genres_model.findByPk(body.id).then(genre => {
         if (genre) {
             genre.update(body).then(() => {
@@ -643,7 +636,6 @@ function adminUpdateGenre(req, res) {
 
 function adminDeleteGenre(req, res) {
     const id = req.params.id;
-    console.log(id);
     genres_model.findByPk(id).then(genre => {
         genre.destroy({
             where: {
