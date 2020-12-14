@@ -25,6 +25,7 @@ const imageThumbnail = require('image-thumbnail');
 const path = require('path');
 const passport = require('passport');
 const hbs = require('nodemailer-express-handlebars');
+const mariadbHelper = require('../services/mariadbHelper');
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.ethereal.email',
@@ -81,6 +82,9 @@ function getUser(req, res) {
     const id = req.params.id;
     users_model.sequelize.query('SELECT u.id, u.user_login, u.user_email, u.user_rol, u.user_description, u.user_profile_image, u.createdAt, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("nvl_chapters", (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), "genres", (IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY())), "id", n.id, "nvl_title", n.nvl_title, "nvl_author", n.nvl_author, "nvl_content", n.nvl_content, "nvl_acronym", n.nvl_acronym, "nvl_status", n.nvl_status, "nvl_last_update", (SELECT createdAt FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1), "nvl_publication_date", n.nvl_publication_date, "nvl_name", n.nvl_name, "nvl_img", n.nvl_img, "createdAt", n.createdAt, "updatedAt", n.updatedAt)) FROM novels n WHERE n.nvl_status IN ("Active", "Finished") AND n.nvl_author = u.id GROUP BY n.id), JSON_ARRAY()) AS novels, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("nvl_chapters", (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), "genres", (IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY())), "id", n.id, "nvl_title", n.nvl_title, "nvl_author", n.nvl_author, "nvl_content", n.nvl_content, "nvl_acronym", n.nvl_acronym, "nvl_status", n.nvl_status, "nvl_last_update", (SELECT createdAt FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1), "nvl_publication_date", n.nvl_publication_date, "nvl_name", n.nvl_name, "nvl_img", n.nvl_img, "createdAt", n.createdAt, "updatedAt", n.updatedAt)) FROM novels n, novels_collaborators nc WHERE n.nvl_status IN ("Active", "Finished") AND nc.novel_id = n.id AND nc.user_id = u.id), JSON_ARRAY()) AS collaborations, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "chp_title", c.chp_title)) FROM chapters c WHERE c.chp_author = u.id AND c.chp_status = "Active"), JSON_ARRAY()) AS chapters, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", nr.id, "novel_id", nr.novel_id, "novel_id", nr.novel_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "novel", (SELECT n.nvl_title  FROM novels n WHERE n.id = nr.novel_id))) FROM novels_ratings nr WHERE nr.user_id = u.id), JSON_ARRAY()) AS novels_ratings FROM users u WHERE u.id = ?', { replacements: [id], type: users_model.sequelize.QueryTypes.SELECT })
         .then(user => {
+            user = mariadbHelper.verifyJSON(user, ['novels', 'collaborations', 'chapters', 'novels_ratings']);
+            user[0].novels = mariadbHelper.verifyJSON(user[0].novels, ['genres']);
+            user[0].collaborations = mariadbHelper.verifyJSON(user[0].collaborations, ['genres']);
             if (user.length > 0) {
                 if (req.user && user[0].id === req.user.id) {
                     const self_user = true;
@@ -100,8 +104,10 @@ function getUserNovels(req, res) {
     const id = req.user.id;
     novels_model.sequelize.query('SELECT n.*, MAX(c.createdAt) AS nvl_last_update, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) AS genres FROM novels n left JOIN chapters c ON c.nvl_id = n.id WHERE n.nvl_author = ? GROUP BY n.id', { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
         .then(novels => {
+            novels = mariadbHelper.verifyJSON(novels, ['genres']);
             novels_collaborators_model.sequelize.query('SELECT n.*, MAX(c.createdAt) AS nvl_last_update, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) AS genres FROM novels_collaborators nc, novels n left JOIN chapters c ON c.nvl_id = n.id WHERE nc.novel_id = n.id AND nc.user_id = ? GROUP BY n.id', { replacements: [id], type: novels_collaborators_model.sequelize.QueryTypes.SELECT })
                 .then(collaborations => {
+                    collaborations = mariadbHelper.verifyJSON(collaborations, ['genres']);
                     return res.status(200).send({ novels, collaborations });
                 }).catch(err => {
                     return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas ' + err });
@@ -403,6 +409,7 @@ function getUserBookmarks(req, res) {
     const uid = req.user.id;
     novels_model.sequelize.query('SELECT n.*, COUNT(c.id) AS nvl_chapters, MAX(c.createdAt) AS nvl_last_update, ROUND((select AVG(nr.rate_value) from novels_ratings nr where nr.novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) AS genres FROM bookmarks b, novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.nvl_status IN ("Active", "Finished") AND b.nvl_id = n.id AND b.user_id = ? GROUP BY n.id;', { replacements: [uid], type: novels_model.sequelize.QueryTypes.SELECT })
         .then(ActiveNovels => {
+            ActiveNovels = mariadbHelper.verifyJSON(ActiveNovels, ['genres']);
             const novels = [];
             for (const novel of ActiveNovels) {
                 if (novel.nvl_chapters > 0 && novel.genres.length > 0) {

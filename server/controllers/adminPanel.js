@@ -15,6 +15,7 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 // files mannager
 const fs = require('fs');
+const mariadbHelper = require('../services/mariadbHelper');
 
 function adminPanelAccess(req, res) {
     return res.status(200).send({ message: 'Acceso otorgado', status: 200 });
@@ -311,6 +312,9 @@ function adminGetNovel(req, res) {
     }
     novels_model.sequelize.query(query, { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT }).then(novel => {
         if (novel.length > 0) {
+            novel = mariadbHelper.verifyJSON(novel, ['bookmarks', 'volumes', 'novel_ratings', 'collaborators', 'genres']);
+            novel[0].volumes = mariadbHelper.verifyJSON(novel[0].volumes, ['chapters']);
+            novel[0].novel_ratings = mariadbHelper.verifyJSON(novel[0].novel_ratings, ['likes']);
             return res.status(200).send({ novel });
         } else {
             return res.status(404).send({ message: 'No se encontro ninguna novela' });
@@ -323,7 +327,11 @@ function adminGetNovel(req, res) {
 function adminGetNovels(req, res) {
     novels_model.sequelize.query('SELECT id, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) as user_login, nvl_title, nvl_status FROM novels n', { type: novels_model.sequelize.QueryTypes.SELECT })
         .then(novels => {
-            return res.status(200).send({ novels });
+            if (novels.length > 0) {
+                return res.status(200).send({ novels });
+            } else {
+                return res.status(404).send({ message: 'No se encontro ninguna novela' });
+            }
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio un error al cargar la novela' });
         });

@@ -130,6 +130,7 @@ function getNovel(req, res) {
 function getNovels(req, res) {
     novels_model.sequelize.query('SELECT n.*, COUNT(c.id) AS nvl_chapters, MAX(c.createdAt) AS nvl_last_update, ROUND((select AVG(nr.rate_value) from novels_ratings nr where nr.novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) AS genres FROM novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.nvl_status IN ("Active", "Finished") GROUP BY n.id', { type: novels_model.sequelize.QueryTypes.SELECT })
         .then(ActiveNovels => {
+            ActiveNovels = mariadbHelper.verifyJSON(ActiveNovels, ['genres']);
             const novels = [];
             for (const novel of ActiveNovels) {
                 if (novel.nvl_chapters > 0 && novel.genres.length > 0) {
@@ -396,6 +397,8 @@ function getChapter(req, res) {
     chapters_model.sequelize.query('SELECT *, (SELECT user_login FROM users u WHERE u.id = c.chp_author) AS user_login, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", cms.id, "comment_content", cms.comment_content, "user_id", cms.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = cms.user_id), "user_profile_image", (SELECT user_profile_image FROM users u WHERE u.id = cms.user_id), "createdAt", cms.createdAt, "updatedAt", cms.updatedAt, "likes_count", (SELECT COUNT(id) FROM likes l WHERE l.comment_id = cms.id), "likes", IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "comment_id", l.comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = l.user_id))) FROM likes l WHERE l.comment_id = cms.id), JSON_ARRAY()))) FROM comments cms WHERE cms.chp_id = c.id), JSON_ARRAY()) AS comments FROM chapters c WHERE c.id = ? AND c.chp_status="Active"', { replacements: [id], type: chapters_model.sequelize.QueryTypes.SELECT })
         .then(chapter => {
             if (chapter.length > 0) {
+                chapter = mariadbHelper.verifyJSON(chapter, ['comments']);
+                chapter[0].comments = mariadbHelper.verifyJSON(chapter[0].comments, ['likes']);
                 return res.status(200).send({ chapter });
             } else {
                 return res.status(404).send({ message: 'No se encuentra ningún capitulo' });
@@ -440,11 +443,12 @@ function getNovelChapters(req, res) {
     if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         query = 'SELECT id, nvl_author, nvl_title, nvl_name, nvl_writer, nvl_acronym, nvl_translator, nvl_img, createdAt, updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), JSON_ARRAY()) AS chapters, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id)), "]"), JSON) FROM bookmarks rl WHERE rl.nvl_id = n.id), JSON_ARRAY()) AS bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "id", nr.id)), "]"), JSON) FROM novels_ratings nr WHERE nr.novel_id = n.id), JSON_ARRAY()) AS novel_ratings FROM novels n WHERE n.id = ? AND n.nvl_status IN ("Active", "Finished")';
     } else {
-        query = 'SELECT id, nvl_author, nvl_title, nvl_name, nvl_writer, nvl_acronym, nvl_translator, nvl_img, createdAt, updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), JSON_ARRAY()) AS chapters, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id)) FROM bookmarks rl WHERE rl.nvl_id = n.id), JSON_ARRAY()) AS bookmarks, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("user_id", nr.user_id, "id", nr.id)) FROM novels_ratings nr WHERE nr.novel_id = n.id), JSON_ARRAY()) AS novel_ratings FROM novels n WHERE n.id = 2 AND n.nvl_status IN ("Active", "Finished")';
+        query = 'SELECT id, nvl_author, nvl_title, nvl_name, nvl_writer, nvl_acronym, nvl_translator, nvl_img, createdAt, updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), JSON_ARRAY()) AS chapters, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id)) FROM bookmarks rl WHERE rl.nvl_id = n.id), JSON_ARRAY()) AS bookmarks, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("user_id", nr.user_id, "id", nr.id)) FROM novels_ratings nr WHERE nr.novel_id = n.id), JSON_ARRAY()) AS novel_ratings FROM novels n WHERE n.id = ? AND n.nvl_status IN ("Active", "Finished")';
     }
     novels_model.sequelize.query(query, { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
         .then(novel => {
-            if (novel.length > 0) {
+            novel = mariadbHelper.verifyJSON(novel, ['chapters', 'bookmarks', 'novel_ratings']);
+            if (novel.length > 0 && novel[0].chapters.length > 0) {
                 return res.status(200).send({ novel });
             } else {
                 return res.status(404).send({ message: 'No se encuentra la novela indicada' });
