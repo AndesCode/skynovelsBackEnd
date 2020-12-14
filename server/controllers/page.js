@@ -9,6 +9,7 @@ const replys_model = require('../models').replys;
 // files mannager
 const fs = require('fs');
 const path = require('path');
+const mariadbHelper = require('../services/mariadbHelper');
 
 // likes 
 
@@ -99,9 +100,11 @@ function getAdvertisements(req, res) {
 function getAdvertisement(req, res) {
     const id = req.params.id;
     advertisements_model.sequelize.query('SELECT a.*, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "adv_id", l.adv_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))) FROM likes l where l.adv_id = a.id), JSON_ARRAY()) AS likes, (SELECT user_login FROM users u WHERE u.id = a.user_id) AS user_login, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "comment_content", c.comment_content, "user_id", c.user_id, "user_login", (SELECT user_login FROM users u where u.id = c.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = c.user_id), "likes_count", (SELECT COUNT(id) FROM likes l where l.comment_id = c.id), "replys_count", (SELECT COUNT(id) FROM replys r where r.comment_id = c.id), "likes", (IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "comment_id", l.comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))) FROM likes l where l.comment_id = c.id), JSON_ARRAY())))) FROM comments c where c.adv_id = a.id), JSON_ARRAY()) as comments FROM advertisements a WHERE a.id = ? AND a.adv_img IS NOT NULL', { replacements: [id], type: advertisements_model.sequelize.QueryTypes.SELECT })
-        .then(advertisements => {
-            if (advertisements.length > 0) {
-                return res.status(200).send({ advertisement: advertisements[0] });
+        .then(advertisement => {
+            if (advertisement.length > 0) {
+                advertisement = mariadbHelper.verifyJSON(advertisement, ['likes', 'comments']);
+                advertisement[0].comments = mariadbHelper.verifyJSON(advertisement[0].comments, ['likes']);
+                return res.status(200).send({ advertisement: advertisement[0] });
             } else {
                 return res.status(404).send({ message: 'No se encuentra ningún anuncio por el id indicado' });
             }
@@ -176,6 +179,7 @@ function getComments(req, res) {
     const id = req.params.id;
     comments_model.sequelize.query('SELECT c.*, (SELECT user_login FROM users u where u.id = c.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = c.user_id) as user_profile_image, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "comment_id", l.comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))) FROM likes l where l.comment_id = c.id), JSON_ARRAY()) as likes FROM comments c WHERE ' + objectType + ' = ?', { replacements: [id], type: comments_model.sequelize.QueryTypes.SELECT })
         .then(comments => {
+            comments = mariadbHelper.verifyJSON(comments, ['likes']);
             return res.status(200).send({ comments });
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio un error al cargar los comentarios' });
@@ -273,6 +277,7 @@ function getReplys(req, res) {
     const id = req.params.id;
     replys_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = r.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = r.user_id) as user_profile_image, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "reply_id", l.reply_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = l.user_id))) FROM likes l WHERE l.reply_id = r.id), JSON_ARRAY()) as likes FROM replys r WHERE r.' + objectType + ' = ?', { replacements: [id], type: replys_model.sequelize.QueryTypes.SELECT })
         .then(replys => {
+            replys = mariadbHelper.verifyJSON(replys, ['likes']);
             return res.status(200).send({ replys });
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio un error al cargar las respuesta' });
