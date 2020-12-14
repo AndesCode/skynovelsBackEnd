@@ -91,7 +91,13 @@ function getNovel(req, res) {
         if (novel.length > 0) {
             novel[0].bookmarks = mariadbHelper.verifyJSON(novel[0].bookmarks);
             novel[0].volumes = mariadbHelper.verifyJSON(novel[0].volumes);
+            for (const volume of novel[0].volumes) {
+                volume.chapter = mariadbHelper.verifyJSON(volume.chapter);
+            }
             novel[0].novel_ratings = mariadbHelper.verifyJSON(novel[0].novel_ratings);
+            for (const novel_rating of novel[0].novel_ratings) {
+                novel_rating.likes = mariadbHelper.verifyJSON(novel_rating.likes);
+            }
             novel[0].collaborators = mariadbHelper.verifyJSON(novel[0].collaborators);
             novel[0].genres = mariadbHelper.verifyJSON(novel[0].genres);
             if (req.params.action === 'edition') {
@@ -111,7 +117,7 @@ function getNovel(req, res) {
                         }
                     }
                     novel[0].volumes = activeVolumes;
-                    if (novel[0].volumes.length > 0) {
+                    if (activeVolumes.length > 0) {
                         return res.status(200).send({ novel });
                     } else {
                         return res.status(404).send({ message: 'No se encontro ninguna novela' });
