@@ -19,7 +19,7 @@ const mariadbHelper = require('../services/mariadbHelper');
 function getTest(req, res) {
     chapters_model.sequelize.query('select IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = 2), JSON_ARRAY()) as genres from novels n where n.id = 2', { type: chapters_model.sequelize.QueryTypes.SELECT })
         .then(test => {
-            test[0].test = '[{\"id\": 37, \"genre_name\": \"Sin genero indicado\"}]';
+            test[0].test = '[]';
             // test[0].test = [{ "id": 37, "genre_name": "Sin genero indicado" }];
             test[0].test = mariadbHelper.verifyJSON(test[0].test);
             return res.status(200).send({ test });
@@ -37,7 +37,7 @@ function getHomeNovels(req, res) {
                 .then(recentNovels => {
                     novels_model.sequelize.query('SELECT n.*, COUNT(c.id) AS nvl_chapters, MAX(c.createdAt) AS nvl_last_update, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) as genres FROM  novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.nvl_status IN ("Active", "Finished") AND n.nvl_recommended = true GROUP BY n.id LIMIT 1', { type: novels_model.sequelize.QueryTypes.SELECT })
                         .then(recommendedNovel => {
-                            if (recommendedNovel[0].genres) {
+                            if (recommendedNovel[0]) {
                                 recommendedNovel[0].genres = mariadbHelper.verifyJSON(recommendedNovel[0].genres);
                             }
                             novels_model.sequelize.query('SELECT n.*, MAX(c.createdAt) AS nvl_last_update FROM novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE  n.nvl_status IN ("Active", "Finished") GROUP BY n.id ORDER BY nvl_last_update DESC LIMIT 10', { type: novels_model.sequelize.QueryTypes.SELECT })
@@ -89,6 +89,11 @@ function getNovel(req, res) {
     }
     novels_model.sequelize.query(query, { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT }).then(novel => {
         if (novel.length > 0) {
+            novel[0].bookmarks = mariadbHelper.verifyJSON(novel[0].bookmarks);
+            novel[0].volumes = mariadbHelper.verifyJSON(novel[0].volumes);
+            novel[0].novel_ratings = mariadbHelper.verifyJSON(novel[0].novel_ratings);
+            novel[0].collaborators = mariadbHelper.verifyJSON(novel[0].collaborators);
+            novel[0].genres = mariadbHelper.verifyJSON(novel[0].genres);
             if (req.params.action === 'edition') {
                 const collaborators = novel[0].collaborators.map(collaborator => collaborator.user_id);
                 if (req.user && (req.user.id === novel[0].nvl_author || collaborators.includes(req.user.id)) && (req.user.user_rol === 'Editor' || req.user.user_rol === 'Admin')) {

@@ -1,10 +1,12 @@
 function verifyJSON(object) {
     if (typeof(object) !== 'object') {
-        console.log('parseando');
-        parsedObeject = JSON.parse(object);
-        return parsedObeject;
+        try {
+            parsedObeject = JSON.parse(object);
+            return parsedObeject;
+        } catch (e) {
+            return object;
+        }
     } else {
-        console.log('no parsea');
         return object;
     }
 }
