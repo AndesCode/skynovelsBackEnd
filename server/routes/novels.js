@@ -33,4 +33,6 @@ module.exports = (app) => {
     app.post('/api/create-novel-rating', md_auth.auth, novelsController.createNovelRating);
     app.put('/api/update-novel-rating', md_auth.auth, novelsController.updateNovelRating);
     app.delete('/api/delete-novel-rating/:id', md_auth.auth, novelsController.deleteNovelRating);
+    // test
+    app.get('/api/test', novelsController.getTest);
 };
