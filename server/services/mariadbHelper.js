@@ -1,14 +1,21 @@
-function verifyJSON(object) {
-    if (typeof(object) !== 'object') {
-        try {
-            parsedObeject = JSON.parse(object);
-            return parsedObeject;
-        } catch (e) {
-            return object;
+/*jshint esversion: 6 */
+function verifyJSON(objects, corrections) {
+    for (const object of objects) {
+        for (const correction of corrections) {
+            if (object[correction] && typeof(object[correction]) !== 'object') {
+                try {
+                    const parsedObeject = JSON.parse(object[correction]);
+                    object[correction] = parsedObeject;
+                } catch (e) {
+                    continue;
+                }
+            } else {
+                continue;
+            }
         }
-    } else {
-        return object;
     }
+    return objects;
+
 }
 
 module.exports = {

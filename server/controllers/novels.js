@@ -19,9 +19,10 @@ const mariadbHelper = require('../services/mariadbHelper');
 function getTest(req, res) {
     chapters_model.sequelize.query('select IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = 2), JSON_ARRAY()) as genres from novels n where n.id = 2', { type: chapters_model.sequelize.QueryTypes.SELECT })
         .then(test => {
-            test[0].test = '[]';
-            // test[0].test = [{ "id": 37, "genre_name": "Sin genero indicado" }];
-            test[0].test = mariadbHelper.verifyJSON(test[0].test);
+            // test[0].test = '[]';
+            test[0].test = '[{ "id": 27, "genre_name": "Sin genero indicado" }]';
+            test[0].test2 = '[{ "id": 17, "genre_name": "Sin genero indicado" }]';
+            test = mariadbHelper.verifyJSON(test, ['test', 'test2']);
             return res.status(200).send({ test });
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio un error en el test' });
@@ -89,17 +90,9 @@ function getNovel(req, res) {
     }
     novels_model.sequelize.query(query, { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT }).then(novel => {
         if (novel.length > 0) {
-            novel[0].bookmarks = mariadbHelper.verifyJSON(novel[0].bookmarks);
-            novel[0].volumes = mariadbHelper.verifyJSON(novel[0].volumes);
-            for (const volume of novel[0].volumes) {
-                volume.chapter = mariadbHelper.verifyJSON(volume.chapter);
-            }
-            novel[0].novel_ratings = mariadbHelper.verifyJSON(novel[0].novel_ratings);
-            for (const novel_rating of novel[0].novel_ratings) {
-                novel_rating.likes = mariadbHelper.verifyJSON(novel_rating.likes);
-            }
-            novel[0].collaborators = mariadbHelper.verifyJSON(novel[0].collaborators);
-            novel[0].genres = mariadbHelper.verifyJSON(novel[0].genres);
+            novel = mariadbHelper.verifyJSON(novel, ['bookmarks', 'volumes', 'novel_ratings', 'collaborators', 'genres']);
+            novel[0].volumes = mariadbHelper.verifyJSON(novel[0].volumes, ['chapters']);
+            novel[0].novel_ratings = mariadbHelper.verifyJSON(novel[0].novel_ratings, ['likes']);
             if (req.params.action === 'edition') {
                 const collaborators = novel[0].collaborators.map(collaborator => collaborator.user_id);
                 if (req.user && (req.user.id === novel[0].nvl_author || collaborators.includes(req.user.id)) && (req.user.user_rol === 'Editor' || req.user.user_rol === 'Admin')) {
