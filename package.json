@@ -26,6 +26,7 @@
         "fs": "0.0.1-security",
         "helmet": "^4.2.0",
         "image-thumbnail": "^1.0.11",
+        "mariadb": "^2.5.2",
         "morgan": "^1.10.0",
         "mysql2": "^2.2.5",
         "njwt": "^1.0.0",

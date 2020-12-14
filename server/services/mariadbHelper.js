@@ -15,7 +15,6 @@ function verifyJSON(objects, corrections) {
         }
     }
     return objects;
-
 }
 
 module.exports = {
