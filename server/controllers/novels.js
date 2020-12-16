@@ -15,20 +15,6 @@ const path = require('path');
 const Sequelize = require('sequelize');
 const mariadbHelper = require('../services/mariadbHelper');
 
-
-function getTest(req, res) {
-    chapters_model.sequelize.query('select IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = 2), JSON_ARRAY()) as genres from novels n where n.id = 2', { type: chapters_model.sequelize.QueryTypes.SELECT })
-        .then(test => {
-            // test[0].test = '[]';
-            test[0].test = '[{ "id": 27, "genre_name": "Sin genero indicado" }]';
-            test[0].test2 = '[{ "id": 17, "genre_name": "Sin genero indicado" }]';
-            test = mariadbHelper.verifyJSON(test, ['test', 'test2']);
-            return res.status(200).send({ test });
-        }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error en el test' });
-        });
-}
-
 // Novels
 
 function getHomeNovels(req, res) {
@@ -233,34 +219,12 @@ function uploadNovelImage(req, res) {
     const id = req.params.id;
     if (req.files) {
         const file_path = req.files.novel_image.path;
-        const file_split = file_path.split('\\');
+        console.log(process.env.pathSlash);
+        const file_split = file_path.split(process.env.pathSlash || '\\');
         const file_name = file_split[3];
-        const ext_split = file_name.split('\.');
+        const ext_split = file_name.split(process.env.pathDot || '\.');
         const file_ext = ext_split[1];
         if (file_ext.toUpperCase() === 'JPG' || file_ext.toUpperCase() === 'JPEG') {
-            if (req.body.old_novel_image) {
-                const old_img = req.body.old_novel_image;
-                old_file_path = './server/uploads/novels/' + old_img;
-                old_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
-                fs.exists(old_file_path, (exists) => {
-                    if (exists) {
-                        fs.unlink(old_file_path, (err) => {
-                            if (err) {
-                                return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
-                            }
-                        });
-                    }
-                });
-                fs.exists(old_file_thumb_path, (exists) => {
-                    if (exists) {
-                        fs.unlink(old_file_thumb_path, (err) => {
-                            if (err) {
-                                return res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo' });
-                            }
-                        });
-                    }
-                });
-            }
             const novel_image = {};
             novel_image.nvl_img = file_name;
             novels_model.findByPk(id, {
@@ -273,38 +237,62 @@ function uploadNovelImage(req, res) {
             }).then(novel => {
                 const collaborators = novel.collaborators.map(collaborator => collaborator.id);
                 if (novel.nvl_author === req.user.id || collaborators.includes(req.user.id)) {
+                    if (novel.nvl_img !== null) {
+                        const old_img = novel.nvl_img;
+                        const old_file_path = './server/uploads/novels/' + old_img;
+                        const old_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
+                        fs.stat(old_file_path, function(err, stats) {
+                            if (stats) {
+                                fs.unlink(old_file_path, (err) => {
+                                    if (err) {
+                                        return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
+                                    }
+                                });
+                            }
+                        });
+                        fs.stat(old_file_thumb_path, function(err, stats) {
+                            if (stats) {
+                                fs.unlink(old_file_thumb_path, (err) => {
+                                    if (err) {
+                                        return res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo' });
+                                    }
+                                });
+                            }
+                        });
+                    }
                     novel.update(novel_image).then(() => {
                         const newPath = './server/uploads/novels/' + file_name;
                         const thumbPath = './server/uploads/novels/thumbs/' + file_name;
                         const options = { width: 210, height: 280 };
-                        imageThumbnail(path.resolve(newPath), options)
-                            .then(thumbnail => {
-                                const buf = new Buffer(thumbnail, 'buffer');
-                                fs.writeFile(thumbPath, buf, function(err) {
-                                    if (err) {
-                                        fs.unlink(file_path, (error) => {
-                                            if (error) {
-                                                return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
-                                            }
-                                        });
-                                    }
-                                });
-                                return res.status(200).send({ image: novel.nvl_img });
-                            }).catch(err => {
-                                fs.unlink(file_path, (err) => {
-                                    if (err) {
-                                        return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
-                                    }
-                                });
-                                return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail. ' });
+                        console.log(newPath);
+                        console.log(thumbPath);
+                        imageThumbnail(path.resolve(newPath), options).then(thumbnail => {
+                            const buf = new Buffer.from(thumbnail, 'buffer');
+                            fs.writeFile(thumbPath, buf, function(err) {
+                                if (err) {
+                                    fs.unlink(file_path, (error) => {
+                                        if (error) {
+                                            return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
+                                        }
+                                    });
+                                }
                             });
+                            return res.status(200).send({ image: novel.nvl_img });
+                        }).catch(err => {
+                            fs.unlink(file_path, (err) => {
+                                if (err) {
+                                    return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
+                                }
+                            });
+                            return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail. ' });
+                        });
                     }).catch(err => {
                         fs.unlink(file_path, (err) => {
                             if (err) {
                                 return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
                             }
                         });
-                        return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela.' + err });
+                        return res.status(500).send({ message: 'Ocurrio un error al actualizar la novela.' });
                     });
                 } else {
                     return res.status(401).send({ message: 'No autorizado' });
@@ -339,8 +327,8 @@ function getNovelImage(req, res) {
     } else if (thumb == "true") {
         img_path = './server/uploads/novels/thumbs/' + image;
     }
-    fs.exists(img_path, (exists) => {
-        if (exists) {
+    fs.stat(img_path, function(err, stats) {
+        if (stats) {
             return res.status(200).sendFile(path.resolve(img_path));
         } else {
             return res.status(404).send({ message: 'No se encuentra la imagen de novela' });
@@ -811,6 +799,20 @@ function deleteNovelVolume(req, res) {
     });
 }
 
+/*function getTest(req, res) {
+    const testPath = 'server/uploads/novels/6TdtzYc0jH51vqfQnrbJosrS.jpg';
+    chapters_model.sequelize.query('select IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = 2), JSON_ARRAY()) as genres from novels n where n.id = 2', { type: chapters_model.sequelize.QueryTypes.SELECT })
+        .then(test => {
+            // test[0].test = '[]';
+            test[0].test = '[{ "id": 27, "genre_name": "Sin genero indicado" }]';
+            test[0].test2 = '[{ "id": 17, "genre_name": "Sin genero indicado" }]';
+            test = mariadbHelper.verifyJSON(test, ['test', 'test2']);
+            return res.status(200).send({ test });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error en el test' });
+        });
+}*/
+
 
 
 module.exports = {
@@ -842,5 +844,6 @@ module.exports = {
     createNovelRating,
     updateNovelRating,
     deleteNovelRating,
-    getTest
+    // tests
+    // getTest
 };

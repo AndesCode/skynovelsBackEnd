@@ -754,27 +754,27 @@ function adminUploadAdvertisementImage(req, res) {
     const id = req.params.id;
     if (req.files) {
         const file_path = req.files.advertisement_image.path;
-        const file_split = file_path.split('\\');
+        const file_split = file_path.split(process.env.pathSlash || '\\');
         const file_name = file_split[3];
-        const ext_split = file_name.split('\.');
+        const ext_split = file_name.split(process.env.pathDot || '\.');
         const file_ext = ext_split[1];
-        if (file_ext == 'jpg') {
-            if (req.body.old_advertisement_image) {
-                const old_img = req.body.old_advertisement_image;
-                old_file_path = './server/uploads/advertisements/' + old_img;
-                fs.exists(old_file_path, (exists) => {
-                    if (exists) {
-                        fs.unlink(old_file_path, (err) => {
-                            if (err) {
-                                return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
-                            }
-                        });
-                    }
-                });
-            }
+        if (file_ext.toUpperCase() === 'JPG' || file_ext.toUpperCase() === 'JPEG') {
             const advertisement_image = {};
             advertisement_image.adv_img = file_name;
             advertisements_model.findByPk(id).then(advertisement => {
+                if (advertisement.adv_img !== null) {
+                    const old_img = advertisement.adv_img;
+                    old_file_path = './server/uploads/advertisements/' + old_img;
+                    fs.stat(old_file_path, function(err, stats) {
+                        if (stats) {
+                            fs.unlink(old_file_path, (err) => {
+                                if (err) {
+                                    return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
+                                }
+                            });
+                        }
+                    });
+                }
                 advertisement.update(advertisement_image).then(() => {
                     return res.status(200).send({ advertisement });
                 }).catch(err => {

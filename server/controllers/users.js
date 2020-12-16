@@ -26,6 +26,7 @@ const path = require('path');
 const passport = require('passport');
 const hbs = require('nodemailer-express-handlebars');
 const mariadbHelper = require('../services/mariadbHelper');
+const applicationURL = process.env.applicationURL || 'http:localhost:4200';
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.ethereal.email',
@@ -52,9 +53,9 @@ function createUser(req, res) {
             from: 'wayne15@ethereal.email',
             to: req.body.user_email,
             subject: 'Skynovels: Confirmación de registro',
-            text: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/activacion-de-usuario/' + activation_user_key,
+            text: 'haz click en el enlace para activar tu cuenta de Skynovels! ' + applicationURL + '/activacion-de-usuario/' + activation_user_key,
             context: {
-                token: 'http://localhost:4200/activacion-de-usuario/' + activation_user_key,
+                token: applicationURL + '/activacion-de-usuario/' + activation_user_key,
                 user: user.user_login,
                 year: new Date().getFullYear()
             },
@@ -214,6 +215,7 @@ function passwordResetRequest(req, res) {
     users_model.findOne({
         where: {
             user_email: req.body.user_email,
+            user_status: 'Active',
         }
     }).then(user => {
         if (user) {
@@ -225,9 +227,9 @@ function passwordResetRequest(req, res) {
                     from: 'wayne15@ethereal.email',
                     to: req.body.user_email,
                     subject: 'Skynovels: Restablecer contraseña',
-                    text: 'haz click en el enalce para activar reiniciar tu contraseña de Skynovels! http://localhost:4200/nueva-contraseña/' + token_data.token,
+                    text: 'haz click en el enlace para reiniciar tu contraseña de Skynovels! ' + applicationURL + '/nueva-contraseña/' + token_data.token,
                     context: {
-                        token: 'http://localhost:4200/nueva-contraseña/' + token_data.token,
+                        token: applicationURL + '/nueva-contraseña/' + token_data.token,
                         user: user.user_login,
                         year: new Date().getFullYear()
                     },
@@ -294,45 +296,45 @@ function uploadUserProfileImg(req, res) {
     const id = req.params.id;
     if (req.files) {
         const file_path = req.files.user_profile_image.path;
-        const file_split = file_path.split('\\');
+        const file_split = file_path.split(process.env.pathSlash || '\\');
         const file_name = file_split[3];
-        const ext_split = file_name.split('\.');
+        const ext_split = file_name.split(process.env.pathDot || '\.');
         const file_ext = ext_split[1];
         if (file_ext.toUpperCase() === 'JPG' || file_ext.toUpperCase() === 'JPEG') {
-            if (req.body.old_user_profile_image) {
-                const old_img = req.body.old_user_profile_image;
-                old_file_path = './server/uploads/users/' + old_img;
-                old_file_thumb_path = './server/uploads/users/thumbs/' + old_img;
-                fs.exists(old_file_path, (exists) => {
-                    if (exists) {
-                        fs.unlink(old_file_path, (err) => {
-                            if (err) {
-                                return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
-                            }
-                        });
-                    }
-                });
-                fs.exists(old_file_thumb_path, (exists) => {
-                    if (exists) {
-                        fs.unlink(old_file_thumb_path, (err) => {
-                            if (err) {
-                                return res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo' });
-                            }
-                        });
-                    }
-                });
-            }
             const user_profile_image = {};
             user_profile_image.user_profile_image = file_name;
             users_model.findByPk(id).then(user => {
                 if (user.id === req.user.id) {
+                    if (user.user_profile_image !== null) {
+                        const old_img = user.user_profile_image;
+                        const old_file_path = './server/uploads/users/' + old_img;
+                        const old_file_thumb_path = './server/uploads/users/thumbs/' + old_img;
+                        fs.stat(old_file_path, function(err, stats) {
+                            if (stats) {
+                                fs.unlink(old_file_path, (err) => {
+                                    if (err) {
+                                        return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
+                                    }
+                                });
+                            }
+                        });
+                        fs.stat(old_file_thumb_path, function(err, stats) {
+                            if (stats) {
+                                fs.unlink(old_file_thumb_path, (err) => {
+                                    if (err) {
+                                        return res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo' });
+                                    }
+                                });
+                            }
+                        });
+                    }
                     user.update(user_profile_image).then(() => {
                         const newPath = './server/uploads/users/' + file_name;
                         const thumbPath = './server/uploads/users/thumbs/' + file_name;
                         const options = { width: 210, height: 280 };
                         imageThumbnail(path.resolve(newPath), options)
                             .then(thumbnail => {
-                                const buf = new Buffer(thumbnail, 'buffer');
+                                const buf = new Buffer.from(thumbnail, 'buffer');
                                 fs.writeFile(thumbPath, buf, function(err) {
                                     if (err) {
                                         fs.unlink(file_path, (error) => {
@@ -394,13 +396,11 @@ function getUserProfileImage(req, res) {
         img_path = './server/uploads/users/thumbs/' + image;
     }
 
-    fs.exists(img_path, (exists) => {
-        if (exists) {
-            return res.sendFile(path.resolve(img_path));
+    fs.stat(img_path, function(err, stats) {
+        if (stats) {
+            return res.status(200).sendFile(path.resolve(img_path));
         } else {
-            return res.status(404).send({
-                message: "No se encuentra la imagen del usuario"
-            });
+            return res.status(404).send({ message: 'No se encuentra la imagen de usuario' });
         }
     });
 }

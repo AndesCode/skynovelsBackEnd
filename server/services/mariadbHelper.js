@@ -4,8 +4,8 @@ function verifyJSON(objects, corrections) {
         for (const correction of corrections) {
             if (object[correction] && typeof(object[correction]) !== 'object') {
                 try {
-                    const parsedObeject = JSON.parse(object[correction]);
-                    object[correction] = parsedObeject;
+                    const parsedValue = JSON.parse(object[correction]);
+                    object[correction] = parsedValue;
                 } catch (e) {
                     continue;
                 }
