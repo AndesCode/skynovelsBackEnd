@@ -15,7 +15,7 @@ const path = require('path');
 const Sequelize = require('sequelize');
 const mariadbHelper = require('../services/mariadbHelper');
 
-// Novels
+// Novels.
 
 function getHomeNovels(req, res) {
     novels_model.sequelize.query('SELECT n.*, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating FROM  novels n  WHERE  n.nvl_status IN ("Active", "Finished") ORDER BY nvl_rating desc LIMIT 10', { type: novels_model.sequelize.QueryTypes.SELECT })
