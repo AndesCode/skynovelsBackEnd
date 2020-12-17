@@ -29,7 +29,7 @@ exports.createSessionToken = (user) => {
     };
     const jwt = njwt.create(params, signingKey);
     const t = new Date();
-    t.setHours(t.getHours() + 1);
+    t.setSeconds(t.getSeconds() + 1);
     jwt.setExpiration(t);
     token = jwt.compact();
     return token;
@@ -47,7 +47,7 @@ exports.createEditorToken = (user) => {
     };
     const jwt = njwt.create(params, signingKey, 'HS512');
     const t = new Date();
-    t.setMinutes(t.getMinutes() + 1);
+    t.setSeconds(t.getSeconds() + 1);
     jwt.setExpiration(t);
     const token_data = {
         token: jwt.compact(),

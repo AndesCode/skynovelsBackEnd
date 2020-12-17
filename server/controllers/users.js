@@ -174,29 +174,29 @@ function login(req, res, next) {
             return res.status(500).send({ 'status': 'fail', 'message': info.message });
         } else {
             if (user.user_rol === 'Admin' || user.user_rol === 'Editor') {
-                const token_data = jwt.createAdminToken(user);
+                let token_data;
+                if (user.user_rol === 'Admin') {
+                    token_data = jwt.createAdminToken(user);
+                } else {
+                    token_data = jwt.createEditorToken(user);
+                }
                 user.update({ user_verification_key: token_data.key }).then(user => {
                     req.logIn(user, function(err) {
                         if (err) { return res.status(500).send({ 'status': 'err', 'message': err.message }); }
                     });
                     return res.status(200).send({
-                        sknvl_s: token_data.token
+                        sknvl_s: [token_data.token.slice(0, 46), 'S', token_data.token.slice(46)].join('')
                     });
                 }).catch(err => {
                     return res.status(500).send({ message: 'Error al actualizar la key de administrador' });
                 });
             } else {
-                let sToken;
-                if (user.user_rol === 'Editor') {
-                    sToken = jwt.createEditorToken(user);
-                } else {
-                    sToken = jwt.createSessionToken(user);
-                }
+                const sToken = jwt.createSessionToken(user);
                 req.logIn(user, function(err) {
                     if (err) { return res.status(500).send({ 'status': 'err', 'message': err.message }); }
                 });
                 return res.send({
-                    sknvl_s: sToken
+                    sknvl_s: [sToken.slice(0, 46), 'S', sToken.slice(46)].join('')
                 });
             }
         }
