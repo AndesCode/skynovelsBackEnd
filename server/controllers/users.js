@@ -28,12 +28,15 @@ const hbs = require('nodemailer-express-handlebars');
 const mariadbHelper = require('../services/mariadbHelper');
 const applicationURL = process.env.applicationURL || 'http:localhost:4200';
 
+const noReplyEmailUser = process.env.noReplyEmailUser;
+const noReplyEmailPass = process.env.noReplyEmailPass;
+
 const transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
+    host: 'mail.skynovels.net',
+    port: 465,
     auth: {
-        user: 'tyler.wisozk6@ethereal.email',
-        pass: 'Dwp1uH1nBhpeyY1Rq7'
+        user: noReplyEmailUser,
+        pass: noReplyEmailPass
     }
 });
 
@@ -50,7 +53,7 @@ function createUser(req, res) {
     users_model.create(body).then(user => {
         const activation_user_key = cryptr.encrypt(user.user_verification_key);
         const mailOptions = {
-            from: 'wayne15@ethereal.email',
+            from: noReplyEmailUser,
             to: req.body.user_email,
             subject: 'Skynovels: Confirmación de registro',
             text: 'haz click en el enlace para activar tu cuenta de Skynovels! ' + applicationURL + '/activacion-de-usuario/' + activation_user_key,
@@ -224,7 +227,7 @@ function passwordResetRequest(req, res) {
                 user_verification_key: token_data.key
             }).then(() => {
                 const mailOptions = {
-                    from: 'wayne15@ethereal.email',
+                    from: noReplyEmailUser,
                     to: req.body.user_email,
                     subject: 'Skynovels: Restablecer contraseña',
                     text: 'haz click en el enlace para reiniciar tu contraseña de Skynovels! ' + applicationURL + '/nueva-contraseña/' + token_data.token,
