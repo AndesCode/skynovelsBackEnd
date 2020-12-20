@@ -127,7 +127,8 @@ function activateUser(req, res) {
     const decryptedkey = cryptr.decrypt(req.body.key);
     users_model.findOne({
         where: {
-            user_verification_key: decryptedkey
+            user_verification_key: decryptedkey,
+            user_status: 'Disabled',
         }
     }).then(user => {
         console.log('Activando usuario: ' + user.user_login);
@@ -433,7 +434,10 @@ function createUserbookmark(req, res) {
     novels_model.findOne({
         where: {
             id: body.nvl_id,
-            nvl_status: 'Active'
+            [Op.or]: [
+                { nvl_status: 'Active' },
+                { nvl_status: 'Finished' }
+            ]
         },
         attributes: ['id', 'nvl_status']
     }).then(novel => {
