@@ -130,16 +130,17 @@ function activateUser(req, res) {
             user_verification_key: decryptedkey
         }
     }).then(user => {
+        console.log('Activando usuario: ' + user.user_login);
         user.update({
             user_status: 'Active',
             user_verification_key: new_user_verification_key
-        }).then(() => {
-            return res.status(200).send({ user_login: user.user_login });
+        }).then(userActivated => {
+            return res.status(200).send({ user_login: userActivated.user_login });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario' });
+            return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario ' + err });
         });
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario' });
+        return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario ' + err });
     });
 }
 
