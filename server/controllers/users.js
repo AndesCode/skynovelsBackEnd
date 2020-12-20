@@ -123,19 +123,18 @@ function getUserNovels(req, res) {
 }
 
 function activateUser(req, res) {
+    const new_user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const decryptedkey = cryptr.decrypt(req.body.key);
     users_model.findOne({
         where: {
             user_verification_key: decryptedkey
         }
     }).then(user => {
-        const new_user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         user.update({
             user_status: 'Active',
             user_verification_key: new_user_verification_key
         }).then(() => {
-            const userLogin = user.user_login;
-            return res.status(200).send({ user_login: userLogin });
+            return res.status(200).send({ user_login: user.user_login });
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario' });
         });
