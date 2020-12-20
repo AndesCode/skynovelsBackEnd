@@ -217,6 +217,7 @@ function updateNovel(req, res) {
 
 function uploadNovelImage(req, res) {
     const id = req.params.id;
+    const imageFileFormats = ['JPG', 'JPEG', 'PNG', 'JFIF', 'PJPEG', 'PJP'];
     if (req.files) {
         const file_path = req.files.novel_image.path;
         console.log(process.env.pathSlash);
@@ -224,7 +225,7 @@ function uploadNovelImage(req, res) {
         const file_name = file_split[3];
         const ext_split = file_name.split(process.env.pathDot || '\.');
         const file_ext = ext_split[1];
-        if (file_ext.toUpperCase() === 'JPG' || file_ext.toUpperCase() === 'JPEG') {
+        if (imageFileFormats.includes(file_ext.toUpperCase())) {
             const novel_image = {};
             novel_image.nvl_img = file_name;
             novels_model.findByPk(id, {
