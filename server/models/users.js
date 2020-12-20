@@ -41,7 +41,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false
         },
         user_email: {
-            type: DataTypes.STRING,
+            type: DataTypes.STRING(75),
             allowNull: false,
             unique: true,
             validate: {
@@ -100,7 +100,7 @@ module.exports = (sequelize, DataTypes) => {
                 }
             }
         },
-        user_verification_key: DataTypes.STRING,
+        user_verification_key: DataTypes.STRING(256),
         user_profile_image: {
             type: DataTypes.STRING(65),
             validate: {
