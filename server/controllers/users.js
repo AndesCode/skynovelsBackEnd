@@ -48,7 +48,7 @@ transporter.use('compile', hbs({
 
 function createUser(req, res) {
     const body = req.body;
-    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.,"'#{}()¡¿])[A-Za-z\d@$!%*?&.,"'#{}()¡¿]{8,16}$/.test(body.user_pass)) {
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$_\-!%*?&.,"'#{}()¡¿])[A-Za-z\d@$_\-!%*?&.,"'#{}()¡¿]{8,16}$/.test(body.user_pass)) {
         return res.status(400).send({ message: 'La contraseña no cumple con el parametro regex' });
     }
     users_model.create(body).then(user => {
@@ -272,7 +272,7 @@ function updateUserPassword(req, res) {
         return res.status(401).send({ message: 'Operación no permitida' });
     }
     users_model.findByPk(id).then(user => {
-        if (/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.,"'#{}()¡¿])[A-Za-z\d@$!%*?&.,"'#{}()¡¿]{8,16}$/.test(body.user_pass)) {
+        if (/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$_\-!%*?&.,"'#{}()¡¿])[A-Za-z\d@$_\-!%*?&.,"'#{}()¡¿]{8,16}$/.test(body.user_pass)) {
             const salt = bcrypt.genSaltSync(saltRounds);
             body.user_pass = bcrypt.hashSync(body.user_pass, salt);
             body.user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
