@@ -126,8 +126,8 @@ function getUserNovels(req, res) {
 
 function activateUser(req, res) {
     const key = req.body.key;
-    const new_user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const decryptedkey = cryptr.decrypt(key);
+    const new_user_verification_key = String(Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15));
+    const decryptedkey = String(cryptr.decrypt(key));
     users_model.sequelize.query('SELECT id, user_login, user_verification_key, user_status FROM users WHERE user_verification_key = ? AND user_status = "Disabled"', { replacements: [decryptedkey], type: users_model.sequelize.QueryTypes.SELECT })
         .then(disabledUser => {
             if (disabledUser.length > 0) {
