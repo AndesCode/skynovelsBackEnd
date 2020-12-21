@@ -131,27 +131,28 @@ function activateUser(req, res) {
     users_model.sequelize.query('SELECT id, user_login, user_verification_key, user_status FROM users WHERE user_verification_key = ? AND user_status = "Disabled"', { replacements: [decryptedkey], type: users_model.sequelize.QueryTypes.SELECT })
         .then(disabledUser => {
             if (disabledUser.length > 0) {
-                const user = disabledUser[0];
-                console.log('Activando usuario: ' + user.user_login);
-                users_model.sequelize.query('UPDATE users SET user_status = "Active", user_verification_key = "' + new_user_verification_key + '" WHERE id = ?', { replacements: [user.id], type: users_model.sequelize.QueryTypes.SELECT })
-                    .then(() => {
+                users_model.findByPk(disabledUser[0].id).then(user => {
+                    user.update({
+                        user_status: 'Active',
+                        user_verification_key: new_user_verification_key
+                    }).then(() => {
                         return res.status(200).send({ user_login: user.user_login });
                     }).catch(err => {
                         console.log(err);
-                        if (err.message.includes('TypeError: results.map')) {
-                            return res.status(200).send({ user_login: user.user_login });
+                        if (err && err.errors && err.errors[0].message) {
+                            return res.status(400).send({ message: err.errors[0].message });
+                        } else {
+                            return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario' });
                         }
-                        return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario 1' + err });
                     });
+                }).catch(err => {
+                    return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario' });
+                });
             } else {
                 return res.status(500).send({ message: 'No se encuentra el usuario a activar.' });
             }
         }).catch(err => {
-            console.log(err);
-            if (err.message.includes('TypeError: results.map')) {
-                return res.status(200).send({ user_login: user.user_login });
-            }
-            return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario 2' + err });
+            return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario' });
         });
 }
 
