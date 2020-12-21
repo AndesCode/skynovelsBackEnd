@@ -147,6 +147,29 @@ function activateUser(req, res) {
         });
 }
 
+function userActivation(req, res) {
+    const key = req.body.key;
+    const new_user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const decryptedkey = cryptr.decrypt(key);
+    users_model.sequelize.query('SELECT id, user_login, user_verification_key, user_status FROM users WHERE user_verification_key = ? AND user_status = "Disabled"', { replacements: [decryptedkey], type: users_model.sequelize.QueryTypes.SELECT })
+        .then(disabledUser => {
+            if (disabledUser.length > 0) {
+                const user = disabledUser[0];
+                console.log('Activando usuario: ' + user.user_login);
+                users_model.sequelize.query('UPDATE users SET user_status = "Active", user_verification_key = "' + new_user_verification_key + '" WHERE id = ?', { replacements: [user.id], type: users_model.sequelize.QueryTypes.SELECT })
+                    .then(() => {
+                        return res.status(200).send({ user_login: user.user_login });
+                    }).catch(err => {
+                        return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario ' + err });
+                    });
+            } else {
+                return res.status(500).send({ message: 'No se encuentra el usuario a activar.' });
+            }
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario ' + err });
+        });
+}
+
 function updateUser(req, res) {
     const body = req.body;
     if (body.user_pass) {
@@ -674,6 +697,7 @@ module.exports = {
     // User register
     createUser,
     activateUser,
+    userActivation,
     // Users
     updateUser,
     getUser,
