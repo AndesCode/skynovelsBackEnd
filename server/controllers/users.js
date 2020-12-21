@@ -141,13 +141,17 @@ function activateUser(req, res) {
                         if (err.message.includes('TypeError: results.map')) {
                             return res.status(200).send({ user_login: user.user_login });
                         }
-                        return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario ' + err });
+                        return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario 1' + err });
                     });
             } else {
                 return res.status(500).send({ message: 'No se encuentra el usuario a activar.' });
             }
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario ' + err });
+            console.log(err);
+            if (err.message.includes('TypeError: results.map')) {
+                return res.status(200).send({ user_login: user.user_login });
+            }
+            return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario 2' + err });
         });
 }
 
