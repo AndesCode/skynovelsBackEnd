@@ -10,7 +10,7 @@ module.exports = (app) => {
     app.get('/api/logout', md_auth.auth, userController.logout);
     // User register
     app.post('/api/create-user', userController.createUser);
-    app.post('/api/activate-user', userController.userActivation);
+    app.post('/api/activate-user', userController.activateUser);
     // Users
     app.get('/api/user/:id', userController.getUser);
     app.put('/api/update-user', md_auth.auth, userController.updateUser);
