@@ -625,7 +625,19 @@ function deleteChapter(req, res) {
 // Genres
 
 function getGenres(req, res) {
-    genres_model.findAll().then(genres => {
+    genres_model.findAll({
+        order: [
+            ['genre_name', 'ASC']
+        ]
+    }).then(genres => {
+        for (const genre of genres) {
+            if (genre.genre_name === 'Sin genero indicado') {
+                genres.push(genres.splice(genres.indexOf(genre), 1)[0]);
+                break;
+            } else {
+                continue;
+            }
+        }
         return res.status(200).send({ genres });
     }).catch(err => {
         return res.status(500).send({ message: 'Ocurrio un error al cargar los generos de novelas' });

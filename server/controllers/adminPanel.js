@@ -282,7 +282,10 @@ function adminCreateRecommendedNovel(req, res) {
         novels_model.findOne({
             where: {
                 id: id,
-                nvl_status: 'Active'
+                [Op.or]: [
+                    { nvl_status: 'Active' },
+                    { nvl_status: 'Finished' }
+                ]
             }
         }).then(novel => {
             if (novel) {

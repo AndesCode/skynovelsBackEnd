@@ -21,12 +21,23 @@ exports.createPasswordRecoveryToken = (user) => {
 // User FrontEnd session token
 exports.createSessionToken = (user) => {
     const signingKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const params = {
-        sub: user.id,
-        user_login: user.user_login,
-        user_forum_auth: user.user_forum_auth,
-        user_profile_image: user.user_profile_image
-    };
+    let params;
+    if (user.user_rol === 'User') {
+        params = {
+            sub: user.id,
+            user_login: user.user_login,
+            user_forum_auth: user.user_forum_auth,
+            user_profile_image: user.user_profile_image
+        };
+    } else {
+        params = {
+            sub: user.id,
+            user_login: user.user_login,
+            user_forum_auth: user.user_forum_auth,
+            user_profile_image: user.user_profile_image,
+            user_rol: user.user_rol
+        };
+    }
     const jwt = njwt.create(params, signingKey);
     const t = new Date();
     t.setSeconds(t.getSeconds() + 1);

@@ -128,7 +128,7 @@ function activateUser(req, res) {
     const key = req.body.key;
     const new_user_verification_key = String(Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15));
     const decryptedkey = String(cryptr.decrypt(key));
-    users_model.sequelize.query('SELECT id, user_login, user_verification_key, user_status FROM users WHERE user_verification_key = ? AND user_status = "Disabled"', { replacements: [decryptedkey], type: users_model.sequelize.QueryTypes.SELECT })
+    users_model.sequelize.query('SELECT id FROM users WHERE user_verification_key = ? AND user_status = "Disabled"', { replacements: [decryptedkey], type: users_model.sequelize.QueryTypes.SELECT })
         .then(disabledUser => {
             if (disabledUser.length > 0) {
                 users_model.findByPk(disabledUser[0].id).then(user => {
@@ -138,18 +138,13 @@ function activateUser(req, res) {
                     }).then(() => {
                         return res.status(200).send({ user_login: user.user_login });
                     }).catch(err => {
-                        console.log(err);
-                        if (err && err.errors && err.errors[0].message) {
-                            return res.status(400).send({ message: err.errors[0].message });
-                        } else {
-                            return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario' });
-                        }
+                        return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario' });
                     });
                 }).catch(err => {
                     return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario' });
                 });
             } else {
-                return res.status(500).send({ message: 'No se encuentra el usuario a activar.' });
+                return res.status(500).send({ message: 'No se encuentra el usuario a activar' });
             }
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio algún error durante la activación del usuario' });
@@ -361,7 +356,12 @@ function uploadUserProfileImg(req, res) {
                                         });
                                     }
                                 });
-                                return res.status(200).send({ image: user.user_profile_image });
+                                // We create a new JSON Web Token, so the users can get in his token the new user image uploaded.
+                                const sToken = jwt.createSessionToken(user);
+                                return res.send({
+                                    image: user.user_profile_image,
+                                    sknvl_s: [sToken.slice(0, 46), 'S', sToken.slice(46)].join('')
+                                });
                             }).catch(err => {
                                 fs.unlink(file_path, (err) => {
                                     if (err) {
