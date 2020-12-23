@@ -308,7 +308,11 @@ function uploadUserProfileImg(req, res) {
     users_model.findByPk(id).then(user => {
         if (user.id === req.user.id && req.files) {
             imageService.uploadImage(user, 'users', req.files).then((image) => {
-                return res.status(200).send({ image: image });
+                const sToken = jwt.createSessionToken(user);
+                return res.send({
+                    sknvl_s: [sToken.slice(0, 46), 'S', sToken.slice(46)].join(''),
+                    image: image
+                });
             }).catch(err => {
                 return res.status(500).send({ message: 'Ocurrio un error al subir la imagen' + err.error });
             });
