@@ -27,14 +27,14 @@ exports.createSessionToken = (user) => {
             sub: user.id,
             user_login: user.user_login,
             user_forum_auth: user.user_forum_auth,
-            user_profile_image: user.user_profile_image
+            image: user.image
         };
     } else {
         params = {
             sub: user.id,
             user_login: user.user_login,
             user_forum_auth: user.user_forum_auth,
-            user_profile_image: user.user_profile_image,
+            image: user.image,
             user_rol: user.user_rol
         };
     }
@@ -53,7 +53,7 @@ exports.createEditorToken = (user) => {
         sub: user.id,
         user_login: user.user_login,
         user_forum_auth: user.user_forum_auth,
-        user_profile_image: user.user_profile_image,
+        image: user.image,
         user_rol: user.user_rol
     };
     const jwt = njwt.create(params, signingKey, 'HS512');
@@ -74,7 +74,7 @@ exports.createAdminToken = (user) => {
         sub: user.id,
         user_login: user.user_login,
         user_forum_auth: user.user_forum_auth,
-        user_profile_image: user.user_profile_image,
+        image: user.image,
         user_rol: user.user_rol
     };
     const jwt = njwt.create(params, signingKey, 'HS512');

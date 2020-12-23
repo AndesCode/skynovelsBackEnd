@@ -11,7 +11,6 @@ module.exports = (app) => {
     // Novels
     app.get('/api/novel/:id/:action', novelsController.getNovel);
     app.get('/api/novels', novelsController.getNovels);
-    app.get('/api/novel/image/:novel_img/:thumb', novelsController.getNovelImage);
     app.put('/api/update-novel', md_auth.EditorAuth, novelsController.updateNovel);
     app.post('/api/create-novel', md_auth.EditorAuth, novelsController.createNovel);
     app.post('/api/upload-novel-img/:id', [md_auth.EditorAuth, md_upload], novelsController.uploadNovelImage);

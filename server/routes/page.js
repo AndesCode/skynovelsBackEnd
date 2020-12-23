@@ -9,7 +9,6 @@ module.exports = (app) => {
     // Advertisements
     app.get('/api/get-advertisements', pageController.getAdvertisements);
     app.get('/api/get-advertisement/:id', pageController.getAdvertisement);
-    app.get('/api/advertisement/image/:advertisement_img', pageController.getAdvertisementImage);
     // Comments
     app.post('/api/create-comment', md_auth.auth, pageController.createComment);
     app.get('/api/get-comments/:id/:objt', pageController.getComments);
@@ -20,4 +19,6 @@ module.exports = (app) => {
     app.get('/api/get-replys/:id/:objt', pageController.getReplys);
     app.put('/api/update-reply', md_auth.auth, pageController.updateReplys);
     app.delete('/api/delete-reply/:id', md_auth.auth, pageController.deleteReplys);
+    // images
+    app.get('/api/get-image/:file_name/:image_type/:thumb', pageController.getImage);
 };

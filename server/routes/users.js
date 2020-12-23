@@ -22,7 +22,6 @@ module.exports = (app) => {
     app.get('/api/password-reset-access', md_auth.changePasswordTokenAuth, userController.passwordResetAccess);
     // Imgs
     app.post('/api/upload-user-profile-img/:id', [md_auth.auth, md_upload], userController.uploadUserProfileImg);
-    app.get('/api/user-profile-img/:profile_img/:thumb', userController.getUserProfileImage);
     // Bookmarks
     app.get('/api/get-user-bookmarks', md_auth.auth, userController.getUserBookmarks);
     app.post('/api/create-user-bookmark', md_auth.auth, userController.createUserbookmark);

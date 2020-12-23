@@ -16,6 +16,7 @@ const Op = Sequelize.Op;
 // files mannager
 const fs = require('fs');
 const mariadbHelper = require('../services/mariadbHelper');
+const imageService = require('../services/imageService');
 
 function adminPanelAccess(req, res) {
     return res.status(200).send({ message: 'Acceso otorgado', status: 200 });
@@ -210,23 +211,8 @@ function adminGetUser(req, res) {
 function adminDeleteUser(req, res) {
     const id = req.params.id;
     users_model.findByPk(id).then(user => {
-        if (user.dataValues.user_profile_image !== '' && user.dataValues.user_profile_image !== null) {
-            const old_img = user.dataValues.user_profile_image;
-            delete_file_path = './server/uploads/users/' + old_img;
-            delete_file_thumb_path = './server/uploads/users/thumbs/' + old_img;
-            fs.unlink(delete_file_path, (err) => {
-                if (err) {
-                    return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua.' });
-                } else {
-                    fs.unlink(delete_file_thumb_path, (err) => {
-                        if (err) {
-                            console.log('error eliminando la imagen de perfil de ' + user.dataValues.user_login);
-                        } else {
-                            console.log('imagen de perfil de ' + user.dataValues.user_login + ' eliminada');
-                        }
-                    });
-                }
-            });
+        if (user.dataValues.image !== '' && user.dataValues.image !== null) {
+            imageService.deleteImage(user.dataValues.image, './server/uploads/users', true);
         }
         user.destroy({
             where: {
@@ -309,9 +295,9 @@ function adminGetNovel(req, res) {
     const id = req.params.id;
     let query;
     if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
-        query = 'SELECT n.*, COUNT(c.id) AS nvl_chapters, MAX(c.createdAt) AS nvl_last_update, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id, "chp_name", (SELECT chp_name FROM chapters ch WHERE ch.id = rl.chp_id))), "]"), JSON) FROM bookmarks rl where rl.nvl_id = n.id), JSON_ARRAY()) as bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "id", v.id, "nvl_id", v.nvl_id, "user_id", v.user_id,"chapters", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) AS chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status IS NOT NULL ), JSON_ARRAY()))), "]"), JSON) FROM volumes v where v.nvl_id = n.id), JSON_ARRAY()) as volumes,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) as likes FROM likes l where l.novel_rating_id = nr.id), JSON_ARRAY()))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), JSON_ARRAY()) as novel_ratings,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id), JSON_ARRAY()) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) AS genres FROM novels n left JOIN chapters c ON c.nvl_id = n.id WHERE n.id = ?';
+        query = 'SELECT n.*, COUNT(c.id) AS nvl_chapters, MAX(c.createdAt) AS nvl_last_update, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id, "chp_name", (SELECT chp_name FROM chapters ch WHERE ch.id = rl.chp_id))), "]"), JSON) FROM bookmarks rl where rl.nvl_id = n.id), JSON_ARRAY()) as bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("vlm_title", v.vlm_title, "id", v.id, "nvl_id", v.nvl_id, "user_id", v.user_id,"chapters", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) AS chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status IS NOT NULL ), JSON_ARRAY()))), "]"), JSON) FROM volumes v where v.nvl_id = n.id), JSON_ARRAY()) as volumes,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "image", (SELECT image FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))), "]"), JSON) as likes FROM likes l where l.novel_rating_id = nr.id), JSON_ARRAY()))), "]"), JSON) FROM novels_ratings nr where nr.novel_id = n.id), JSON_ARRAY()) as novel_ratings,  IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))), "]"), JSON) FROM novels_collaborators nc where nc.novel_id = n.id), JSON_ARRAY()) as collaborators,IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))), "]"), JSON) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) AS genres FROM novels n left JOIN chapters c ON c.nvl_id = n.id WHERE n.id = ?';
     } else {
-        query = 'SELECT n.*, COUNT(c.id) AS nvl_chapters, MAX(c.createdAt) AS nvl_last_update, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id, "chp_name", (SELECT chp_name FROM chapters ch WHERE ch.id = rl.chp_id))) FROM bookmarks rl where rl.nvl_id = n.id), JSON_ARRAY()) as bookmarks, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("vlm_title", v.vlm_title, "id", v.id, "nvl_id", v.nvl_id, "user_id", v.user_id,"chapters", IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC) AS chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status IS NOT NULL ), JSON_ARRAY()))) FROM volumes v where v.nvl_id = n.id), JSON_ARRAY()) as volumes,  IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))) as likes FROM likes l where l.novel_rating_id = nr.id), JSON_ARRAY()))) FROM novels_ratings nr where nr.novel_id = n.id), JSON_ARRAY()) as novel_ratings,  IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))) FROM novels_collaborators nc where nc.novel_id = n.id), JSON_ARRAY()) as collaborators,IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) AS genres FROM novels n left JOIN chapters c ON c.nvl_id = n.id WHERE n.id = ?';
+        query = 'SELECT n.*, COUNT(c.id) AS nvl_chapters, MAX(c.createdAt) AS nvl_last_update, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id, "chp_name", (SELECT chp_name FROM chapters ch WHERE ch.id = rl.chp_id))) FROM bookmarks rl where rl.nvl_id = n.id), JSON_ARRAY()) as bookmarks, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("vlm_title", v.vlm_title, "id", v.id, "nvl_id", v.nvl_id, "user_id", v.user_id,"chapters", IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC) AS chapters FROM chapters c where c.vlm_id = v.id AND c.chp_status IS NOT NULL ), JSON_ARRAY()))) FROM volumes v where v.nvl_id = n.id), JSON_ARRAY()) as volumes,  IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "image", (SELECT image FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))) as likes FROM likes l where l.novel_rating_id = nr.id), JSON_ARRAY()))) FROM novels_ratings nr where nr.novel_id = n.id), JSON_ARRAY()) as novel_ratings,  IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))) FROM novels_collaborators nc where nc.novel_id = n.id), JSON_ARRAY()) as collaborators,IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) AS genres FROM novels n left JOIN chapters c ON c.nvl_id = n.id WHERE n.id = ?';
     }
     novels_model.sequelize.query(query, { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT }).then(novel => {
         if (novel.length > 0) {
@@ -400,24 +386,8 @@ function adminUpdateNovel(req, res) {
 function adminDeleteNovel(req, res) {
     const id = req.params.id;
     novels_model.findByPk(id).then((novel) => {
-        // Deleting Novel image
-        if (novel.dataValues.nvl_img !== '') {
-            const old_img = novel.dataValues.nvl_img;
-            delete_file_path = './server/uploads/novels/' + old_img;
-            delete_file_thumb_path = './server/uploads/novels/thumbs/' + old_img;
-            fs.unlink(delete_file_path, (err) => {
-                if (err) {
-                    return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua. ' });
-                } else {
-                    fs.unlink(delete_file_thumb_path, (err) => {
-                        if (err) {
-                            return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen thumb antigua. ' });
-                        } else {
-                            return res.status(200);
-                        }
-                    });
-                }
-            });
+        if (novel.dataValues.image !== null) {
+            imageService.deleteImage(novel.dataValues.image, './server/uploads/novels', true);
         }
         novel.destroy({
             where: {
@@ -727,17 +697,8 @@ function adminUpdateAdvertisement(req, res) {
 function adminDeleteAdvertisement(req, res) {
     const id = req.params.id;
     advertisements_model.findByPk(id).then((advertisement) => {
-        // Deleting Novel image
-        if (advertisement.dataValues.adv_img !== '' && advertisement.dataValues.adv_img !== null) {
-            const old_img = advertisement.dataValues.adv_img;
-            delete_file_path = './server/uploads/advertisements/' + old_img;
-            fs.unlink(delete_file_path, (err) => {
-                if (err) {
-                    console.log('error eliminando la imagen de anuncio');
-                } else {
-                    console.log('Imagen de anuncio eliminada');
-                }
-            });
+        if (advertisement.dataValues.image !== '' && advertisement.dataValues.image !== null) {
+            imageService.deleteImage(advertisement.dataValues.image, './server/uploads/advertisements', false);
         }
         advertisement.destroy({
             where: {
@@ -755,59 +716,19 @@ function adminDeleteAdvertisement(req, res) {
 
 function adminUploadAdvertisementImage(req, res) {
     const id = req.params.id;
-    const imageFileFormats = ['JPG', 'JPEG', 'PNG', 'JFIF', 'PJPEG', 'PJP'];
-    if (req.files) {
-        const file_path = req.files.advertisement_image.path;
-        const file_split = file_path.split(process.env.pathSlash || '\\');
-        const file_name = file_split[3];
-        const ext_split = file_name.split(process.env.pathDot || '\.');
-        const file_ext = ext_split[1];
-        if (imageFileFormats.includes(file_ext.toUpperCase())) {
-            const advertisement_image = {};
-            advertisement_image.adv_img = file_name;
-            advertisements_model.findByPk(id).then(advertisement => {
-                if (advertisement.adv_img !== null) {
-                    const old_img = advertisement.adv_img;
-                    old_file_path = './server/uploads/advertisements/' + old_img;
-                    fs.stat(old_file_path, function(err, stats) {
-                        if (stats) {
-                            fs.unlink(old_file_path, (err) => {
-                                if (err) {
-                                    return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
-                                }
-                            });
-                        }
-                    });
-                }
-                advertisement.update(advertisement_image).then(() => {
-                    return res.status(200).send({ advertisement });
-                }).catch(err => {
-                    fs.unlink(file_path, (err) => {
-                        if (err) {
-                            return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                        }
-                    });
-                    return res.status(500).send({ message: 'Ocurrio un error al actualizar el anuncio.' });
-                });
+    advertisements_model.findByPk(id).then(advertisement => {
+        if (req.files) {
+            imageService.uploadImage(advertisement, 'advertisements', req.files).then((image) => {
+                return res.status(200).send({ image: image });
             }).catch(err => {
-                fs.unlink(file_path, (err) => {
-                    if (err) {
-                        return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                    }
-                });
-                return res.status(500).send({ message: 'No existe el anuncio.' });
+                return res.status(500).send({ message: 'Ocurrio un error al subir la imagen' + err.error });
             });
         } else {
-            fs.unlink(file_path, (err) => {
-                if (err) {
-                    return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                }
-            });
-            return res.status(500).send({ message: 'La extensión del archivo no es valida.' });
+            return res.status(500).send({ message: 'req.files invalido' });
         }
-    } else {
-        return res.status(400).send({ message: 'Debe Seleccionar anuncio.' });
-    }
+    }).catch(err => {
+        return res.status(500).send({ message: 'No existe el anuncio' });
+    });
 }
 
 module.exports = {

@@ -27,6 +27,7 @@ const passport = require('passport');
 const hbs = require('nodemailer-express-handlebars');
 const mariadbHelper = require('../services/mariadbHelper');
 const applicationURL = process.env.applicationURL || 'http:localhost:4200';
+const imageService = require('../services/imageService');
 
 const noReplyFromUser = process.env.noReplyFromUser;
 const noReplyEmailUser = process.env.noReplyEmailUser;
@@ -85,7 +86,7 @@ function createUser(req, res) {
 
 function getUser(req, res) {
     const id = req.params.id;
-    users_model.sequelize.query('SELECT u.id, u.user_login, u.user_email, u.user_rol, u.user_description, u.user_profile_image, u.createdAt, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("nvl_chapters", (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), "genres", (IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY())), "id", n.id, "nvl_title", n.nvl_title, "nvl_author", n.nvl_author, "nvl_content", n.nvl_content, "nvl_acronym", n.nvl_acronym, "nvl_status", n.nvl_status, "nvl_last_update", (SELECT createdAt FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1), "nvl_publication_date", n.nvl_publication_date, "nvl_name", n.nvl_name, "nvl_img", n.nvl_img, "createdAt", n.createdAt, "updatedAt", n.updatedAt)) FROM novels n WHERE n.nvl_status IN ("Active", "Finished") AND n.nvl_author = u.id GROUP BY n.id), JSON_ARRAY()) AS novels, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("nvl_chapters", (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), "genres", (IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY())), "id", n.id, "nvl_title", n.nvl_title, "nvl_author", n.nvl_author, "nvl_content", n.nvl_content, "nvl_acronym", n.nvl_acronym, "nvl_status", n.nvl_status, "nvl_last_update", (SELECT createdAt FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1), "nvl_publication_date", n.nvl_publication_date, "nvl_name", n.nvl_name, "nvl_img", n.nvl_img, "createdAt", n.createdAt, "updatedAt", n.updatedAt)) FROM novels n, novels_collaborators nc WHERE n.nvl_status IN ("Active", "Finished") AND nc.novel_id = n.id AND nc.user_id = u.id), JSON_ARRAY()) AS collaborations, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "chp_title", c.chp_title)) FROM chapters c WHERE c.chp_author = u.id AND c.chp_status = "Active"), JSON_ARRAY()) AS chapters, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", nr.id, "novel_id", nr.novel_id, "novel_id", nr.novel_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "novel", (SELECT n.nvl_title  FROM novels n WHERE n.id = nr.novel_id))) FROM novels_ratings nr WHERE nr.user_id = u.id), JSON_ARRAY()) AS novels_ratings FROM users u WHERE u.id = ?', { replacements: [id], type: users_model.sequelize.QueryTypes.SELECT })
+    users_model.sequelize.query('SELECT u.id, u.user_login, u.user_email, u.user_rol, u.user_description, u.image, u.createdAt, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("nvl_chapters", (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), "genres", (IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY())), "id", n.id, "nvl_title", n.nvl_title, "nvl_author", n.nvl_author, "nvl_content", n.nvl_content, "nvl_acronym", n.nvl_acronym, "nvl_status", n.nvl_status, "nvl_last_update", (SELECT createdAt FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1), "nvl_publication_date", n.nvl_publication_date, "nvl_name", n.nvl_name, "image", n.image, "createdAt", n.createdAt, "updatedAt", n.updatedAt)) FROM novels n WHERE n.nvl_status IN ("Active", "Finished") AND n.nvl_author = u.id GROUP BY n.id), JSON_ARRAY()) AS novels, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("nvl_chapters", (SELECT COUNT(c.id) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), "genres", (IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY())), "id", n.id, "nvl_title", n.nvl_title, "nvl_author", n.nvl_author, "nvl_content", n.nvl_content, "nvl_acronym", n.nvl_acronym, "nvl_status", n.nvl_status, "nvl_last_update", (SELECT createdAt FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active" ORDER BY c.createdAt DESC LIMIT 1), "nvl_publication_date", n.nvl_publication_date, "nvl_name", n.nvl_name, "image", n.image, "createdAt", n.createdAt, "updatedAt", n.updatedAt)) FROM novels n, novels_collaborators nc WHERE n.nvl_status IN ("Active", "Finished") AND nc.novel_id = n.id AND nc.user_id = u.id), JSON_ARRAY()) AS collaborations, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "chp_title", c.chp_title)) FROM chapters c WHERE c.chp_author = u.id AND c.chp_status = "Active"), JSON_ARRAY()) AS chapters, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", nr.id, "novel_id", nr.novel_id, "novel_id", nr.novel_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "createdAt", nr.createdAt, "novel", (SELECT n.nvl_title  FROM novels n WHERE n.id = nr.novel_id))) FROM novels_ratings nr WHERE nr.user_id = u.id), JSON_ARRAY()) AS novels_ratings FROM users u WHERE u.id = ?', { replacements: [id], type: users_model.sequelize.QueryTypes.SELECT })
         .then(user => {
             user = mariadbHelper.verifyJSON(user, ['novels', 'collaborations', 'chapters', 'novels_ratings']);
             user[0].novels = mariadbHelper.verifyJSON(user[0].novels, ['genres']);
@@ -246,7 +247,6 @@ function passwordResetRequest(req, res) {
                     },
                     template: 'passwordResetRequest'
                 };
-
                 transporter.sendMail(mailOptions, function(err, data) {
                     if (err) {
                         return res.status(500).send({ message: 'Error al enviar el correo ' + err });
@@ -289,13 +289,13 @@ function updateUserPassword(req, res) {
             }).then(() => {
                 return res.status(200).send({ message: '¡Contraseña actualizada con exito!' });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al actualizar la contraseña ' });
+                return res.status(500).send({ message: 'Ocurrio un error al actualizar la contraseña' });
             });
         } else {
-            return res.status(400).send({ message: 'La contraseña no cumple con el parametro regex' });
+            return res.status(400).send({ message: 'La contraseña no cumple las normas de contraseña' });
         }
     }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error cargar el usuario ' });
+        return res.status(500).send({ message: 'Ocurrio un error cargar el usuario' });
     });
 }
 
@@ -305,120 +305,18 @@ function passwordResetAccess(req, res) {
 
 function uploadUserProfileImg(req, res) {
     const id = req.params.id;
-    const imageFileFormats = ['JPG', 'JPEG', 'PNG', 'JFIF', 'PJPEG', 'PJP'];
-    if (req.files) {
-        const file_path = req.files.user_profile_image.path;
-        const file_split = file_path.split(process.env.pathSlash || '\\');
-        const file_name = file_split[3];
-        const ext_split = file_name.split(process.env.pathDot || '\.');
-        const file_ext = ext_split[1];
-        if (imageFileFormats.includes(file_ext.toUpperCase())) {
-            const user_profile_image = {};
-            user_profile_image.user_profile_image = file_name;
-            users_model.findByPk(id).then(user => {
-                if (user.id === req.user.id) {
-                    if (user.user_profile_image !== null) {
-                        const old_img = user.user_profile_image;
-                        const old_file_path = './server/uploads/users/' + old_img;
-                        const old_file_thumb_path = './server/uploads/users/thumbs/' + old_img;
-                        fs.stat(old_file_path, function(err, stats) {
-                            if (stats) {
-                                fs.unlink(old_file_path, (err) => {
-                                    if (err) {
-                                        return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
-                                    }
-                                });
-                            }
-                        });
-                        fs.stat(old_file_thumb_path, function(err, stats) {
-                            if (stats) {
-                                fs.unlink(old_file_thumb_path, (err) => {
-                                    if (err) {
-                                        return res.status(500).send({ message: 'Ocurrio un error al eliminar el thumb antiguo' });
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    user.update(user_profile_image).then(() => {
-                        const newPath = './server/uploads/users/' + file_name;
-                        const thumbPath = './server/uploads/users/thumbs/' + file_name;
-                        const options = { width: 210, height: 280 };
-                        imageThumbnail(path.resolve(newPath), options)
-                            .then(thumbnail => {
-                                const buf = new Buffer.from(thumbnail, 'buffer');
-                                fs.writeFile(thumbPath, buf, function(err) {
-                                    if (err) {
-                                        fs.unlink(file_path, (error) => {
-                                            if (error) {
-                                                return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
-                                            }
-                                        });
-                                    }
-                                });
-                                // We create a new JSON Web Token, so the users can get in his token the new user image uploaded.
-                                const sToken = jwt.createSessionToken(user);
-                                return res.send({
-                                    image: user.user_profile_image,
-                                    sknvl_s: [sToken.slice(0, 46), 'S', sToken.slice(46)].join('')
-                                });
-                            }).catch(err => {
-                                fs.unlink(file_path, (err) => {
-                                    if (err) {
-                                        return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail, se ha cancelado el upload.' });
-                                    }
-                                });
-                                return res.status(500).send({ message: 'Ocurrio un error al crear el thumbnail. ' });
-                            });
-                    }).catch(err => {
-                        fs.unlink(file_path, (err) => {
-                            if (err) {
-                                return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                            }
-                        });
-                        return res.status(500).send({ message: 'Ocurrio un error al actualizar el usuario.' });
-                    });
-                } else {
-                    return res.status(401).send({ message: 'No autorizado' });
-                }
+    users_model.findByPk(id).then(user => {
+        if (user.id === req.user.id && req.files) {
+            imageService.uploadImage(user, 'users', req.files).then((image) => {
+                return res.status(200).send({ image: image });
             }).catch(err => {
-                fs.unlink(file_path, (err) => {
-                    if (err) {
-                        return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                    }
-                });
-                return res.status(500).send({ message: 'No existe el usuario.' });
+                return res.status(500).send({ message: 'Ocurrio un error al subir la imagen' + err.error });
             });
         } else {
-            fs.unlink(file_path, (err) => {
-                if (err) {
-                    return res.status(500).send({ message: 'Ocurrio un error al intentar eliminar el archivo.' });
-                }
-            });
-            return res.status(400).send({ message: 'La extensión del archivo no es valida.' });
+            return res.status(401).send({ message: 'No autorizado' });
         }
-    } else {
-        return res.status(400).send({ message: 'Debe Seleccionar un usuario.' });
-    }
-}
-
-function getUserProfileImage(req, res) {
-    const image = req.params.profile_img;
-    const thumb = req.params.thumb;
-    let img_path = null;
-
-    if (thumb == "false") {
-        img_path = './server/uploads/users/' + image;
-    } else if (thumb == "true") {
-        img_path = './server/uploads/users/thumbs/' + image;
-    }
-
-    fs.stat(img_path, function(err, stats) {
-        if (stats) {
-            return res.status(200).sendFile(path.resolve(img_path));
-        } else {
-            return res.status(404).send({ message: 'No se encuentra la imagen de usuario' });
-        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'No existe el usuario.' + err });
     });
 }
 
@@ -630,7 +528,7 @@ function createUserInvitation(req, res) {
 
 function getUserInvitations(req, res) {
     if (req.user) {
-        invitations_model.sequelize.query('SELECT *, (SELECT user_login FROM users u WHERE u.id = i.invitation_from_id) AS invitation_from_login, (SELECT user_profile_image FROM users u WHERE u.id = i.invitation_from_id) AS invitation_from_user_image, (SELECT nvl_title FROM novels n WHERE n.id = i.invitation_novel) AS invitation_nvl_title FROM invitations i WHERE i.invitation_status = "Active" AND i.invitation_to_id = ?;', { replacements: [req.user.id], type: novels_collaborators_model.sequelize.QueryTypes.SELECT })
+        invitations_model.sequelize.query('SELECT *, (SELECT user_login FROM users u WHERE u.id = i.invitation_from_id) AS invitation_from_login, (SELECT image FROM users u WHERE u.id = i.invitation_from_id) AS invitation_from_user_image, (SELECT nvl_title FROM novels n WHERE n.id = i.invitation_novel) AS invitation_nvl_title FROM invitations i WHERE i.invitation_status = "Active" AND i.invitation_to_id = ?;', { replacements: [req.user.id], type: novels_collaborators_model.sequelize.QueryTypes.SELECT })
             .then(invitations => {
                 return res.status(200).send({ invitations });
             }).catch(err => {
@@ -692,7 +590,6 @@ module.exports = {
     updateUserPassword,
     passwordResetAccess,
     // Imgs
-    getUserProfileImage,
     uploadUserProfileImg,
     // Bookmarks
     getUserBookmarks,

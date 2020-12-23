@@ -39,7 +39,7 @@ module.exports = (sequelize, DataTypes) => {
                 },
             }
         },
-        adv_img: {
+        image: {
             type: DataTypes.STRING(250),
             validate: {
                 len: [0, 250],

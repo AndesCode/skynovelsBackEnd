@@ -101,10 +101,10 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         user_verification_key: DataTypes.STRING(256),
-        user_profile_image: {
-            type: DataTypes.STRING(65),
+        image: {
+            type: DataTypes.STRING(250),
             validate: {
-                len: [0, 65],
+                len: [0, 250],
             }
         },
         user_description: {
@@ -174,7 +174,6 @@ module.exports = (sequelize, DataTypes) => {
         const salt = bcrypt.genSaltSync(saltRounds);
         user.user_verification_key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         user.user_pass = bcrypt.hashSync(user.user_pass, salt);
-        // console.log(options);
     });
 
     return users;

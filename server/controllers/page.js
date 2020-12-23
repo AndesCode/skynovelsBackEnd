@@ -89,7 +89,7 @@ function deleteLike(req, res) {
 // Advertisements
 
 function getAdvertisements(req, res) {
-    advertisements_model.sequelize.query('SELECT a.* FROM advertisements a WHERE a.adv_img IS NOT NULL', { type: advertisements_model.sequelize.QueryTypes.SELECT })
+    advertisements_model.sequelize.query('SELECT a.* FROM advertisements a WHERE a.image IS NOT NULL', { type: advertisements_model.sequelize.QueryTypes.SELECT })
         .then(advertisements => {
             return res.status(200).send({ advertisements });
         }).catch(err => {
@@ -99,7 +99,7 @@ function getAdvertisements(req, res) {
 
 function getAdvertisement(req, res) {
     const id = req.params.id;
-    advertisements_model.sequelize.query('SELECT a.*, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "adv_id", l.adv_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))) FROM likes l where l.adv_id = a.id), JSON_ARRAY()) AS likes, (SELECT user_login FROM users u WHERE u.id = a.user_id) AS user_login, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "comment_content", c.comment_content, "createdAt", c.createdAt, "user_id", c.user_id, "user_login", (SELECT user_login FROM users u where u.id = c.user_id), "user_profile_image", (SELECT user_profile_image FROM users u where u.id = c.user_id), "likes_count", (SELECT COUNT(id) FROM likes l where l.comment_id = c.id), "replys_count", (SELECT COUNT(id) FROM replys r where r.comment_id = c.id), "likes", (IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "comment_id", l.comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))) FROM likes l where l.comment_id = c.id), JSON_ARRAY())))) FROM comments c where c.adv_id = a.id), JSON_ARRAY()) as comments FROM advertisements a WHERE a.id = ? AND a.adv_img IS NOT NULL', { replacements: [id], type: advertisements_model.sequelize.QueryTypes.SELECT })
+    advertisements_model.sequelize.query('SELECT a.*, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "adv_id", l.adv_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))) FROM likes l where l.adv_id = a.id), JSON_ARRAY()) AS likes, (SELECT user_login FROM users u WHERE u.id = a.user_id) AS user_login, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "comment_content", c.comment_content, "createdAt", c.createdAt, "user_id", c.user_id, "user_login", (SELECT user_login FROM users u where u.id = c.user_id), "image", (SELECT image FROM users u where u.id = c.user_id), "likes_count", (SELECT COUNT(id) FROM likes l where l.comment_id = c.id), "replys_count", (SELECT COUNT(id) FROM replys r where r.comment_id = c.id), "likes", (IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "comment_id", l.comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))) FROM likes l where l.comment_id = c.id), JSON_ARRAY())))) FROM comments c where c.adv_id = a.id), JSON_ARRAY()) as comments FROM advertisements a WHERE a.id = ? AND a.image IS NOT NULL', { replacements: [id], type: advertisements_model.sequelize.QueryTypes.SELECT })
         .then(advertisement => {
             if (advertisement.length > 0) {
                 advertisement = mariadbHelper.verifyJSON(advertisement, ['likes', 'comments']);
@@ -111,17 +111,6 @@ function getAdvertisement(req, res) {
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio un error cargar el anuncio' });
         });
-}
-
-function getAdvertisementImage(req, res) {
-    const img_path = './server/uploads/advertisements/' + req.params.advertisement_img;
-    fs.exists(img_path, (exists) => {
-        if (exists) {
-            return res.status(200).sendFile(path.resolve(img_path));
-        } else {
-            return res.status(404).send({ message: 'No se encuentra la imagen de anuncio' });
-        }
-    });
 }
 
 function createComment(req, res) {
@@ -143,14 +132,14 @@ function createComment(req, res) {
         modelDefined = true;
         objectId = body.adv_id;
         objectName = 'adv_id';
-        atributes = ['id', 'adv_img'];
+        atributes = ['id', 'image'];
     }
     model.findByPk(objectId, { attributes: atributes }).then(object => {
         if (object) {
             if (objectName === 'chp_id' && object.chp_status !== 'Active') {
                 return res.status(409).send({ message: 'No se pudo agregar el comentario' });
             }
-            if (objectName === 'adv_id' && (object.adv_img === null || object.adv_img.length === 0)) {
+            if (objectName === 'adv_id' && (object.image === null || object.image.length === 0)) {
                 return res.status(409).send({ message: 'No se pudo agregar el comentario' });
             }
             comments_model.create({
@@ -177,7 +166,7 @@ function createComment(req, res) {
 function getComments(req, res) {
     const objectType = req.params.objt;
     const id = req.params.id;
-    comments_model.sequelize.query('SELECT c.*, (SELECT user_login FROM users u where u.id = c.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = c.user_id) as user_profile_image, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "comment_id", l.comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))) FROM likes l where l.comment_id = c.id), JSON_ARRAY()) as likes FROM comments c WHERE ' + objectType + ' = ?', { replacements: [id], type: comments_model.sequelize.QueryTypes.SELECT })
+    comments_model.sequelize.query('SELECT c.*, (SELECT user_login FROM users u where u.id = c.user_id) as user_login, (SELECT image FROM users u where u.id = c.user_id) as image, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "comment_id", l.comment_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))) FROM likes l where l.comment_id = c.id), JSON_ARRAY()) as likes FROM comments c WHERE ' + objectType + ' = ?', { replacements: [id], type: comments_model.sequelize.QueryTypes.SELECT })
         .then(comments => {
             comments = mariadbHelper.verifyJSON(comments, ['likes']);
             return res.status(200).send({ comments });
@@ -275,7 +264,7 @@ function createReply(req, res) {
 function getReplys(req, res) {
     const objectType = req.params.objt;
     const id = req.params.id;
-    replys_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = r.user_id) as user_login, (SELECT user_profile_image FROM users u where u.id = r.user_id) as user_profile_image, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "reply_id", l.reply_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = l.user_id))) FROM likes l WHERE l.reply_id = r.id), JSON_ARRAY()) as likes FROM replys r WHERE r.' + objectType + ' = ?', { replacements: [id], type: replys_model.sequelize.QueryTypes.SELECT })
+    replys_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = r.user_id) as user_login, (SELECT image FROM users u where u.id = r.user_id) as image, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "reply_id", l.reply_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = l.user_id))) FROM likes l WHERE l.reply_id = r.id), JSON_ARRAY()) as likes FROM replys r WHERE r.' + objectType + ' = ?', { replacements: [id], type: replys_model.sequelize.QueryTypes.SELECT })
         .then(replys => {
             replys = mariadbHelper.verifyJSON(replys, ['likes']);
             return res.status(200).send({ replys });
@@ -328,11 +317,29 @@ function deleteReplys(req, res) {
     });
 }
 
+function getImage(req, res) {
+    const image = req.params.file_name;
+    const image_type = './server/uploads/' + req.params.image_type;
+    const thumb = req.params.thumb;
+    let img_path = null;
+    if (thumb === 'false' || req.params.image_type === 'advertisements') {
+        img_path = image_type + '/' + image;
+    } else if (thumb === 'true' && req.params.image_type !== 'advertisements') {
+        img_path = image_type + '/thumbs/' + image;
+    }
+    fs.stat(img_path, function(err, stats) {
+        if (stats) {
+            return res.status(200).sendFile(path.resolve(img_path));
+        } else {
+            return res.status(404).send({ message: 'No se encuentra la imagen' });
+        }
+    });
+}
+
 module.exports = {
     // Advertisements
     getAdvertisement,
     getAdvertisements,
-    getAdvertisementImage,
     // Comments
     createComment,
     getComments,
@@ -345,5 +352,7 @@ module.exports = {
     deleteReplys,
     // Likes
     createLike,
-    deleteLike
+    deleteLike,
+    // images
+    getImage
 };
