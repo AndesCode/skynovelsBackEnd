@@ -34,8 +34,8 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             validate: {
                 len: {
-                    args: [2, 10000],
-                    msg: 'El contenido del anuncio debe tener entre 2 y 10.000 caracteres'
+                    args: [15, 10000],
+                    msg: 'El contenido del anuncio debe tener entre 15 y 10.000 caracteres'
                 },
             }
         },

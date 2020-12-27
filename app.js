@@ -11,13 +11,19 @@ const app = express();
 const helmet = require("helmet");
 require('./server/passport/local-auth');
 require('dotenv').config();
+const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
 let sessionConfiguration;
-if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
+let whitelist = [];
+if (isProd) {
+    sessionConfiguration = JSON.parse(process.env.prodDataBaseSession);
+    whitelist = ['https://api.anovelsite.com', 'https://anovelsite.com'];
+    console.log('Environment: production');
+} else {
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
     sessionConfiguration = JSON.parse(process.env.devDataBaseSession);
-} else {
-    sessionConfiguration = JSON.parse(process.env.prodDataBaseSession);
+    whitelist = ['http://localhost:4200', 'http://localhost:8100'];
+    console.log('Environment: development');
 }
 
 const sessionStore = new MySQLStore(sessionConfiguration);
@@ -26,21 +32,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(morgan('dev'));
 app.use(helmet());
 
-if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
-    console.log('Environment: development');
-    app.use(session({
-        name: 'sessionId',
-        secret: process.env.devSessionSecret,
-        resave: false,
-        store: sessionStore,
-        saveUninitialized: false,
-        cookie: {
-            maxAge: 5616000000
-        }
-    }));
-} else {
-    console.log('Environment: production');
-    // NODE_ENV=production node app.js
+if (isProd) {
     app.use(session({
         name: 'sessionId',
         secret: process.env.prodSessionSecret,
@@ -55,12 +47,22 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
             maxAge: 5616000000
         }
     }));
+} else {
+    app.use(session({
+        name: 'sessionId',
+        secret: process.env.devSessionSecret,
+        resave: false,
+        store: sessionStore,
+        saveUninitialized: false,
+        cookie: {
+            maxAge: 5616000000
+        }
+    }));
 }
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-const whitelist = ['https://anovelsite.com', 'http://localhost:4200', 'https://api.anovelsite.com'];
 const corsOptions = {
     origin: function(origin, callback) {
         if (whitelist.indexOf(origin) !== -1 || !origin) {
@@ -72,10 +74,10 @@ const corsOptions = {
     credentials: true
 };
 app.use(cors(corsOptions), (req, res, next) => {
-    if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
-        res.header('Access-Control-Allow-Origin', '*');
-    } else {
+    if (isProd) {
         res.header('Access-Control-Allow-Origin', 'https://anovelsite.com');
+    } else {
+        res.header('Access-Control-Allow-Origin', '*');
     }
     res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
@@ -95,15 +97,15 @@ app.use('server', express.static(path.join(__dirname, 'server')));
 
 let port;
 
-if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
-    port = 3000;
-    app.get('*', (req, res) => {
+if (isProd) {
+    port = 80;
+    app.get('/api', (req, res) => {
         console.log('ruta actual: ' + req.originalUrl);
         res.status(200).send({ message: 'Welcome to the server' });
     });
 } else {
-    port = 80;
-    app.get('/api', (req, res) => {
+    port = 3000;
+    app.get('*', (req, res) => {
         console.log('ruta actual: ' + req.originalUrl);
         res.status(200).send({ message: 'Welcome to the server' });
     });
