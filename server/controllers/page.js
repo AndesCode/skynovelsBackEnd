@@ -89,7 +89,7 @@ function deleteLike(req, res) {
 // Advertisements
 
 function getAdvertisements(req, res) {
-    advertisements_model.sequelize.query('SELECT a.* FROM advertisements a WHERE a.image IS NOT NULL', { type: advertisements_model.sequelize.QueryTypes.SELECT })
+    advertisements_model.sequelize.query('SELECT a.* FROM advertisements a WHERE a.image IS NOT NULL AND a.adv_status = "Active" ORDER BY adv_order;', { type: advertisements_model.sequelize.QueryTypes.SELECT })
         .then(advertisements => {
             return res.status(200).send({ advertisements });
         }).catch(err => {

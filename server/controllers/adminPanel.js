@@ -637,7 +637,7 @@ function adminGetAdvertisements(req, res) {
         .then(advertisements => {
             return res.status(200).send({ advertisements });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error cargar los anuncios' });
+            return res.status(500).send({ message: 'Ocurrio un error cargar los anuncios ' });
         });
 }
 
@@ -671,13 +671,16 @@ function adminCreateAdvertisement(req, res) {
 
 function adminUpdateAdvertisement(req, res) {
     const body = req.body;
+    console.log(body);
     advertisements_model.findByPk(body.id).then(advertisement => {
         if (advertisement) {
             advertisement.update({
                 adv_title: body.adv_title,
+                adv_status: body.adv_status,
                 adv_content: body.adv_content,
                 adv_order: body.adv_order
             }).then((advertisement) => {
+                console.log(advertisement);
                 return res.status(200).send({ advertisement });
             }).catch(err => {
                 if (err && err.errors && err.errors[0].message) {

@@ -70,7 +70,18 @@ module.exports = (sequelize, DataTypes) => {
                     msg: 'El orden de anuncio debe ser numerico'
                 }
             }
-        }
+        },
+        adv_status: {
+            type: DataTypes.STRING(8),
+            validate: {
+                isIn: {
+                    args: [
+                        ['Active', 'Disabled']
+                    ],
+                    msg: 'El estado de usuario que se intenta asignar no esta permitido'
+                }
+            }
+        },
     });
 
     advertisements.associate = function(models) {

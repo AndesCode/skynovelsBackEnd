@@ -11,22 +11,22 @@ module.exports = (sequelize, DataTypes) => {
         },
         nvl_author: DataTypes.INTEGER,
         nvl_translator: {
-            type: DataTypes.STRING(25),
+            type: DataTypes.STRING(60),
             defaultValue: null,
             validate: {
                 len: {
-                    args: [0, 25],
-                    msg: 'El nombre del traductor de la novela debe tener entre 0 y 25 caracteres'
+                    args: [0, 60],
+                    msg: 'El nombre del traductor de la novela debe tener entre 0 y 60 caracteres'
                 }
             }
         },
         nvl_translator_eng: {
-            type: DataTypes.STRING(25),
+            type: DataTypes.STRING(60),
             defaultValue: null,
             validate: {
                 len: {
-                    args: [0, 25],
-                    msg: 'El nombre del traductor a ingles de la novela debe tener entre 0 y 25 caracteres'
+                    args: [0, 60],
+                    msg: 'El nombre del traductor a ingles de la novela debe tener entre 0 y 60 caracteres'
                 }
             }
         },
@@ -41,7 +41,7 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         nvl_title: {
-            type: DataTypes.STRING(60),
+            type: DataTypes.STRING(120),
             allowNull: false,
             validate: {
                 isUnique: function(value, next) {
@@ -58,8 +58,8 @@ module.exports = (sequelize, DataTypes) => {
                         });
                 },
                 len: {
-                    args: [4, 60],
-                    msg: 'El titulo de la novela debe tener entre 4 y 60 caracteres'
+                    args: [4, 120],
+                    msg: 'El titulo de la novela debe tener entre 4 y 120 caracteres'
                 },
                 notNull: {
                     msg: 'Falta Indicar un titulo para la novela'
@@ -99,12 +99,12 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         nvl_writer: {
-            type: DataTypes.STRING(25),
+            type: DataTypes.STRING(60),
             allowNull: false,
             validate: {
                 len: {
-                    args: [0, 25],
-                    msg: 'El escritor de la novela debe tener entre 0 y 25 caracteres'
+                    args: [0, 60],
+                    msg: 'El escritor de la novela debe tener entre 0 y 60 caracteres'
                 },
                 notNull: {
                     msg: 'Falta Indicar el autor de la novela'
