@@ -231,7 +231,7 @@ function uploadNovelImage(req, res) {
             imageService.uploadImage(novel, 'novels', req.files).then((image) => {
                 return res.status(200).send({ image: image });
             }).catch(err => {
-                return res.status(500).send({ message: 'Ocurrio un error al subir la imagen' + err.error });
+                return res.status(500).send({ message: 'Ocurrio un error al subir la imagen' });
             });
         } else {
             return res.status(401).send({ message: 'No autorizado' });
