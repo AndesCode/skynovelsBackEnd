@@ -239,9 +239,9 @@ function passwordResetRequest(req, res) {
                     from: noReplyEmailUser,
                     to: req.body.user_email,
                     subject: 'Skynovels: Restablecer contraseña',
-                    text: 'haz click en el enlace para reiniciar tu contraseña de Skynovels! ' + applicationURL + '/nueva-contraseña/' + token_data.token,
+                    text: 'haz click en el enlace para reiniciar tu contraseña de Skynovels! ' + applicationURL + '/nueva-contrasena/' + token_data.token,
                     context: {
-                        token: applicationURL + '/nueva-contraseña/' + token_data.token,
+                        token: applicationURL + '/nueva-contrasena/' + token_data.token,
                         user: user.user_login,
                         year: new Date().getFullYear()
                     },
