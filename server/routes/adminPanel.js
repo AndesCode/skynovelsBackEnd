@@ -48,4 +48,6 @@ module.exports = (app) => {
     app.put('/api/admin-update-advertisement', md_auth.adminAuth, adminPanelController.adminUpdateAdvertisement);
     app.delete('/api/admin-delete-advertisement/:id', md_auth.adminAuth, adminPanelController.adminDeleteAdvertisement);
     app.post('/api/admin-upload-advertisement-img/:id', [md_auth.adminAuth, md_upload], adminPanelController.adminUploadAdvertisementImage);
+    // Collaborators
+    app.post('/api/admin-create-novel-collaborator', md_auth.adminAuth, adminPanelController.adminCreateNovelCollaborator);
 };

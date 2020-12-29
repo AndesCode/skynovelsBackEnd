@@ -519,7 +519,7 @@ function createUserInvitation(req, res) {
                         return res.status(400).send({ message: 'Usuario debe ser Editor o Administrador' });
                     }
                 } else {
-                    return res.status(400).send({ message: 'No se encuentra ningún usuario por ese nombre' });
+                    return res.status(404).send({ message: 'No se encuentra ningún usuario por ese nombre' });
                 }
             }).catch(err => {
                 return res.status(500).send({ message: 'Ha ocurrido algún error durante la carga del usuario' });
@@ -549,17 +549,38 @@ function updateUserInvitation(req, res) {
     invitations_model.findByPk(body.id).then(invitation => {
         if (req.user.id === invitation.invitation_to_id) {
             if (body.invitation_status === 'Confirmed') {
-                novels_collaborators_model.create({
-                    novel_id: invitation.invitation_novel,
-                    user_id: req.user.id
-                }).then(() => {
-                    invitations_model.destroy({
-                        where: {
-                            id: invitation.id
-                        }
-                    }).then(() => {
-                        return res.status(200).send({ invitation });
-                    });
+                novels_collaborators_model.findOne({
+                    where: {
+                        [Op.and]: [
+                            { novel_id: invitation.invitation_novel },
+                            { user_id: req.user.id }
+                        ]
+                    }
+                }).then((novel_collaborator) => {
+                    if (novel_collaborator) {
+                        invitations_model.destroy({
+                            where: {
+                                id: invitation.id
+                            }
+                        }).then(() => {
+                            return res.status(200).send({ invitation });
+                        });
+                    } else {
+                        novels_collaborators_model.create({
+                            novel_id: invitation.invitation_novel,
+                            user_id: req.user.id
+                        }).then(() => {
+                            invitations_model.destroy({
+                                where: {
+                                    id: invitation.id
+                                }
+                            }).then(() => {
+                                return res.status(200).send({ invitation });
+                            });
+                        });
+                    }
+                }).catch(err => {
+                    return res.status(500).send({ message: 'Ocurrio un error al cargar la invitación ' });
                 });
             } else {
                 invitations_model.destroy({

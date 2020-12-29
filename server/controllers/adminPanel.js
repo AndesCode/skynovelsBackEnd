@@ -10,6 +10,7 @@ const genres_model = require('../models').genres;
 const forum_posts_model = require('../models').forum_posts;
 const posts_comments_model = require('../models').posts_comments;
 const advertisements_model = require('../models').advertisements;
+const novels_collaborators_model = require('../models').novels_collaborators;
 // Sequelize
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
@@ -364,7 +365,7 @@ function adminUpdateNovel(req, res) {
                     if (body.genres && body.genres.length > 0) {
                         novel.setGenres(body.genres);
                     }
-                    if (body.collaborators && novel.nvl_author === req.user.id) {
+                    if (body.collaborators && body.collaborators.length > 0) {
                         novel.setCollaborators(body.collaborators);
                     }
                     return res.status(200).send({ novel });
@@ -734,6 +735,68 @@ function adminUploadAdvertisementImage(req, res) {
     });
 }
 
+function adminCreateNovelCollaborator(req, res) {
+    const body = req.body;
+    console.log(req.body.noveld_id);
+    novels_model.findByPk(req.body.noveld_id, {
+        include: [{
+            model: users_model,
+            as: 'collaborators',
+            attributes: ['id', 'user_login'],
+            through: { attributes: [] },
+        }],
+        attributes: ['id', 'nvl_author']
+    }).then(novel => {
+        if (novel) {
+            console.log(novel.id);
+            users_model.findOne({
+                where: {
+                    user_status: 'Active',
+                    [Op.or]: [
+                        { user_login: body.user_login },
+                        { user_email: body.user_login }
+                    ]
+                },
+                attributes: ['id', 'user_login', 'user_rol']
+            }).then(user => {
+                if (user !== null) {
+                    if (user.id === novel.nvl_author) {
+                        return res.status(400).send({ message: 'El usuario es el creador de esta novela y ya puede editarla' });
+                    } else {
+                        if (user.user_rol === 'Admin' || user.user_rol === 'Editor') {
+                            const collaborators = novel.collaborators.map(collaborator => collaborator.id);
+                            if (collaborators.includes(user.id)) {
+                                return res.status(500).send({ message: 'El usuario ya es colaborador de la novela' });
+                            } else {
+                                novels_collaborators_model.create({
+                                    novel_id: novel.id,
+                                    user_id: user.id
+                                }).then(collaboratorRes => {
+                                    const collaborator = {
+                                        user_id: collaboratorRes.user_id,
+                                        user_login: user.user_login
+                                    };
+                                    return res.status(201).send({ collaborator });
+                                }).catch(err => {
+                                    return res.status(500).send({ message: 'Ocurrio un error al añadir el colaborador' });
+                                });
+                            }
+                        } else {
+                            return res.status(400).send({ message: 'Usuario debe ser Editor o Administrador' });
+                        }
+                    }
+                } else {
+                    return res.status(404).send({ message: 'No se encuentra ningún usuario por ese nombre' });
+                }
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ha ocurrido algún error durante la carga del usuario' });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    });
+}
+
 module.exports = {
     // Panel
     adminPanelAccess,
@@ -776,5 +839,7 @@ module.exports = {
     adminUpdateAdvertisement,
     adminDeleteAdvertisement,
     adminUploadAdvertisementImage,
+    // Collaborators
+    adminCreateNovelCollaborator
 
 };
