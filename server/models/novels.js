@@ -155,14 +155,18 @@ module.exports = (sequelize, DataTypes) => {
 
     novels.beforeCreate((novel, options) => {
         novel.nvl_title = novel.nvl_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
-        novel.nvl_name = novel.nvl_title.replace(/[\s-]+/g, ' ');
+        novel.nvl_name = novel.nvl_title.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+        novel.nvl_name = novel.nvl_name.replace(/[^\w\s]/gi, '-');
+        novel.nvl_name = novel.nvl_name.replace(/[\s-]+/g, ' ');
         novel.nvl_name = novel.nvl_name.split(' ').join('-');
         novel.nvl_name = novel.nvl_name.toLowerCase();
         novel.nvl_recommended = false;
     });
     novels.beforeUpdate((novel, options) => {
         novel.nvl_title = novel.nvl_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
-        novel.nvl_name = novel.nvl_title.replace(/[\s-]+/g, ' ');
+        novel.nvl_name = novel.nvl_title.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+        novel.nvl_name = novel.nvl_name.replace(/[^\w\s]/gi, '-');
+        novel.nvl_name = novel.nvl_name.replace(/[\s-]+/g, ' ');
         novel.nvl_name = novel.nvl_name.split(' ').join('-');
         novel.nvl_name = novel.nvl_name.toLowerCase();
     });

@@ -148,16 +148,21 @@ module.exports = (sequelize, DataTypes) => {
     chapters.beforeCreate((chapter, options) => {
         chapter.chp_title = chapter.chp_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
         chapter.chp_index_title = chapter.chp_index_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
-        chapter.chp_name = chapter.chp_index_title.replace(/[\s-]+/g, ' ');
+        chapter.chp_name = chapter.chp_index_title.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+        chapter.chp_name = chapter.chp_name.replace(/[^\w\s]/gi, '-');
+        chapter.chp_name = chapter.chp_name.replace(/[\s-]+/g, ' ');
         chapter.chp_name = chapter.chp_name.split(' ').join('-');
         chapter.chp_name = chapter.chp_name.toLowerCase();
     });
     chapters.beforeUpdate((chapter, options) => {
         chapter.chp_title = chapter.chp_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
         chapter.chp_index_title = chapter.chp_index_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
-        chapter.chp_name = chapter.chp_index_title.replace(/[\s-]+/g, ' ');
+        chapter.chp_name = chapter.chp_index_title.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+        chapter.chp_name = chapter.chp_name.replace(/[^\w\s]/gi, '-');
+        chapter.chp_name = chapter.chp_name.replace(/[\s-]+/g, ' ');
         chapter.chp_name = chapter.chp_name.split(' ').join('-');
         chapter.chp_name = chapter.chp_name.toLowerCase();
+        chapter.chp_name = chapter.chp_name.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
     });
 
     return chapters;

@@ -246,12 +246,7 @@ function deleteNovel(req, res) {
     novels_model.findByPk(id).then((novel) => {
         if (novel.nvl_author === req.user.id) {
             if (novel.dataValues.image !== '' && novel.dataValues.image !== null) {
-                imageService.deleteImage(novel.dataValues.image, './server/uploads/novels', true).then((imageDeletion) => {
-                    console.log('imagen eliminada');
-
-                }).catch(err => {
-                    return res.status(500).send({ message: 'Ocurrio un error al eliminar la imagen antigua' });
-                });
+                imageService.deleteImage(novel.dataValues.image, './server/uploads/novels', true)
             }
             novel.destroy({
                 where: {

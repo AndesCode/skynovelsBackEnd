@@ -672,7 +672,6 @@ function adminCreateAdvertisement(req, res) {
 
 function adminUpdateAdvertisement(req, res) {
     const body = req.body;
-    console.log(body);
     advertisements_model.findByPk(body.id).then(advertisement => {
         if (advertisement) {
             advertisement.update({
@@ -681,7 +680,6 @@ function adminUpdateAdvertisement(req, res) {
                 adv_content: body.adv_content,
                 adv_order: body.adv_order
             }).then((advertisement) => {
-                console.log(advertisement);
                 return res.status(200).send({ advertisement });
             }).catch(err => {
                 if (err && err.errors && err.errors[0].message) {
@@ -737,7 +735,6 @@ function adminUploadAdvertisementImage(req, res) {
 
 function adminCreateNovelCollaborator(req, res) {
     const body = req.body;
-    console.log(req.body.noveld_id);
     novels_model.findByPk(req.body.noveld_id, {
         include: [{
             model: users_model,
@@ -748,7 +745,6 @@ function adminCreateNovelCollaborator(req, res) {
         attributes: ['id', 'nvl_author']
     }).then(novel => {
         if (novel) {
-            console.log(novel.id);
             users_model.findOne({
                 where: {
                     user_status: 'Active',
