@@ -315,6 +315,15 @@ function getChapterEdition(req, res) {
 function getNovelChapters(req, res) {
     const id = req.params.id;
     let query;
+    /*
+
+        if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
+        query = 'SELECT n.id, n.nvl_author, n.nvl_title, n.nvl_name, n.nvl_writer, n.nvl_acronym, n.nvl_translator, n.image, n.createdAt, n.updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL(CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON), JSON_ARRAY()) AS chapters, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id)), "]"), JSON) FROM bookmarks rl WHERE rl.nvl_id = n.id), JSON_ARRAY()) AS bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "id", nr.id)), "]"), JSON) FROM novels_ratings nr WHERE nr.novel_id = n.id), JSON_ARRAY()) AS novel_ratings FROM novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.id = ? AND n.nvl_status IN ("Active", "Finished") ORDER BY c.chp_number ASC';
+    } else {
+        query = 'SELECT n.id, n.nvl_author, n.nvl_title, n.nvl_name, n.nvl_writer, n.nvl_acronym, n.nvl_translator, n.image, n.createdAt, n.updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL(JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), JSON_ARRAY()) AS chapters, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id)) FROM bookmarks rl WHERE rl.nvl_id = n.id), JSON_ARRAY()) AS bookmarks, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("user_id", nr.user_id, "id", nr.id)) FROM novels_ratings nr WHERE nr.novel_id = n.id), JSON_ARRAY()) AS novel_ratings FROM novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.id = 3 AND n.nvl_status IN ("Active", "Finished") ORDER BY c.chp_number ASC';
+    }
+
+    */
     if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
         query = 'SELECT id, nvl_author, nvl_title, nvl_name, nvl_writer, nvl_acronym, nvl_translator, image, createdAt, updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), "]"), JSON) FROM chapters c WHERE c.nvl_id = n.id AND c.chp_status = "Active"), JSON_ARRAY()) AS chapters, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id)), "]"), JSON) FROM bookmarks rl WHERE rl.nvl_id = n.id), JSON_ARRAY()) AS bookmarks, IFNULL((SELECT CONVERT(CONCAT("[", GROUP_CONCAT(JSON_OBJECT("user_id", nr.user_id, "id", nr.id)), "]"), JSON) FROM novels_ratings nr WHERE nr.novel_id = n.id), JSON_ARRAY()) AS novel_ratings FROM novels n WHERE n.id = ? AND n.nvl_status IN ("Active", "Finished")';
     } else {
@@ -700,19 +709,14 @@ function deleteNovelVolume(req, res) {
     });
 }
 
-/*function getTest(req, res) {
-    const testPath = 'server/uploads/novels/6TdtzYc0jH51vqfQnrbJosrS.jpg';
-    chapters_model.sequelize.query('select IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = 2), JSON_ARRAY()) as genres from novels n where n.id = 2', { type: chapters_model.sequelize.QueryTypes.SELECT })
+function getTest(req, res) {
+    novels_model.sequelize.query('SELECT n.id, n.nvl_author, n.nvl_title, n.nvl_name, n.nvl_writer, n.nvl_acronym, n.nvl_translator, n.image, n.createdAt, n.updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL(JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), JSON_ARRAY()) AS chapters, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id)) FROM bookmarks rl WHERE rl.nvl_id = n.id), JSON_ARRAY()) AS bookmarks, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("user_id", nr.user_id, "id", nr.id)) FROM novels_ratings nr WHERE nr.novel_id = n.id), JSON_ARRAY()) AS novel_ratings FROM novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.id = 3 AND n.nvl_status IN ("Active", "Finished") ORDER BY c.chp_number ASC', { type: novels_model.sequelize.QueryTypes.SELECT })
         .then(test => {
-            // test[0].test = '[]';
-            test[0].test = '[{ "id": 27, "genre_name": "Sin genero indicado" }]';
-            test[0].test2 = '[{ "id": 17, "genre_name": "Sin genero indicado" }]';
-            test = mariadbHelper.verifyJSON(test, ['test', 'test2']);
             return res.status(200).send({ test });
         }).catch(err => {
-            return res.status(500).send({ message: 'Ocurrio un error en el test' });
+            return res.status(500).send({ message: 'Ocurrio un error en el test ' + err });
         });
-}*/
+}
 
 
 
@@ -745,5 +749,5 @@ module.exports = {
     updateNovelRating,
     deleteNovelRating,
     // tests
-    // getTest
+    getTest
 };
