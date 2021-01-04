@@ -153,6 +153,7 @@ module.exports = (sequelize, DataTypes) => {
         chapter.chp_name = chapter.chp_name.replace(/[\s-]+/g, ' ');
         chapter.chp_name = chapter.chp_name.split(' ').join('-');
         chapter.chp_name = chapter.chp_name.toLowerCase();
+        chapter.chp_name = chapter.chp_name.replace(/\-$/, '');
     });
     chapters.beforeUpdate((chapter, options) => {
         chapter.chp_title = chapter.chp_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
@@ -163,6 +164,7 @@ module.exports = (sequelize, DataTypes) => {
         chapter.chp_name = chapter.chp_name.split(' ').join('-');
         chapter.chp_name = chapter.chp_name.toLowerCase();
         chapter.chp_name = chapter.chp_name.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+        chapter.chp_name = chapter.chp_name.replace(/\-$/, '');
     });
 
     return chapters;

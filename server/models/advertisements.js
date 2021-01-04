@@ -101,15 +101,22 @@ module.exports = (sequelize, DataTypes) => {
 
     advertisements.beforeCreate((advertisement, options) => {
         advertisement.adv_title = advertisement.adv_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
-        advertisement.adv_name = advertisement.adv_title.replace(/[\s-]+/g, ' ');
+        advertisement.adv_name = advertisement.adv_title.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+        advertisement.adv_name = advertisement.adv_name.replace(/[^\w\s]/gi, '-');
+        advertisement.adv_name = advertisement.adv_name.replace(/[\s-]+/g, ' ');
         advertisement.adv_name = advertisement.adv_name.split(' ').join('-');
         advertisement.adv_name = advertisement.adv_name.toLowerCase();
+        advertisement.adv_name = advertisement.adv_name.replace(/\-$/, '');
     });
     advertisements.beforeUpdate((advertisement, options) => {
         advertisement.adv_title = advertisement.adv_title.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
-        advertisement.adv_name = advertisement.adv_title.replace(/[\s-]+/g, ' ');
+        advertisement.adv_name = advertisement.adv_title.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+        advertisement.adv_name = advertisement.adv_name.replace(/[^\w\s]/gi, '-');
+        advertisement.adv_name = advertisement.adv_name.replace(/[\s-]+/g, ' ');
         advertisement.adv_name = advertisement.adv_name.split(' ').join('-');
         advertisement.adv_name = advertisement.adv_name.toLowerCase();
+        advertisement.adv_name = advertisement.adv_name.replace(/\-$/, '');
+
     });
 
     return advertisements;

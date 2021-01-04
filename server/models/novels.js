@@ -160,6 +160,7 @@ module.exports = (sequelize, DataTypes) => {
         novel.nvl_name = novel.nvl_name.replace(/[\s-]+/g, ' ');
         novel.nvl_name = novel.nvl_name.split(' ').join('-');
         novel.nvl_name = novel.nvl_name.toLowerCase();
+        novel.nvl_name = novel.nvl_name.replace(/\-$/, '');
         novel.nvl_recommended = false;
     });
     novels.beforeUpdate((novel, options) => {
@@ -169,6 +170,7 @@ module.exports = (sequelize, DataTypes) => {
         novel.nvl_name = novel.nvl_name.replace(/[\s-]+/g, ' ');
         novel.nvl_name = novel.nvl_name.split(' ').join('-');
         novel.nvl_name = novel.nvl_name.toLowerCase();
+        novel.nvl_name = novel.nvl_name.replace(/\-$/, '');
     });
 
     return novels;
