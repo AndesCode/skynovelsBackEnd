@@ -19,8 +19,15 @@ const imageService = require('../services/imageService');
 // Novels.
 
 function getHomeNovels(req, res) {
-    novels_model.sequelize.query('SELECT n.*, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating FROM  novels n  WHERE  n.nvl_status IN ("Active", "Finished") ORDER BY nvl_rating desc LIMIT 10', { type: novels_model.sequelize.QueryTypes.SELECT })
+    novels_model.sequelize.query('SELECT n.*, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating, (SELECT COUNT(id) FROM novels_ratings WHERE novel_id = n.id) as nvl_ratings_count FROM novels n WHERE n.nvl_status IN ("Active", "Finished") ORDER BY nvl_rating desc LIMIT 10;', { type: novels_model.sequelize.QueryTypes.SELECT })
         .then(topNovels => {
+            for (const topNovel of topNovels) {
+                const plusPointsByVotes = 0.2 * topNovel.nvl_ratings_count;
+                topNovel.nvl_rating = Number(topNovel.nvl_rating) + plusPointsByVotes;
+            }
+            topNovels.sort(function(a, b) {
+                return (b.nvl_rating) - (a.nvl_rating);
+            });
             novels_model.sequelize.query('SELECT n.*, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating FROM  novels n  WHERE  n.nvl_status IN ("Active", "Finished") ORDER BY n.createdAt desc LIMIT 10', { type: novels_model.sequelize.QueryTypes.SELECT })
                 .then(recentNovels => {
                     novels_model.sequelize.query('SELECT n.*, COUNT(c.id) AS nvl_chapters, MAX(c.createdAt) AS nvl_last_update, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) as genres FROM  novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.nvl_status IN ("Active", "Finished") AND n.nvl_recommended = true GROUP BY n.id LIMIT 1', { type: novels_model.sequelize.QueryTypes.SELECT })
