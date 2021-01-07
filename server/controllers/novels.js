@@ -7,10 +7,6 @@ const chapters_model = require('../models').chapters;
 const volumes_model = require('../models').volumes;
 const users_model = require('../models').users;
 const genres_model = require('../models').genres;
-// files mannager
-const fs = require('fs');
-const imageThumbnail = require('image-thumbnail');
-const path = require('path');
 //Sequelize
 const Sequelize = require('sequelize');
 const mariadbHelper = require('../services/mariadbHelper');

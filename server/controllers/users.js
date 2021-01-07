@@ -20,9 +20,6 @@ const jwt = require('../services/jwt');
 // More requires
 const nodemailer = require("nodemailer");
 const atob = require('atob');
-const fs = require('fs');
-const imageThumbnail = require('image-thumbnail');
-const path = require('path');
 const passport = require('passport');
 const hbs = require('nodemailer-express-handlebars');
 const mariadbHelper = require('../services/mariadbHelper');

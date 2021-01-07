@@ -15,7 +15,6 @@ const novels_collaborators_model = require('../models').novels_collaborators;
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 // files mannager
-const fs = require('fs');
 const mariadbHelper = require('../services/mariadbHelper');
 const imageService = require('../services/imageService');
 
