@@ -1,4 +1,5 @@
 /*jshint esversion: 6 */
+/*jshint sub:true*/
 const http = require('http');
 const express = require('express');
 const path = require('path');
@@ -43,7 +44,7 @@ if (isProd) {
         cookie: {
             secure: true,
             httpOnly: true,
-            // sameSite: 'Strict', utilizar en servidor!!!,
+            sameSite: 'Strict',
             maxAge: 5616000000
         }
     }));
@@ -55,6 +56,7 @@ if (isProd) {
         store: sessionStore,
         saveUninitialized: false,
         cookie: {
+            httpOnly: true,
             maxAge: 5616000000
         }
     }));
