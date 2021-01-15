@@ -18,7 +18,7 @@ let sessionConfiguration;
 let whitelist = [];
 if (isProd) {
     sessionConfiguration = JSON.parse(process.env.prodDataBaseSession);
-    whitelist = ['https://skynovels.net', 'https://api.skynovels.net', 'https://www.skynovels.net'];
+    whitelist = ['https://skynovels.net', 'https://api.skynovels.net', 'https://www.skynovels.net', 'https://skynovels.net/', 'https://www.skynovels.net/'];
     console.log('Environment: production');
 } else {
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
