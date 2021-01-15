@@ -18,7 +18,7 @@ let sessionConfiguration;
 let whitelist = [];
 if (isProd) {
     sessionConfiguration = JSON.parse(process.env.prodDataBaseSession);
-    whitelist = ['https://skynovels.net', 'https://api.skynovels.net', 'https://www.skynovels.net', 'https://www.beta.skynovels.net', 'https://beta.skynovels.net', 'https://api.beta.skynovels.net'];
+    whitelist = ['https://skynovels.net', 'https://api.skynovels.net', 'https://www.skynovels.net'];
     console.log('Environment: production');
 } else {
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
@@ -77,19 +77,6 @@ const corsOptions = {
     credentials: true
 };
 app.use(cors(corsOptions), (req, res, next) => {
-    /*if (isProd) {
-        if (whitelist.includes(req.get('origin'))) {
-            res.header('Access-Control-Allow-Origin', req.get('origin'));
-        } else {
-            res.header('Access-Control-Allow-Origin', 'https://skynovels.net');
-        }
-    } else {
-        if (whitelist.includes(req.get('origin'))) {
-            res.header('Access-Control-Allow-Origin', req.get('origin'));
-        } else {
-            res.header('Access-Control-Allow-Origin', '*');
-        }
-    }*/
     res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
     res.header('Allow', 'GET, POST, OPTIONS, PUT, DELETE');
