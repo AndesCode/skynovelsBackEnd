@@ -21,4 +21,6 @@ module.exports = (app) => {
     app.delete('/api/delete-reply/:id', md_auth.auth, pageController.deleteReplys);
     // images
     app.get('/api/get-image/:file_name/:image_type/:thumb', pageController.getImage);
+    // Test
+    app.get('/api/get-notTest', pageController.getNotificationsTest);
 };

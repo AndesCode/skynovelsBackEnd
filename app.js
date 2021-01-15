@@ -18,7 +18,7 @@ let sessionConfiguration;
 let whitelist = [];
 if (isProd) {
     sessionConfiguration = JSON.parse(process.env.prodDataBaseSession);
-    whitelist = ['https://beta.skynovels.net', 'https://api.beta.skynovels.net'];
+    whitelist = ['https://skynovels.net', 'https://api.skynovels.net', 'https://www.skynovels.net', 'https://www.beta.skynovels.net', 'https://beta.skynovels.net'];
     console.log('Environment: production');
 } else {
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
@@ -77,7 +77,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions), (req, res, next) => {
     if (isProd) {
-        res.header('Access-Control-Allow-Origin', 'https://beta.skynovels.net');
+        res.header('Access-Control-Allow-Origin', 'https://skynovels.net');
     } else {
         res.header('Access-Control-Allow-Origin', '*');
     }

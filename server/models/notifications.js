@@ -2,7 +2,7 @@
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 module.exports = (sequelize, DataTypes) => {
-    const likes = sequelize.define('likes', {
+    const notifications = sequelize.define('notifications', {
         id: {
             autoIncrement: true,
             primaryKey: true,
@@ -11,18 +11,44 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
+        like_id: {
+            type: DataTypes.INTEGER,
+            validate: {
+                isUnique: function(value, next) {
+                    if (value) {
+                        notifications.findOne({
+                                where: {
+                                    [Op.and]: [{ user_id: this.user_id }, { like_id: value }]
+                                }
+                            }).then(function(like_notification) {
+                                if (like_notification) {
+                                    return next({ message: 'Error, no se puede notificar dos veces el mismo elemento' });
+                                } else {
+                                    return next();
+                                }
+                            })
+                            .catch(function(err) {
+                                return next(err);
+                            });
+                    } else {
+                        return next();
+                    }
+                },
+                isNumeric: true,
+            }
+        },
         novel_rating_id: {
             type: DataTypes.INTEGER,
             validate: {
                 isUnique: function(value, next) {
                     if (value) {
-                        likes.findOne({
+                        notifications.findOne({
                                 where: {
                                     [Op.and]: [{ user_id: this.user_id }, { novel_rating_id: value }]
                                 }
-                            }).then(function(novel_rating_like) {
-                                if (novel_rating_like) {
-                                    return next({ message: 'Error, No puedes dar like dos veces a un mismo elemento' });
+                            }).then(function(novel_rating_notification) {
+                                if (novel_rating_notification) {
+                                    return next({ message: 'Error, no se puede notificar dos veces el mismo elemento' });
                                 } else {
                                     return next();
                                 }
@@ -42,13 +68,13 @@ module.exports = (sequelize, DataTypes) => {
             validate: {
                 isUnique: function(value, next) {
                     if (value) {
-                        likes.findOne({
+                        notifications.findOne({
                                 where: {
                                     [Op.and]: [{ user_id: this.user_id }, { reply_id: value }]
                                 }
-                            }).then(function(reply_like) {
-                                if (reply_like) {
-                                    return next({ message: 'Error, No puedes dar like dos veces a un mismo elemento' });
+                            }).then(function(reply_notification) {
+                                if (reply_notification) {
+                                    return next({ message: 'Error, no se puede notificar dos veces el mismo elemento' });
                                 } else {
                                     return next();
                                 }
@@ -68,39 +94,13 @@ module.exports = (sequelize, DataTypes) => {
             validate: {
                 isUnique: function(value, next) {
                     if (value) {
-                        likes.findOne({
+                        notifications.findOne({
                                 where: {
                                     [Op.and]: [{ user_id: this.user_id }, { comment_id: value }]
                                 }
-                            }).then(function(comment_like) {
-                                if (comment_like) {
-                                    return next({ message: 'Error, No puedes dar like dos veces a un mismo elemento' });
-                                } else {
-                                    return next();
-                                }
-                            })
-                            .catch(function(err) {
-                                return next(err);
-                            });
-                    } else {
-                        return next();
-                    }
-                },
-                isNumeric: true,
-            }
-        },
-        adv_id: {
-            type: DataTypes.INTEGER,
-            validate: {
-                isUnique: function(value, next) {
-                    if (value) {
-                        likes.findOne({
-                                where: {
-                                    [Op.and]: [{ user_id: this.user_id }, { adv_id: value }]
-                                }
-                            }).then(function(advertisement_like) {
-                                if (advertisement_like) {
-                                    return next({ message: 'Error, No puedes dar like dos veces a un mismo elemento' });
+                            }).then(function(comment_notification) {
+                                if (comment_notification) {
+                                    return next({ message: 'Error, no se puede notificar dos veces el mismo elemento' });
                                 } else {
                                     return next();
                                 }
@@ -122,32 +122,31 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
-    }, {
-        timestamps: false,
+        readed: DataTypes.BOOLEAN,
     });
 
-    likes.associate = function(models) {
-        likes.belongsTo(models.novels_ratings, {
+    notifications.associate = function(models) {
+        notifications.belongsTo(models.novels_ratings, {
             foreignKey: 'novel_rating_id',
             as: 'novel_rating'
         });
-        likes.belongsTo(models.advertisements, {
-            foreignKey: 'adv_id',
-            as: 'advertisement'
+        notifications.belongsTo(models.likes, {
+            foreignKey: 'like_id',
+            as: 'like'
         });
-        likes.belongsTo(models.comments, {
+        notifications.belongsTo(models.comments, {
             foreignKey: 'comment_id',
             as: 'comment'
         });
-        likes.belongsTo(models.replys, {
+        notifications.belongsTo(models.replys, {
             foreignKey: 'reply_id',
             as: 'reply'
         });
-        likes.belongsTo(models.users, {
+        notifications.belongsTo(models.users, {
             foreignKey: 'user_id',
             as: 'user'
         });
     };
 
-    return likes;
+    return notifications;
 };

@@ -6,10 +6,13 @@ const advertisements_model = require('../models').advertisements;
 const likes_model = require('../models').likes;
 const comments_model = require('../models').comments;
 const replys_model = require('../models').replys;
+const notifications_model = require('../models').notifications;
 // files mannager
 const fs = require('fs');
 const path = require('path');
 const mariadbHelper = require('../services/mariadbHelper');
+const notificationsService = require('../services/notificationsService');
+
 
 // likes 
 
@@ -49,6 +52,7 @@ function createLike(req, res) {
                 'user_id': req.user.id,
                 [objectName]: objectId
             }).then(like => {
+                notificationsService.createLikeNotification(like.id, model, objectId, objectName);
                 return res.status(201).send({ like });
             }).catch(err => {
                 if (err && err.errors && err.errors[0].message) {
@@ -296,6 +300,18 @@ function updateReplys(req, res) {
     });
 }
 
+function getReplys(req, res) {
+    const objectType = req.params.objt;
+    const id = req.params.id;
+    replys_model.sequelize.query('SELECT *, (SELECT user_login FROM users u where u.id = r.user_id) as user_login, (SELECT image FROM users u where u.id = r.user_id) as image, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "reply_id", l.reply_id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = l.user_id))) FROM likes l WHERE l.reply_id = r.id), JSON_ARRAY()) as likes FROM replys r WHERE r.' + objectType + ' = ?', { replacements: [id], type: replys_model.sequelize.QueryTypes.SELECT })
+        .then(replys => {
+            replys = mariadbHelper.verifyJSON(replys, ['likes']);
+            return res.status(200).send({ replys });
+        }).catch(err => {
+            return res.status(500).send({ message: 'Ocurrio un error al cargar las respuesta' });
+        });
+}
+
 function deleteReplys(req, res) {
     const id = req.params.id;
     replys_model.findByPk(id).then(reply => {
@@ -336,6 +352,14 @@ function getImage(req, res) {
     });
 }
 
+function getNotificationsTest(req, res) {
+    notifications_model.findAll().then((nots) => {
+        return res.status(200).send({ nots });
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la respuesta' });
+    });
+}
+
 module.exports = {
     // Advertisements
     getAdvertisement,
@@ -354,5 +378,7 @@ module.exports = {
     createLike,
     deleteLike,
     // images
-    getImage
+    getImage,
+    // Test
+    getNotificationsTest
 };

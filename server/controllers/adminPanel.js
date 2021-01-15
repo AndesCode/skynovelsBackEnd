@@ -729,7 +729,7 @@ function adminUploadAdvertisementImage(req, res) {
 
 function adminCreateNovelCollaborator(req, res) {
     const body = req.body;
-    novels_model.findByPk(req.body.noveld_id, {
+    novels_model.findByPk(req.body.novel_id, {
         include: [{
             model: users_model,
             as: 'collaborators',
@@ -782,7 +782,7 @@ function adminCreateNovelCollaborator(req, res) {
                 return res.status(500).send({ message: 'Ha ocurrido algún error durante la carga del usuario' });
             });
         } else {
-            return res.status(401).send({ message: 'No autorizado' });
+            return res.status(404).send({ message: 'No se encuentra la novela indicada' });
         }
     });
 }
