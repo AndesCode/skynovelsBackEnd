@@ -30,7 +30,8 @@ module.exports = (app) => {
     // Invitations
     app.post('/api/create-user-invitation', md_auth.auth, userController.createUserInvitation);
     app.put('/api/update-user-invitation', md_auth.auth, userController.updateUserInvitation);
-    app.get('/api/get-user-invitations', userController.getUserInvitations);
+    app.get('/api/get-user-invitations', md_auth.auth, userController.getUserInvitations);
     // Notifications
-    app.get('/api/get-user-notifications', userController.getUserNotifications);
+    app.get('/api/get-user-notifications', md_auth.auth, userController.getUserNotifications);
+    app.get('/api/get-user-unread-notifications', md_auth.auth, userController.getUnreadUserNotifications);
 };

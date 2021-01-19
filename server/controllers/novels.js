@@ -309,11 +309,14 @@ function getChapterEdition(req, res) {
 
 function getNovelChapters(req, res) {
     const id = req.params.id;
-    const query = 'SELECT n.id, n.nvl_author, n.nvl_title, n.nvl_name, n.nvl_writer, n.nvl_acronym, n.nvl_translator, n.image, n.createdAt, n.updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL(JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), JSON_ARRAY()) AS chapters, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id)) FROM bookmarks rl WHERE rl.nvl_id = n.id), JSON_ARRAY()) AS bookmarks, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("user_id", nr.user_id, "id", nr.id)) FROM novels_ratings nr WHERE nr.novel_id = n.id), JSON_ARRAY()) AS novel_ratings FROM novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.id = ? AND n.nvl_status IN ("Active", "Finished") ORDER BY c.chp_number ASC';
+    const query = 'SELECT n.id, n.nvl_author, n.nvl_title, n.nvl_name, n.nvl_writer, n.nvl_acronym, n.nvl_translator, n.image, n.createdAt, n.updatedAt, (SELECT user_login FROM users u WHERE u.id = n.nvl_author) AS user_login, IFNULL(JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC), JSON_ARRAY()) AS chapters, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id)) FROM bookmarks rl WHERE rl.nvl_id = n.id), JSON_ARRAY()) AS bookmarks, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("user_id", nr.user_id, "id", nr.id)) FROM novels_ratings nr WHERE nr.novel_id = n.id), JSON_ARRAY()) AS novel_ratings FROM novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.id = ? AND n.nvl_status IN ("Active", "Finished")';
     novels_model.sequelize.query(query, { replacements: [id], type: novels_model.sequelize.QueryTypes.SELECT })
         .then(novel => {
             novel = mariadbHelper.verifyJSON(novel, ['chapters', 'bookmarks', 'novel_ratings']);
             if (novel.length > 0 && novel[0].chapters.length > 0) {
+                novel[0].chapters.sort(function(a, b) {
+                    return (a.chp_number) - (b.chp_number);
+                });
                 return res.status(200).send({ novel });
             } else {
                 return res.status(404).send({ message: 'No se encuentra la novela indicada' });

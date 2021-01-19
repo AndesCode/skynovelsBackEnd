@@ -18,12 +18,12 @@ let sessionConfiguration;
 let whitelist = [];
 if (isProd) {
     sessionConfiguration = JSON.parse(process.env.prodDataBaseSession);
-    // whitelist = ['https://skynovels.net', 'https://api.skynovels.net', 'https://www.skynovels.net', 'https://skynovels.net/', 'https://www.skynovels.net/'];
+    whitelist = ['https://skynovels.net', 'https://api.skynovels.net', 'https://www.skynovels.net', 'https://skynovels.net/', 'https://www.skynovels.net/'];
     console.log('Environment: production');
 } else {
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
     sessionConfiguration = JSON.parse(process.env.devDataBaseSession);
-    // whitelist = ['http://localhost:4200', 'http://localhost:8100'];
+    whitelist = ['http://localhost:4200', 'http://localhost:8100'];
     console.log('Environment: development');
 }
 
@@ -66,20 +66,20 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 const corsOptions = {
-    /*origin: function(origin, callback) {
+    origin: function(origin, callback) {
         if (whitelist.indexOf(origin) !== -1 || !origin) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
         }
-    },*/
+    },
     credentials: true
 };
 app.use(cors(corsOptions), (req, res, next) => {
     if (isProd) {
         res.header('Access-Control-Allow-Origin', 'https://www.skynovels.net');
     } else {
-        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Origin', 'http://localhost:4200');
     }
     res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
