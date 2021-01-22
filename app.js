@@ -10,21 +10,31 @@ const morgan = require('morgan');
 const passport = require('passport');
 const app = express();
 const helmet = require("helmet");
+const passportSocketIo = require("passport.socketio");
+const cookieParser = require('cookie-parser');
+const socketService = require('./server/services/socketService');
 require('./server/passport/local-auth');
 require('dotenv').config();
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
 let sessionConfiguration;
 let whitelist = [];
+let allowedOrigin = '';
+let sessionSecret = '';
 if (isProd) {
     sessionConfiguration = JSON.parse(process.env.prodDataBaseSession);
     whitelist = ['https://skynovels.net', 'https://api.skynovels.net', 'https://www.skynovels.net', 'https://skynovels.net/', 'https://www.skynovels.net/'];
+    allowedOrigin = 'https://www.skynovels.net';
     console.log('Environment: production');
+    sessionSecret = process.env.prodSessionSecret;
 } else {
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
     sessionConfiguration = JSON.parse(process.env.devDataBaseSession);
     whitelist = ['http://localhost:4200', 'http://localhost:8100'];
+    allowedOrigin = 'http://localhost:4200';
+    //allowedOrigin = 'http://localhost:8100';
     console.log('Environment: development');
+    sessionSecret = process.env.devSessionSecret;
 }
 
 const sessionStore = new MySQLStore(sessionConfiguration);
@@ -36,7 +46,7 @@ app.use(helmet());
 if (isProd) {
     app.use(session({
         name: 'sessionId',
-        secret: process.env.prodSessionSecret,
+        secret: sessionSecret,
         resave: false,
         store: sessionStore,
         saveUninitialized: false,
@@ -51,7 +61,7 @@ if (isProd) {
 } else {
     app.use(session({
         name: 'sessionId',
-        secret: process.env.devSessionSecret,
+        secret: sessionSecret,
         resave: false,
         store: sessionStore,
         saveUninitialized: false,
@@ -77,9 +87,9 @@ const corsOptions = {
 };
 app.use(cors(corsOptions), (req, res, next) => {
     if (isProd) {
-        res.header('Access-Control-Allow-Origin', 'https://www.skynovels.net');
+        res.header('Access-Control-Allow-Origin', allowedOrigin);
     } else {
-        res.header('Access-Control-Allow-Origin', 'http://localhost:4200');
+        res.header('Access-Control-Allow-Origin', allowedOrigin);
     }
     res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
@@ -114,6 +124,55 @@ if (isProd) {
 }
 
 const server = http.createServer(app);
+
+const io = socketService.init(server);
+io.use(passportSocketIo.authorize({
+    cookieParser: cookieParser,
+    key: 'sessionId', // the name of the cookie where express/connect stores its session_id
+    secret: sessionSecret, // the session_secret to parse the cookie
+    store: sessionStore, // we NEED to use a sessionstore. no memorystore please
+    success: onAuthorizeSuccess, // *optional* callback on success - read more below
+    fail: onAuthorizeFail, // *optional* callback on fail/error - read more below
+}));
+
+function onAuthorizeSuccess(data, accept) {
+    console.log('successful connection to socket.io');
+    accept(null, true);
+    accept();
+}
+
+function onAuthorizeFail(data, message, error, accept) {
+    if (error)
+        throw new Error(message);
+    console.log('failed connection to socket.io:', message);
+    accept(null, false);
+    if (error)
+        accept(new Error(message));
+}
+
+const userSocketIdMap = new Map();
+io.on('connection', (socket) => {
+    userSocketIdMap.set(socket.id, socket.request.user.id);
+    socketService.setOnlineUsers(userSocketIdMap);
+
+    socket.emit('test event', 'emitiendo!!!');
+    io.to(socket.id).emit('test event user', socket.request.user.user_login);
+
+    console.log(userSocketIdMap);
+
+    socket.on('getOnlineUsersCount', data => {
+        if (socket.request.user.user_rol === 'admin') {
+            socket.emit('onlineUsersCount', userSocketIdMap.size);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        userSocketIdMap.delete(socket.id);
+        console.log('Got disconnect!');
+        socketService.setOnlineUsers(userSocketIdMap);
+    });
+});
+
 server.listen(process.env.PORT || port, function() {
     console.log('server running on:');
     console.log(server.address());

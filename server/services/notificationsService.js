@@ -1,5 +1,6 @@
 /*jshint esversion: 6 */
 const notifications_model = require('../models').notifications;
+const socketsService = require('./socketService');
 
 function createLikeNotification(likeId, model, objectId, objectName) {
     console.log(objectId);
@@ -10,6 +11,7 @@ function createLikeNotification(likeId, model, objectId, objectName) {
             like_id: likeId
         }).then((notification) => {
             console.log(notification);
+            socketsService.notifyUser(notification.user_id);
         }).catch(err => {
             const message = 'Ocurrio un error al cargar el objeto';
             console.log('error');

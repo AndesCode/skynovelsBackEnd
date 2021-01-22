@@ -132,8 +132,6 @@ function deleteImage(image, route, hasThumbnail = false) {
     });
 }
 
-
-
 module.exports = {
     uploadImage,
     deleteImage,
