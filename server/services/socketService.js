@@ -9,7 +9,7 @@ if (isProd) {
     //allowedOrigin = 'http://localhost:8100';
 }
 let io;
-let userSocketIdMap;
+let usersSocketsConnections;
 
 function emit(eventName, data) {
     io.sockets.emit(eventName, data);
@@ -18,27 +18,21 @@ function emit(eventName, data) {
 function notifyUser(user_id) {
     notifications_model.sequelize.query('SELECT COUNT(n.id) AS user_unread_notifications_count FROM notifications n WHERE n.user_id = ? AND n.readed = false', { replacements: [user_id], type: notifications_model.sequelize.QueryTypes.SELECT })
         .then((notifications) => {
-            console.log(getByValue(userSocketIdMap, user_id));
-            if (getByValue(userSocketIdMap, user_id)) {
-                io.to(getByValue(userSocketIdMap, user_id)).emit('test event', notifications[0]);
+            if (usersSocketsConnections.find(x => x.user_id === user_id)) {
+                const socket_info = usersSocketsConnections.find(x => x.user_id === user_id);
+                io.to(socket_info.socket_id).emit('test event', notifications[0]);
+            } else {
+                console.log('no hay usuario logeado con el id ' + user_id)
+                return;
             }
         }).catch(err => {
-            console.log('error al mandar notificación al usuario');
+            return;
         });
 }
 
-function setOnlineUsers(usersOnlineMap) {
-    userSocketIdMap = usersOnlineMap;
-    console.log('service');
-    console.log(userSocketIdMap);
+function setOnlineUsers(usersOnline) {
+    usersSocketsConnections = usersOnline;
     return;
-}
-
-function getByValue(map, searchValue) {
-    for (let [key, value] of map.entries()) {
-        if (value === searchValue)
-            return key;
-    }
 }
 
 module.exports = {

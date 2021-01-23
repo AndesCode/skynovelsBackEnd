@@ -138,7 +138,6 @@ io.use(passportSocketIo.authorize({
 function onAuthorizeSuccess(data, accept) {
     console.log('successful connection to socket.io');
     accept(null, true);
-    accept();
 }
 
 function onAuthorizeFail(data, message, error, accept) {
@@ -150,27 +149,45 @@ function onAuthorizeFail(data, message, error, accept) {
         accept(new Error(message));
 }
 
-const userSocketIdMap = new Map();
+const usersSocketsConnections = [];
 io.on('connection', (socket) => {
-    userSocketIdMap.set(socket.id, socket.request.user.id);
-    socketService.setOnlineUsers(userSocketIdMap);
-
+    const newConnection = {
+        socket_id: socket.id,
+        ip: socket.handshake.address,
+        user_id: socket.request.user.id || null
+    };
+    usersSocketsConnections.push(newConnection);
+    socketService.setOnlineUsers(usersSocketsConnections);
     socket.emit('test event', 'emitiendo!!!');
     io.to(socket.id).emit('test event user', socket.request.user.user_login);
 
-    console.log(userSocketIdMap);
-
     socket.on('getOnlineUsersCount', data => {
         if (socket.request.user.user_rol === 'admin') {
-            socket.emit('onlineUsersCount', userSocketIdMap.size);
+            socket.emit('onlineUsersCount', usersSocketsConnections.length);
         }
     });
 
-    socket.on('disconnect', () => {
-        userSocketIdMap.delete(socket.id);
-        console.log('Got disconnect!');
-        socketService.setOnlineUsers(userSocketIdMap);
+    socket.on('login', function(user_id) {
+        if (usersSocketsConnections.find(x => x.socket_id === socket.id)) {
+            usersSocketsConnections.find(x => x.socket_id === socket.id).user_id = user_id;
+        }
+        socketService.setOnlineUsers(usersSocketsConnections);
     });
+
+    socket.on('logOut', function(user_id) {
+        if (usersSocketsConnections.find(x => x.socket_id === socket.id)) {
+            usersSocketsConnections.find(x => x.socket_id === socket.id).user_id = null;
+        }
+        socketService.setOnlineUsers(usersSocketsConnections);
+        console.log(usersSocketsConnections);
+    });
+
+    socket.on('disconnect', () => {
+        usersSocketsConnections.splice(usersSocketsConnections.findIndex(x => x.socket_id === socket.id), 1);
+        socketService.setOnlineUsers(usersSocketsConnections);
+    });
+    console.log('mismo');
+    console.log(usersSocketsConnections);
 });
 
 server.listen(process.env.PORT || port, function() {
