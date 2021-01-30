@@ -24,7 +24,7 @@ const atob = require('atob');
 const passport = require('passport');
 const hbs = require('nodemailer-express-handlebars');
 const mariadbHelper = require('../services/mariadbHelper');
-const applicationURL = process.env.applicationURL || 'http:localhost:4200';
+const applicationURL = process.env.NODE_ENV === 'production' ? 'https://www.skynovels.net' : 'http://localhost:4200';
 const imageService = require('../services/imageService');
 
 const noReplyFromUser = process.env.noReplyFromUser;
@@ -600,19 +600,26 @@ function updateUserInvitation(req, res) {
 function getUserNotifications(req, res) {
     notifications_model.sequelize.query(
             `SELECT n.*, 
-                (SELECT JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = l.user_id), "image", (SELECT image FROM users u WHERE u.id = l.user_id), "adv_id", l.adv_id, "adv_title", (SELECT adv_title FROM advertisements adv WHERE adv.id = l.adv_id), "novel_rating_id", l.novel_rating_id, "rate_comment", (SELECT rate_comment FROM novels_ratings nr WHERE nr.id = l.novel_rating_id), "comment_id", l.comment_id, "comment_content", (SELECT comment_content FROM comments c WHERE c.id = l.comment_id), "reply_id", l.reply_id, "reply_content", (SELECT reply_content FROM replys r WHERE r.id = l.reply_id)) FROM likes l WHERE l.id = n.like_id) AS like_notification,
-                (SELECT JSON_OBJECT("id", c.id, "user_id", c.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = c.user_id), "image", (SELECT image FROM users u WHERE u.id = c.user_id), "comment_content", c.comment_content, "adv_id", c.adv_id, "adv_title", (SELECT adv_title FROM advertisements adv WHERE adv.id = c.adv_id), "chp_id", c.chp_id, "chp_title", (SELECT chp_title FROM chapters ch WHERE ch.id = c.chp_id)) FROM comments c WHERE c.id = n.comment_id) AS comment_notification,
-                (SELECT JSON_OBJECT("id", r.id, "user_id", r.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = r.user_id), "image", (SELECT image FROM users u WHERE u.id = r.user_id), "reply_content", r.reply_content, "comment_id", r.comment_id, "comment_content", (SELECT comment_content FROM comments c WHERE c.id = r.comment_id), "novel_raintg_id", r.novel_rating_id, "rate_comment", (SELECT rate_comment FROM novels_ratings nr WHERE nr.id = r.novel_rating_id)) FROM replys r WHERE r.id = n.reply_id) AS reply_notification,
-                (SELECT JSON_OBJECT("id", nr.id, "user_id", nr.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = nr.user_id), "image", (SELECT image FROM users u WHERE u.id = nr.user_id), "rate_comment", nr.rate_comment, "rate_value", nr.rate_value, "novel_id", nr.novel_id, "nvl_title", (SELECT nvl_title FROM novels nvl WHERE nvl.id = nr.novel_id)) FROM novels_ratings nr WHERE nr.id = n.novel_rating_id) AS novel_rating_notification
-                FROM notifications n 
-                WHERE 
-                n.user_id = ? LIMIT 10`, { replacements: [req.user.id], type: notifications_model.sequelize.QueryTypes.SELECT })
+            (SELECT JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = l.user_id), "image", (SELECT image FROM users u WHERE u.id = l.user_id), "adv_id", l.adv_id, "adv_title", (SELECT adv_title FROM advertisements adv WHERE adv.id = l.adv_id), "novel_rating_id", l.novel_rating_id, "rate_comment", (SELECT rate_comment FROM novels_ratings nr WHERE nr.id = l.novel_rating_id), "comment_id", l.comment_id, "comment_content", (SELECT comment_content FROM comments c WHERE c.id = l.comment_id), "reply_id", l.reply_id, "reply_content", (SELECT reply_content FROM replys r WHERE r.id = l.reply_id)) FROM likes l WHERE l.id = n.like_id) AS like_notification,
+            (SELECT JSON_OBJECT("id", c.id, "user_id", c.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = c.user_id), "image", (SELECT image FROM users u WHERE u.id = c.user_id), "comment_content", c.comment_content, "adv_id", c.adv_id, "adv_title", (SELECT adv_title FROM advertisements adv WHERE adv.id = c.adv_id), "chp_id", c.chp_id, "chp_title", (SELECT chp_title FROM chapters ch WHERE ch.id = c.chp_id), "chp_name", (SELECT chp_name FROM chapters ch WHERE ch.id = c.chp_id), "nvl_id", (SELECT nvl_id FROM chapters ch WHERE ch.id = c.chp_id), "nvl_name", (SELECT nvl_name FROM novels nov LEFT JOIN chapters ch on ch.nvl_id = nov.id WHERE ch.id = c.chp_id LIMIT 1)) FROM comments c WHERE c.id = n.comment_id) AS comment_notification,
+            
+            
+            
+            (SELECT JSON_OBJECT("id", r.id, "user_id", r.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = r.user_id), "image", (SELECT image FROM users u WHERE u.id = r.user_id), "reply_content", r.reply_content, "comment_id", r.comment_id, "comment_content", (SELECT comment_content FROM comments c WHERE c.id = r.comment_id), "novel_raintg_id", r.novel_rating_id, "rate_comment", (SELECT rate_comment FROM novels_ratings nr WHERE nr.id = r.novel_rating_id), "nvl_name", ( SELECT nvl_name FROM novels nov left join novels_ratings nr on nr.novel_id = nov.id WHERE nr.id = r.novel_rating_id LIMIT 1), "novel_id", ( SELECT nov.id FROM novels nov left join novels_ratings nr on nr.novel_id = nov.id WHERE nr.id = r.novel_rating_id LIMIT 1)) FROM replys r WHERE r.id = n.reply_id) AS reply_notification,
+            
+            
+            
+            (SELECT JSON_OBJECT("id", nr.id, "user_id", nr.user_id, "user_login", (SELECT user_login FROM users u WHERE u.id = nr.user_id), "image", (SELECT image FROM users u WHERE u.id = nr.user_id), "rate_comment", nr.rate_comment, "rate_value", nr.rate_value, "novel_id", nr.novel_id, "nvl_title", (SELECT nvl_title FROM novels nvl WHERE nvl.id = nr.novel_id), "nvl_name", (SELECT nvl_name FROM novels nvl WHERE nvl.id = nr.novel_id)) FROM novels_ratings nr WHERE nr.id = n.novel_rating_id) AS novel_rating_notification
+            FROM notifications n 
+            WHERE 
+            n.user_id = ? ORDER BY n.createdAt DESC LIMIT 10`, { replacements: [req.user.id], type: notifications_model.sequelize.QueryTypes.SELECT })
         .then(notifications => {
             notifications = mariadbHelper.verifyJSON(notifications, ['like_notification', 'comment_notification', 'reply_notification', 'novel_rating_notification', 'advertisement_notification']);
             for (let notification of notifications) {
                 if (notification.like_notification !== null) {
                     if (notification.like_notification.adv_id !== null) {
                         notification.message = `A ${notification.like_notification.user_login} le gusta el anuncio ´${notification.like_notification.adv_title}´`;
+
                     }
                     if (notification.like_notification.novel_rating_id !== null) {
                         notification.message = `A ${notification.like_notification.user_login} le gusta tu calificación de novela ´${notification.like_notification.rate_comment}´`;
@@ -628,15 +635,18 @@ function getUserNotifications(req, res) {
                 if (notification.comment_notification !== null) {
                     if (notification.comment_notification.adv_id !== null) {
                         notification.message = `${notification.comment_notification.user_login} ha comentado en el anuncio ´${notification.comment_notification.adv_title}´`;
+                        notification.url = `${applicationURL}/noticias/${notification.comment_notification.adv_id}/${notification.comment_notification.adv_title}`;
                     }
                     if (notification.comment_notification.chp_id !== null) {
                         notification.message = `${notification.comment_notification.user_login} ha comentado en el capítulo ´${notification.comment_notification.chp_title}´`;
+                        notification.url = `${applicationURL}/novelas/${notification.comment_notification.nvl_id}/${notification.comment_notification.nvl_name}/${notification.comment_notification.chp_id}/${notification.comment_notification.chp_name}`;
                     }
                     notification.user_image = notification.comment_notification.image;
                 }
                 if (notification.novel_rating_notification !== null) {
                     notification.message = `${notification.novel_rating_notification.user_login} ha calificado con ${notification.novel_rating_notification.rate_value} estrellas la novela ´${notification.novel_rating_notification.nvl_title}´`;
                     notification.user_image = notification.novel_rating_notification.image;
+                    notification.url = `${applicationURL}/novelas/${notification.novel_rating_notification.novel_id}/${notification.novel_rating_notification.nvl_name}`;
                 }
                 if (notification.reply_notification !== null) {
                     if (notification.reply_notification.comment_id !== null) {
@@ -644,6 +654,7 @@ function getUserNotifications(req, res) {
                     }
                     if (notification.reply_notification.novel_raintg_id !== null) {
                         notification.message = `${notification.reply_notification.user_login} ha respondido sobre tu calificación de novela ´${notification.reply_notification.rate_comment}´`;
+                        notification.url = `${applicationURL}/novelas/${notification.reply_notification.novel_id}/${notification.reply_notification.nvl_name}`;
                     }
                     notification.user_image = notification.reply_notification.image;
                 }

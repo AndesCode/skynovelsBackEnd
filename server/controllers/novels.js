@@ -11,6 +11,7 @@ const genres_model = require('../models').genres;
 const Sequelize = require('sequelize');
 const mariadbHelper = require('../services/mariadbHelper');
 const imageService = require('../services/imageService');
+const notificationsService = require('../services/notificationsService');
 
 // Novels.
 
@@ -531,6 +532,14 @@ function createNovelRating(req, res) {
     const body = req.body;
     body.user_id = req.user.id;
     novels_ratings_model.create(body).then(novel_rating => {
+        novels_model.sequelize.query(`SELECT user_id FROM novels_collaborators WHERE novel_id = ${novel_rating.novel_id} UNION (SELECT nvl_author FROM novels WHERE id = ${novel_rating.novel_id})`, { type: novels_model.sequelize.QueryTypes.SELECT })
+            .then((novel_editors) => {
+                for (let editor of novel_editors) {
+                    if (req.user.id !== editor.user_id) {
+                        notificationsService.createNotification(editor.user_id, novel_rating.id, 'novel_rating_id');
+                    }
+                }
+            });
         return res.status(200).send({ novel_rating });
     }).catch(err => {
         if (err && err.errors && err.errors[0].message) {
@@ -696,7 +705,6 @@ function deleteNovelVolume(req, res) {
 function getTest(req, res) {
     novels_model.sequelize.query('SELECT n.*, COUNT(c.id) AS nvl_chapters, MAX(c.createdAt) AS nvl_last_update, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", rl.id, "user_id", rl.user_id, "chp_id", rl.chp_id, "chp_name", (SELECT chp_name FROM chapters ch WHERE ch.id = rl.chp_id))) FROM bookmarks rl WHERE rl.nvl_id = n.id), JSON_ARRAY()) AS bookmarks, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("vlm_title", v.vlm_title, "id", v.id, "nvl_id", v.nvl_id, "user_id", v.user_id,"chapters", IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "chp_index_title", c.chp_index_title, "chp_name", c.chp_name, "chp_number", c.chp_number, "chp_status", c.chp_status, "createdAt", c.createdAt) ORDER BY c.chp_number ASC) AS chapters FROM chapters c WHERE c.vlm_id = v.id AND c.chp_status = "Active" AND c.vlm_id IS NOT NULL), JSON_ARRAY()))) FROM volumes v WHERE v.nvl_id = n.id), JSON_ARRAY()) as volumes,  IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("user_id", nr.user_id, "rate_value", nr.rate_value, "rate_comment", nr.rate_comment, "replys_count", (SELECT COUNT(nrr.id) FROM replys nrr WHERE nrr.novel_rating_id = nr.id), "createdAt", nr.createdAt, "updatedAt", nr.updatedAt, "id", nr.id, "user_login", (SELECT user_login FROM users u where u.id = nr.user_id), "image", (SELECT image FROM users u where u.id = nr.user_id), "likes", IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", l.id, "user_id", l.user_id, "user_login", (SELECT user_login FROM users u where u.id = l.user_id))) as likes FROM likes l where l.novel_rating_id = nr.id), JSON_ARRAY()))) FROM novels_ratings nr WHERE nr.novel_id = n.id), JSON_ARRAY()) as novel_ratings,  IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("user_id", nc.user_id, "user_login", (SELECT user_login FROM users u where u.id = nc.user_id))) FROM novels_collaborators nc where nc.novel_id = n.id), JSON_ARRAY()) as collaborators, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) AS genres FROM novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.id = 2 AND n.nvl_status IN ("Active", "Finished")', { type: novels_model.sequelize.QueryTypes.SELECT })
         .then(test => {
-            console.log(io);
             return res.status(200).send({ test });
         }).catch(err => {
             return res.status(500).send({ message: 'Ocurrio un error en el test ' + err });

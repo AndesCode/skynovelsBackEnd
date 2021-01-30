@@ -158,8 +158,6 @@ io.on('connection', (socket) => {
     };
     usersSocketsConnections.push(newConnection);
     socketService.setOnlineUsers(usersSocketsConnections);
-    socket.emit('test event', 'emitiendo!!!');
-    io.to(socket.id).emit('test event user', socket.request.user.user_login);
 
     socket.on('getOnlineUsersCount', data => {
         if (socket.request.user.user_rol === 'admin') {
@@ -179,15 +177,12 @@ io.on('connection', (socket) => {
             usersSocketsConnections.find(x => x.socket_id === socket.id).user_id = null;
         }
         socketService.setOnlineUsers(usersSocketsConnections);
-        console.log(usersSocketsConnections);
     });
 
     socket.on('disconnect', () => {
         usersSocketsConnections.splice(usersSocketsConnections.findIndex(x => x.socket_id === socket.id), 1);
         socketService.setOnlineUsers(usersSocketsConnections);
     });
-    console.log('mismo');
-    console.log(usersSocketsConnections);
 });
 
 server.listen(process.env.PORT || port, function() {

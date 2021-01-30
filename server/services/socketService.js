@@ -20,9 +20,8 @@ function notifyUser(user_id) {
         .then((notifications) => {
             if (usersSocketsConnections.find(x => x.user_id === user_id)) {
                 const socket_info = usersSocketsConnections.find(x => x.user_id === user_id);
-                io.to(socket_info.socket_id).emit('test event', notifications[0]);
+                io.to(socket_info.socket_id).emit('userNotificationEvent', notifications[0]);
             } else {
-                console.log('no hay usuario logeado con el id ' + user_id)
                 return;
             }
         }).catch(err => {

@@ -7,6 +7,7 @@ const likes_model = require('../models').likes;
 const comments_model = require('../models').comments;
 const replys_model = require('../models').replys;
 const notifications_model = require('../models').notifications;
+const novels_model = require('../models').novels;
 // files mannager
 const fs = require('fs');
 const path = require('path');
@@ -46,13 +47,15 @@ function createLike(req, res) {
         objectId = body.reply_id;
         objectName = 'reply_id';
     }
-    model.findByPk(objectId, { attributes: ['id'] }).then(object => {
+    model.findByPk(objectId, { attributes: ['id', 'user_id'] }).then(object => {
         if (object) {
             likes_model.create({
-                'user_id': req.user.id,
+                user_id: req.user.id,
                 [objectName]: objectId
             }).then(like => {
-                notificationsService.createLikeNotification(like.id, model, objectId, objectName);
+                if (req.user.id !== object.user_id) {
+                    notificationsService.createNotification(object.user_id, like.id, 'like_id');
+                }
                 return res.status(201).send({ like });
             }).catch(err => {
                 if (err && err.errors && err.errors[0].message) {
@@ -129,14 +132,14 @@ function createComment(req, res) {
         modelDefined = true;
         objectId = body.chp_id;
         objectName = 'chp_id';
-        atributes = ['id', 'chp_status'];
+        atributes = ['id', 'chp_status', 'chp_author', 'nvl_id'];
     }
     if (body.adv_id && !modelDefined) {
         model = advertisements_model;
         modelDefined = true;
         objectId = body.adv_id;
         objectName = 'adv_id';
-        atributes = ['id', 'image'];
+        atributes = ['id', 'image', 'user_id'];
     }
     model.findByPk(objectId, { attributes: atributes }).then(object => {
         if (object) {
@@ -147,10 +150,24 @@ function createComment(req, res) {
                 return res.status(409).send({ message: 'No se pudo agregar el comentario' });
             }
             comments_model.create({
-                'user_id': req.user.id,
+                user_id: req.user.id,
                 [objectName]: objectId,
                 comment_content: body.comment_content
             }).then(comment => {
+                if (objectName === 'chp_id') {
+                    novels_model.sequelize.query(`SELECT user_id FROM novels_collaborators WHERE novel_id = ${object.nvl_id} UNION (SELECT nvl_author FROM novels WHERE id = ${object.nvl_id})`, { type: novels_model.sequelize.QueryTypes.SELECT })
+                        .then((novel_editors) => {
+                            for (let editor of novel_editors) {
+                                if (req.user.id !== editor.user_id) {
+                                    notificationsService.createNotification(editor.user_id, comment.id, 'comment_id');
+                                }
+                            }
+                        });
+                } else {
+                    if (req.user.id !== object.user_id) {
+                        notificationsService.createNotification(object.user_id || object.chp_author, comment.id, 'comment_id');
+                    }
+                }
                 return res.status(201).send({ comment });
             }).catch(err => {
                 if (err && err.errors && err.errors[0].message) {
@@ -242,13 +259,16 @@ function createReply(req, res) {
         objectId = body.novel_rating_id;
         objectName = 'novel_rating_id';
     }
-    model.findByPk(objectId, { attributes: ['id'] }).then(object => {
+    model.findByPk(objectId, { attributes: ['id', 'user_id'] }).then(object => {
         if (object) {
             replys_model.create({
-                'user_id': req.user.id,
+                user_id: req.user.id,
                 [objectName]: objectId,
                 reply_content: body.reply_content
             }).then(reply => {
+                if (req.user.id !== object.user_id) {
+                    notificationsService.createNotification(object.user_id, reply.id, 'reply_id');
+                }
                 return res.status(201).send({ reply });
             }).catch(err => {
                 if (err && err.errors && err.errors[0].message) {
