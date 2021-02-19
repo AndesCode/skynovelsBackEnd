@@ -665,7 +665,7 @@ function getUserNotifications(req, res) {
                     notification.type = 'novel_rating';
                     notification.message = `${notification.novel_rating_notification.user_login} ha calificado con ${notification.novel_rating_notification.rate_value} estrellas la novela ´${notification.novel_rating_notification.nvl_title}´`;
                     notification.user_image = notification.novel_rating_notification.image;
-                    notification.url = `/novelas/${notification.novel_rating_notification.novel_id}/${notification.novel_rating_notification.nvl_name}`;
+                    notification.url = `/novelas/${notification.novel_rating_notification.novel_id}/${notification.novel_rating_notification.nvl_name}?rating=${notification.novel_rating_id}`;
                 }
                 if (notification.reply_notification !== null) {
                     notification.type = 'reply';
@@ -693,7 +693,7 @@ function getUserNotifications(req, res) {
                     user_id: req.user.id
                 }
             }).then(() => {
-                notifications = notifications.map(x => {
+                /*notifications = notifications.map(x => {
                     const map = {
                         id: x.id,
                         user_id: x.user_id,
@@ -705,7 +705,7 @@ function getUserNotifications(req, res) {
                         createdAt: x.createdAt
                     };
                     return map;
-                });
+                });*/
                 return res.status(200).send({ notifications });
             }).catch(err => {
                 return res.status(500).send({ message: 'Ocurrio un error cargando las notificaciones' });

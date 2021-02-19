@@ -7,24 +7,6 @@ const fs = require('fs');
 const imageThumbnail = require('image-thumbnail');
 const path = require('path');
 
-function example(objects, corrections) {
-    for (const object of objects) {
-        for (const correction of corrections) {
-            if (object[correction] && typeof(object[correction]) !== 'object') {
-                try {
-                    const parsedValue = JSON.parse(object[correction]);
-                    object[correction] = parsedValue;
-                } catch (e) {
-                    continue;
-                }
-            } else {
-                continue;
-            }
-        }
-    }
-    return objects;
-}
-
 function uploadImage(object, objectType, req_files) {
     return new Promise((resolve, rejected) => {
         const file_path = req_files.image.path;
