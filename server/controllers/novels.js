@@ -27,17 +27,22 @@ function getHomeNovels(req, res) {
             });
             novels_model.sequelize.query('SELECT n.*, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating FROM  novels n  WHERE  n.nvl_status IN ("Active", "Finished") ORDER BY n.createdAt desc LIMIT 10', { type: novels_model.sequelize.QueryTypes.SELECT })
                 .then(recentNovels => {
-                    novels_model.sequelize.query('SELECT n.*, COUNT(c.id) AS nvl_chapters, MAX(c.createdAt) AS nvl_last_update, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) as genres FROM  novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.nvl_status IN ("Active", "Finished") AND n.nvl_recommended = true GROUP BY n.id LIMIT 1', { type: novels_model.sequelize.QueryTypes.SELECT })
-                        .then(recommendedNovel => {
-                            recommendedNovel = mariadbHelper.verifyJSON(recommendedNovel, ['genres']);
-                            novels_model.sequelize.query('SELECT n.*, MAX(c.createdAt) AS nvl_last_update FROM novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE  n.nvl_status IN ("Active", "Finished") GROUP BY n.id ORDER BY nvl_last_update DESC LIMIT 10', { type: novels_model.sequelize.QueryTypes.SELECT })
-                                .then(updatedNovels => {
-                                    return res.status(200).send({ topNovels, recentNovels, recommendedNovel, updatedNovels });
+                    novels_model.sequelize.query('SELECT n.*, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating FROM  novels n  WHERE  n.nvl_status = "Finished" ORDER BY n.createdAt desc LIMIT 10', { type: novels_model.sequelize.QueryTypes.SELECT })
+                        .then(finishedNovels => {
+                            novels_model.sequelize.query('SELECT n.*, COUNT(c.id) AS nvl_chapters, MAX(c.createdAt) AS nvl_last_update, ROUND((SELECT AVG(rate_value) FROM novels_ratings where novel_id = n.id), 1) as nvl_rating, IFNULL((SELECT JSON_ARRAYAGG(JSON_OBJECT("id", gn.genre_id, "genre_name", (SELECT genre_name FROM genres g where g.id = gn.genre_id))) FROM genres_novels gn where gn.novel_id = n.id), JSON_ARRAY()) as genres FROM  novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE n.nvl_status IN ("Active", "Finished") AND n.nvl_recommended = true GROUP BY n.id LIMIT 1', { type: novels_model.sequelize.QueryTypes.SELECT })
+                                .then(recommendedNovel => {
+                                    recommendedNovel = mariadbHelper.verifyJSON(recommendedNovel, ['genres']);
+                                    novels_model.sequelize.query('SELECT n.*, MAX(c.createdAt) AS nvl_last_update FROM novels n left JOIN chapters c ON c.nvl_id = n.id AND c.chp_status = "Active" WHERE  n.nvl_status IN ("Active", "Finished") GROUP BY n.id ORDER BY nvl_last_update DESC LIMIT 10', { type: novels_model.sequelize.QueryTypes.SELECT })
+                                        .then(updatedNovels => {
+                                            return res.status(200).send({ topNovels, recentNovels, recommendedNovel, updatedNovels, finishedNovels });
+                                        }).catch(err => {
+                                            return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas actualizadas' });
+                                        });
                                 }).catch(err => {
-                                    return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas actualizadas' });
+                                    return res.status(500).send({ message: 'Ocurrio un error al cargar la novela recomendada' });
                                 });
                         }).catch(err => {
-                            return res.status(500).send({ message: 'Ocurrio un error al cargar la novela recomendada' });
+                            return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas completadas' });
                         });
                 }).catch(err => {
                     return res.status(500).send({ message: 'Ocurrio un error al cargar las novelas recientes' });
