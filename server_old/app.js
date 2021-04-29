@@ -186,6 +186,6 @@ io.on('connection', (socket) => {
     });
 });
 
-eurekaHelper.registerWithEureka('backend', process.env.PORT || port);
+eurekaHelper.registerWithEureka('backend' /* nombre del micro al registrarse */, process.env.PORT || port);
 
 module.exports = app;
