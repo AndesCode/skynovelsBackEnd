@@ -15,6 +15,7 @@ const cookieParser = require('cookie-parser');
 const socketService = require('./server/services/socketService');
 require('./server/passport/local-auth');
 require('dotenv').config();
+const eurekaHelper = require('./eureka-helper');
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
 let sessionConfiguration;
@@ -185,9 +186,6 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(process.env.PORT || port, function() {
-    console.log('server running on:');
-    console.log(server.address());
-});
+eurekaHelper.registerWithEureka('backend', process.env.PORT || port);
 
 module.exports = app;

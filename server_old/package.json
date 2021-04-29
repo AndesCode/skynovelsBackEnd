@@ -14,6 +14,7 @@
     "author": "AndesCode",
     "license": "ISC",
     "dependencies": {
+        "eureka-js-client": "^4.5.0",
         "atob": "^2.1.2",
         "bcrypt": "^5.0.0",
         "connect-multiparty": "^2.2.0",
