@@ -14,7 +14,6 @@
     "author": "AndesCode",
     "license": "ISC",
     "dependencies": {
-        "eureka-js-client": "^4.5.0",
         "atob": "^2.1.2",
         "bcrypt": "^5.0.0",
         "connect-multiparty": "^2.2.0",
@@ -22,6 +21,7 @@
         "cors": "^2.8.5",
         "cryptr": "^6.0.2",
         "dotenv": "^8.2.0",
+        "eureka-js-client": "^4.5.0",
         "express": "^4.17.1",
         "express-mysql-session": "^2.1.5",
         "express-session": "^1.17.1",
@@ -30,6 +30,7 @@
         "image-thumbnail": "^1.0.13",
         "mariadb": "^2.5.2",
         "morgan": "^1.10.0",
+        "mysql2": "^2.2.5",
         "njwt": "^1.0.0",
         "nodemailer": "^6.4.17",
         "nodemailer-express-handlebars": "^4.0.0",
