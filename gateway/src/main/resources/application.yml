@@ -1,0 +1,4 @@
+server:
+  port: 8050
+  compression:
+    enabled: true

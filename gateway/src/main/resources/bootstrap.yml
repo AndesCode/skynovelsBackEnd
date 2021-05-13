@@ -1,0 +1,18 @@
+spring:
+  banner-mode: console
+  application:
+    name: gateway
+  banner:
+    location: logo.txt
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+    healthcheck:
+      enabled: true
+  instance:
+    instance-id: ${spring.cloud.client.hostname}:${spring.application.name}:${vcap.application.instance_id:${spring.application.instance_id:${random.value}}}
+    secure-port-enabled: true
+    non-secure-port-enabled: false
+    home-page-url: http://${eureka.hostname}:${server.port}
+    hostname: mingateway
