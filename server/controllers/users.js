@@ -618,13 +618,13 @@ function getUserNotifications(req, res) {
                     }
                     if (notification.like_notification.novel_rating_id !== null) {
                         notification.message = `A ${notification.like_notification.user_login} le gusta tu calificación de novela ´${notification.like_notification.rate_comment}´`;
-                        notification.url = `/novelas/${notification.like_notification.novel_id}/${notification.like_notification.nvl_name}`;
+                        notification.url = `/novelas/${notification.like_notification.novel_id}/${notification.like_notification.nvl_name}?rating=${notification.like_notification.novel_rating_id}`;
                     }
                     if (notification.like_notification.comment_id !== null) {
                         notification.like_notification.comment = JSON.parse(notification.like_notification.comment);
                         notification.message = `A ${notification.like_notification.user_login} le gusta tu comentario ´${notification.like_notification.comment_content}´`;
                         if (notification.like_notification.comment.adv_id !== null) {
-                            notification.url = `/noticias/${notification.like_notification.comment.adv_id}/${notification.like_notification.comment.adv_name}`;
+                            notification.url = `/noticias/${notification.like_notification.comment.adv_id}/${notification.like_notification.comment.adv_name}?comment=${notification.like_notification.comment.id}`;
                         }
                         if (notification.like_notification.comment.chp_id !== null) {
                             notification.url = `/novelas/${notification.like_notification.comment.nvl_id}/${notification.like_notification.comment.nvl_name}/${notification.like_notification.comment.chp_id}/${notification.like_notification.comment.chp_name}`;
@@ -636,7 +636,7 @@ function getUserNotifications(req, res) {
                         if (notification.like_notification.reply.comment_id !== null) {
                             notification.like_notification.reply.comment = JSON.parse(notification.like_notification.reply.comment);
                             if (notification.like_notification.reply.comment.adv_id !== null) {
-                                notification.url = `/noticias/${notification.like_notification.reply.comment.adv_id}/${notification.like_notification.reply.comment.adv_name}`;
+                                notification.url = `/noticias/${notification.like_notification.reply.comment.adv_id}/${notification.like_notification.reply.comment.adv_name}?comment=${notification.like_notification.reply.comment.id}&reply=${notification.like_notification.reply.id}`;
                             }
                             if (notification.like_notification.reply.comment.chp_id !== null) {
                                 notification.url = `/novelas/${notification.like_notification.reply.comment.nvl_id}/${notification.like_notification.reply.comment.nvl_name}/${notification.like_notification.reply.comment.chp_id}/${notification.like_notification.reply.comment.chp_name}`;
@@ -644,7 +644,7 @@ function getUserNotifications(req, res) {
                         }
                         if (notification.like_notification.reply.novel_rating_id !== null) {
                             notification.like_notification.reply.novel_rating = JSON.parse(notification.like_notification.reply.novel_rating);
-                            notification.url = `/novelas/${notification.like_notification.reply.novel_rating.novel_id}/${notification.like_notification.reply.novel_rating.nvl_name}`;
+                            notification.url = `/novelas/${notification.like_notification.reply.novel_rating.novel_id}/${notification.like_notification.reply.novel_rating.nvl_name}?rating=${notification.like_notification.reply.novel_rating.id}&reply=${notification.like_notification.reply.id}`;
                         }
                     }
                     notification.user_image = notification.like_notification.image;
@@ -653,7 +653,7 @@ function getUserNotifications(req, res) {
                     notification.type = 'comment';
                     if (notification.comment_notification.adv_id !== null) {
                         notification.message = `${notification.comment_notification.user_login} ha comentado en el anuncio ´${notification.comment_notification.adv_title}´`;
-                        notification.url = `/noticias/${notification.comment_notification.adv_id}/${notification.comment_notification.adv_name}`;
+                        notification.url = `/noticias/${notification.comment_notification.adv_id}/${notification.comment_notification.adv_name}?comment=${notification.comment_notification.id}`;
                     }
                     if (notification.comment_notification.chp_id !== null) {
                         notification.message = `${notification.comment_notification.user_login} ha comentado en el capítulo ´${notification.comment_notification.chp_title}´`;
@@ -673,7 +673,7 @@ function getUserNotifications(req, res) {
                         notification.reply_notification.comment = JSON.parse(notification.reply_notification.comment);
                         notification.message = `${notification.reply_notification.user_login} ha respondido sobre tu comentario ´${notification.reply_notification.comment_content}´`;
                         if (notification.reply_notification.comment.adv_id !== null) {
-                            notification.url = `/noticias/${notification.reply_notification.comment.adv_id}/${notification.reply_notification.comment.adv_name}`;
+                            notification.url = `/noticias/${notification.reply_notification.comment.adv_id}/${notification.reply_notification.comment.adv_name}?comment=${notification.reply_notification.comment_id}&reply=${notification.reply_notification.id}`;
                         }
                         if (notification.reply_notification.comment.chp_id !== null) {
                             notification.url = `/novelas/${notification.reply_notification.comment.nvl_id}/${notification.reply_notification.comment.nvl_name}/${notification.reply_notification.comment.chp_id}/${notification.reply_notification.comment.chp_name}`;
@@ -681,7 +681,7 @@ function getUserNotifications(req, res) {
                     }
                     if (notification.reply_notification.novel_rating_id !== null) {
                         notification.message = `${notification.reply_notification.user_login} ha respondido sobre tu calificación de novela ´${notification.reply_notification.rate_comment}´`;
-                        notification.url = `/novelas/${notification.reply_notification.novel_id}/${notification.reply_notification.nvl_name}?rating=${notification.reply_notification.novel_rating_id}?reply=${notification.reply_notification.id}`;
+                        notification.url = `/novelas/${notification.reply_notification.novel_id}/${notification.reply_notification.nvl_name}?rating=${notification.reply_notification.novel_rating_id}&reply=${notification.reply_notification.id}`;
                     }
                     notification.user_image = notification.reply_notification.image;
                 }
