@@ -6,7 +6,6 @@ const advertisements_model = require('../models').advertisements;
 const likes_model = require('../models').likes;
 const comments_model = require('../models').comments;
 const replys_model = require('../models').replys;
-const notifications_model = require('../models').notifications;
 const novels_model = require('../models').novels;
 // files mannager
 const fs = require('fs');
@@ -372,14 +371,6 @@ function getImage(req, res) {
     });
 }
 
-function getNotificationsTest(req, res) {
-    notifications_model.findAll().then((nots) => {
-        return res.status(200).send({ nots });
-    }).catch(err => {
-        return res.status(500).send({ message: 'Ocurrio un error al cargar la respuesta' });
-    });
-}
-
 module.exports = {
     // Advertisements
     getAdvertisement,
@@ -398,7 +389,5 @@ module.exports = {
     createLike,
     deleteLike,
     // images
-    getImage,
-    // Test
-    getNotificationsTest
+    getImage
 };

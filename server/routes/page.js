@@ -22,5 +22,5 @@ module.exports = (app) => {
     // images
     app.get('/api/get-image/:file_name/:image_type/:thumb', pageController.getImage);
     // Test
-    app.get('/api/get-notTest', pageController.getNotificationsTest);
+    //app.get('/api/get-notTest', pageController.getNotificationsTest);
 };
