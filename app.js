@@ -30,9 +30,10 @@ if (isProd) {
 } else {
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
     sessionConfiguration = JSON.parse(process.env.devDataBaseSession);
-    whitelist = ['http://localhost:4200', 'http://localhost:8100'];
+    whitelist = ['http://localhost:30000', 'http://localhost:4200', 'http://localhost:8100'];
+    //allowedOrigin = 'http://localhost:30000';
     allowedOrigin = 'http://localhost:4200';
-    //allowedOrigin = 'http://localhost:8100';
+    // allowedOrigin = 'http://localhost:8100';
     console.log('Environment: development');
     sessionSecret = process.env.devSessionSecret;
 }
@@ -48,6 +49,7 @@ if (isProd) {
         name: 'sessionId',
         secret: sessionSecret,
         resave: false,
+        key: 'sessionId',
         store: sessionStore,
         saveUninitialized: false,
         proxy: true,
@@ -63,6 +65,7 @@ if (isProd) {
         name: 'sessionId',
         secret: sessionSecret,
         resave: false,
+        key: 'sessionId',
         store: sessionStore,
         saveUninitialized: false,
         cookie: {
@@ -136,14 +139,14 @@ io.use(passportSocketIo.authorize({
 }));
 
 function onAuthorizeSuccess(data, accept) {
-    console.log('successful connection to socket.io');
+    console.log('successful connection to socket.io ' + data);
     accept(null, true);
 }
 
 function onAuthorizeFail(data, message, error, accept) {
     if (error)
         throw new Error(message);
-    console.log('failed connection to socket.io:', message);
+    console.log('failed connection to socket.io:', message + ' ' + error);
     accept(null, false);
     if (error)
         accept(new Error(message));
