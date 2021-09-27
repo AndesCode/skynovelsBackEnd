@@ -32,6 +32,6 @@ module.exports = (app) => {
     app.put('/api/update-user-invitation', md_auth.auth, userController.updateUserInvitation);
     app.get('/api/get-user-invitations', md_auth.auth, userController.getUserInvitations);
     // Notifications
-    app.get('/api/get-user-notifications', md_auth.auth, userController.getUserNotifications);
+    app.get('/api/get-user-notifications/:limit', md_auth.auth, userController.getUserNotifications);
     app.get('/api/get-user-unread-notifications', md_auth.auth, userController.getUnreadUserNotifications);
 };

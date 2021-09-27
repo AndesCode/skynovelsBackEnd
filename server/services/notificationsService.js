@@ -17,7 +17,7 @@ function createNotification(notificationToUserId, objectId, objectName) {
 }
 
 function deleteOldNotifications() {
-    notifications_model.sequelize.query('DELETE FROM notifications WHERE DATE(createdAt) < DATE_SUB(CURRENT_DATE(), INTERVAL 31 DAY)', { type: notifications_model.sequelize.QueryTypes.DELETE })
+    notifications_model.sequelize.query('DELETE FROM notifications WHERE DATE(createdAt) < DATE_SUB(CURRENT_DATE(), INTERVAL 21 DAY)', { type: notifications_model.sequelize.QueryTypes.DELETE })
         .then(() => {
             return;
         }).catch(err => {
