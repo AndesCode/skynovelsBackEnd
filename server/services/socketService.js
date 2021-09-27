@@ -5,9 +5,9 @@ const isProd = process.env.NODE_ENV === 'production' ? true : false;
 if (isProd) {
     allowedOrigin = 'https://www.skynovels.net';
 } else {
-    //allowedOrigin = 'http://localhost:30000';
+    // allowedOrigin = 'http://localhost:30000';
     allowedOrigin = 'http://localhost:4200';
-    //allowedOrigin = 'http://localhost:8100';
+    // allowedOrigin = 'http://localhost:8100';
 }
 let io;
 let usersSocketsConnections;
