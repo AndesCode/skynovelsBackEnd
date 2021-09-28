@@ -159,6 +159,7 @@ io.on('connection', (socket) => {
         ip: socket.handshake.address,
         user_id: socket.request.user.id || null
     };
+    console.log(newConnection.socket_id);
     usersSocketsConnections.push(newConnection);
     socketService.setOnlineUsers(usersSocketsConnections);
 
@@ -180,6 +181,10 @@ io.on('connection', (socket) => {
             usersSocketsConnections.find(x => x.socket_id === socket.id).user_id = null;
         }
         socketService.setOnlineUsers(usersSocketsConnections);
+    });
+
+    socket.on('connect_error', function(err) {
+        console.log(`connect_error due to ${err.message}`);
     });
 
     socket.on('disconnect', () => {
