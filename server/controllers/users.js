@@ -676,7 +676,11 @@ function getUserNotifications(req, res) {
 
                     }
                     if (notification.comment_notification.chp_id !== null) {
-                        notification.message = `${notification.comment_notification.user_login} ha comentado en el capítulo ´${notification.comment_notification.chp_title}´`;
+                        if (notification.comment_notification.chp_title !== null && notification.comment_notification.chp_title !== 'null') {
+                            notification.message = `${notification.comment_notification.user_login} ha comentado en el capítulo ´${notification.comment_notification.chp_title}´`;
+                        } else {
+                            notification.message = `${notification.comment_notification.user_login} ha comentado en el capítulo ´${notification.comment_notification.chp_name}´`;
+                        }
                         notification.url = `/comentarios-de-capitulo/${notification.comment_notification.chp_id}`;
                     }
                     notification.user_image = notification.comment_notification.image;
