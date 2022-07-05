@@ -32,8 +32,8 @@ if (isProd) {
     sessionConfiguration = JSON.parse(process.env.devDataBaseSession);
     whitelist = ['http://localhost:30000', 'http://localhost:4200', 'http://localhost:8100'];
     // allowedOrigin = 'http://localhost:30000';
-    allowedOrigin = 'http://localhost:4200';
-    // allowedOrigin = 'http://localhost:8100';
+    // allowedOrigin = 'http://localhost:4200';
+    allowedOrigin = 'http://localhost:8100';
     console.log('Environment: development');
     sessionSecret = process.env.devSessionSecret;
 }
