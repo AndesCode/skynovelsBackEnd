@@ -22,6 +22,12 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
+        reply_to_reply: {
+            type: DataTypes.INTEGER,
+            validate: {
+                isNumeric: true
+            }
+        },
         novel_rating_id: {
             type: DataTypes.INTEGER,
             validate: {

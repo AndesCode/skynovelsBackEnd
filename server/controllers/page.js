@@ -4,6 +4,7 @@ const novels_ratings_model = require('../models').novels_ratings;
 const chapters_model = require('../models').chapters;
 const advertisements_model = require('../models').advertisements;
 const likes_model = require('../models').likes;
+const reaction_model = require('../models').reaction_chapters;
 const comments_model = require('../models').comments;
 const replys_model = require('../models').replys;
 const novels_model = require('../models').novels;
@@ -91,6 +92,66 @@ function deleteLike(req, res) {
         return res.status(500).send({ message: 'Ocurrio un error al cargar el "Me gusta"' });
     });
 }
+
+// reactions
+
+function createReaction(req, res) {
+    const body = req.body;
+    let modelDefined = false;
+    let objectId;
+    let objectName;
+    if (body.chapter_id && !modelDefined) {
+        modelDefined = true;
+        objectId = body.chapter_id;
+        objectName = 'chapter_id';
+    }
+    chapters_model.findByPk(objectId, {attributes: ['id','chp_author'] }).then(object => {
+        if (object) {
+            reaction_model.create({
+                reaction_id: req.body.reaction_id,
+                user_id: req.user.id,
+                [objectName]: objectId
+            }).then(reaction => {
+                if (req.user.id !== object.chp_author) {
+                    notificationsService.createNotification(object.chp_author, reaction.id, 'reaction_id');
+                }
+                return res.status(201).send({ reaction });
+            }).catch(err => {
+                if (err && err.errors && err.errors[0].message) {
+                    return res.status(400).send({ message: err.errors[0].message });
+                } else {
+                    return res.status(500).send({ message: 'Ocurrio un error al asignar el "Me gusta"' });
+                }
+            });
+        } else {
+            return res.status(500).send({ message: 'No se encuentra el elemento al que se intenta asignar el "Me gusta"' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al cargar el elemento al que se intenta asignar el "Me gusta"' });
+    });
+}
+
+function deleteReaction(req, res) {
+    const id = req.params.id;
+    reaction_model.findByPk(id).then(reaction => {
+        if (req.user.id === reaction.user_id) {
+            reaction.destroy({
+                where: {
+                    id: id
+                }
+            }).then(reaction => {
+                return res.status(200).send({ reaction });
+            }).catch(err => {
+                return res.status(500).send({ message: 'Ocurrio un error al eliminar la "Reacccion"' });
+            });
+        } else {
+            return res.status(401).send({ message: 'No autorizado' });
+        }
+    }).catch(err => {
+        return res.status(500).send({ message: 'Ocurrio un error al cargar la "Reaccion"' });
+    });
+}
+
 
 // Advertisements
 
@@ -246,6 +307,8 @@ function createReply(req, res) {
     let model;
     let objectId;
     let objectName;
+    let objectId2;
+    let objectName2;
     if (body.comment_id && !modelDefined) {
         model = comments_model;
         modelDefined = true;
@@ -258,15 +321,32 @@ function createReply(req, res) {
         objectId = body.novel_rating_id;
         objectName = 'novel_rating_id';
     }
+    if (body.reply_to_reply && !modelDefined) {
+        model = comments_model;
+        modelDefined = true;
+        objectId = body.com_id;
+        objectId2 = body.reply_to_reply;
+        objectName = 'comment_id';
+        objectName2 = 'reply_to_reply';
+    }
+    if (body.reply_to_rating && !modelDefined) {
+        model = novels_ratings_model;
+        modelDefined = true;
+        objectId = body.rating_id;
+        objectId2 = body.reply_to_rating;
+        objectName = 'novel_rating_id';
+        objectName2 = 'reply_to_reply';
+    }
     model.findByPk(objectId, { attributes: ['id', 'user_id'] }).then(object => {
         if (object) {
             replys_model.create({
                 user_id: req.user.id,
+                [objectName2]: objectId2,
                 [objectName]: objectId,
                 reply_content: body.reply_content
-            }).then(reply => {
+            }).then(reply => { 
                 if (req.user.id !== object.user_id) {
-                    notificationsService.createNotification(object.user_id, reply.id, 'reply_id');
+                    notificationsService.createNotification(object.user_id, reply.id,  'reply_id');
                 }
                 return res.status(201).send({ reply });
             }).catch(err => {
@@ -388,6 +468,9 @@ module.exports = {
     // Likes
     createLike,
     deleteLike,
+    // Reactions
+    createReaction,
+    deleteReaction,
     // images
     getImage
 };

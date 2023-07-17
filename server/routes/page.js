@@ -3,6 +3,9 @@ const pageController = require('../controllers').page;
 const md_auth = require('../authenticated/authenticated');
 
 module.exports = (app) => {
+     // Reactions
+     app.post('/api/create-reaction', md_auth.auth, pageController.createReaction);
+     app.delete('/api/delete-reaction/:id', md_auth.auth, pageController.deleteReaction);
     // Likes
     app.post('/api/create-like', md_auth.auth, pageController.createLike);
     app.delete('/api/delete-like/:id', md_auth.auth, pageController.deleteLike);
