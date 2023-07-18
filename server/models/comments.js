@@ -28,6 +28,12 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true
             }
         },
+        prf_id: {
+            type: DataTypes.INTEGER,
+            validate: {
+                isNumeric: true
+            }
+        },
         comment_content: {
             type: DataTypes.STRING(2000),
             allowNull: false,
@@ -48,6 +54,10 @@ module.exports = (sequelize, DataTypes) => {
         comments.belongsTo(models.advertisements, {
             foreignKey: 'adv_id',
             as: 'advertisement'
+        });
+        comments.belongsTo(models.advertisements, {
+            foreignKey: 'prf_id',
+            as: 'profile'
         });
         comments.belongsTo(models.users, {
             foreignKey: 'user_id',

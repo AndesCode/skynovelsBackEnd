@@ -115,6 +115,32 @@ module.exports = (sequelize, DataTypes) => {
                 isNumeric: true,
             }
         },
+        prf_id: {
+            type: DataTypes.INTEGER,
+            validate: {
+                isUnique: function(value, next) {
+                    if (value) {
+                        likes.findOne({
+                                where: {
+                                    [Op.and]: [{ user_id: this.user_id }, { prf_id: value }]
+                                }
+                            }).then(function(profile_like) {
+                                if (profile_like) {
+                                    return next({ message: 'Error, No puedes dar like dos veces a un mismo elemento' });
+                                } else {
+                                    return next();
+                                }
+                            })
+                            .catch(function(err) {
+                                return next(err);
+                            });
+                    } else {
+                        return next();
+                    }
+                },
+                isNumeric: true,
+            }
+        },
         user_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -142,6 +168,10 @@ module.exports = (sequelize, DataTypes) => {
         likes.belongsTo(models.replys, {
             foreignKey: 'reply_id',
             as: 'reply'
+        });
+        likes.belongsTo(models.users, {
+            foreignKey: 'prf_id',
+            as: 'profile'
         });
         likes.belongsTo(models.users, {
             foreignKey: 'user_id',

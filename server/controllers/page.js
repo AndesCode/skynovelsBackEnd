@@ -8,6 +8,7 @@ const reaction_model = require('../models').reaction_chapters;
 const comments_model = require('../models').comments;
 const replys_model = require('../models').replys;
 const novels_model = require('../models').novels;
+const profile_model = require('../models').users;
 // files mannager
 const fs = require('fs');
 const path = require('path');
@@ -35,6 +36,12 @@ function createLike(req, res) {
         objectId = body.adv_id;
         objectName = 'adv_id';
     }
+    if (body.prf_id && !modelDefined) {
+        model = profile_model;
+        modelDefined = true;
+        objectId = body.prf_id;
+        objectName = 'prf_id';
+    }
     if (body.comment_id && !modelDefined) {
         model = comments_model;
         modelDefined = true;
@@ -47,6 +54,7 @@ function createLike(req, res) {
         objectId = body.reply_id;
         objectName = 'reply_id';
     }
+
     model.findByPk(objectId, { attributes: ['id', 'user_id'] }).then(object => {
         if (object) {
             likes_model.create({
@@ -200,6 +208,13 @@ function createComment(req, res) {
         objectId = body.adv_id;
         objectName = 'adv_id';
         atributes = ['id', 'image', 'user_id'];
+    }
+    if (body.prf_id && !modelDefined) {
+        model = profile_model;
+        modelDefined = true;
+        objectId = body.prf_id;
+        objectName = 'prf_id';
+        atributes = ['id', 'image'];
     }
     model.findByPk(objectId, { attributes: atributes }).then(object => {
         if (object) {
